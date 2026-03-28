@@ -1,54 +1,101 @@
 /**
- * JumpGuideHUD.js - 점프 가이드 UI
- * 게임 시작 시 5초간 화면 하단에 좌우 영역 안내를 보여주는 반투명 가이드.
- * 왼쪽 = "톡! 낮은점프", 오른쪽 = "쑥! 높은점프"
- * 4초 후 1초에 걸쳐 페이드아웃되고 자동 파괴됨.
+ * JumpButtonHUD - 점프 버튼 시각 표시 (우하단 고정)
+ *
+ * 버튼은 시각적 표시만 담당하고, 실제 터치 입력은 GameScene에서 처리.
+ * (Phaser 컨테이너 내 setInteractive 터치 문제 회피)
+ *
+ * - "톡" 버튼 (파란): 낮은 점프
+ * - "쑥" 버튼 (주황): 높은 점프
  */
 
 import Phaser from 'phaser';
 
-export class JumpGuideHUD {
+export class JumpButtonHUD {
   constructor(scene) {
     this.scene = scene;
     const { width, height } = scene.cameras.main;
 
-    // 컨테이너: 모든 가이드 요소를 묶어서 한번에 페이드아웃
-    this.container = scene.add.container(0, 0);
-    this.container.setDepth(15); // UI 위에 표시 (HUD depth=10 보다 위)
+    // 버튼 크기 및 배치 설정
+    this.btnRadius = 35;        // 버튼 반지름
+    const gap = 15;
+    const marginRight = 20;
+    const marginBottom = 25;
 
-    // === 왼쪽 가이드 (낮은 점프) ===
-    const leftBg = scene.add.rectangle(width * 0.25, height * 0.85, width * 0.4, 60, 0x000000, 0.3);
-    leftBg.setStrokeStyle(2, 0xffffff, 0.3);
-    const leftText = scene.add.text(width * 0.25, height * 0.85, '톡! 낮은점프', {
-      fontSize: '18px',
-      fontFamily: 'Jua, Arial, sans-serif',
-      color: '#ffffff',
-      stroke: '#000000',
-      strokeThickness: 3,
-    }).setOrigin(0.5);
+    // 버튼 중심 좌표 (GameScene에서 터치 판정에 사용)
+    this.highX = width - marginRight - this.btnRadius;
+    this.highY = height - marginBottom - this.btnRadius;
+    this.lowX = this.highX - this.btnRadius * 2 - gap;
+    this.lowY = this.highY;
 
-    // === 오른쪽 가이드 (높은 점프) ===
-    const rightBg = scene.add.rectangle(width * 0.75, height * 0.85, width * 0.4, 60, 0x000000, 0.3);
-    rightBg.setStrokeStyle(2, 0xffffff, 0.3);
-    const rightText = scene.add.text(width * 0.75, height * 0.85, '쑥! 높은점프', {
-      fontSize: '18px',
-      fontFamily: 'Jua, Arial, sans-serif',
-      color: '#ffdd00',
-      stroke: '#000000',
-      strokeThickness: 3,
-    }).setOrigin(0.5);
+    // === 낮은 점프 버튼 (파란색) ===
+    this.lowBg = scene.add.circle(this.lowX, this.lowY, this.btnRadius, 0x4488ff, 0.7);
+    this.lowBg.setStrokeStyle(3, 0xffffff, 0.9);
+    this.lowBg.setDepth(200);
 
-    this.container.add([leftBg, leftText, rightBg, rightText]);
+    this.lowArrow = scene.add.text(this.lowX, this.lowY - 8, '▲', {
+      fontSize: '24px', color: '#ffffff',
+      stroke: '#000000', strokeThickness: 2,
+    }).setOrigin(0.5).setDepth(201);
 
-    // 5초 후 페이드아웃 (4초 대기 + 1초 페이드)
-    scene.tweens.add({
-      targets: this.container,
-      alpha: 0,
-      duration: 1000,
-      delay: 4000,
-      onComplete: () => {
-        this.container.destroy();
-      }
+    this.lowLabel = scene.add.text(this.lowX, this.lowY + 18, '톡', {
+      fontSize: '14px', fontFamily: 'Jua, Arial', color: '#ffffff',
+      stroke: '#000000', strokeThickness: 2,
+    }).setOrigin(0.5).setDepth(201);
+
+    // === 높은 점프 버튼 (주황색) ===
+    this.highBg = scene.add.circle(this.highX, this.highY, this.btnRadius, 0xff6644, 0.7);
+    this.highBg.setStrokeStyle(3, 0xffffff, 0.9);
+    this.highBg.setDepth(200);
+
+    this.highArrow = scene.add.text(this.highX, this.highY - 8, '▲▲', {
+      fontSize: '24px', color: '#ffffff',
+      stroke: '#000000', strokeThickness: 2,
+    }).setOrigin(0.5).setDepth(201);
+
+    this.highLabel = scene.add.text(this.highX, this.highY + 18, '쑥', {
+      fontSize: '14px', fontFamily: 'Jua, Arial', color: '#ffffff',
+      stroke: '#000000', strokeThickness: 2,
+    }).setOrigin(0.5).setDepth(201);
+  }
+
+  /**
+   * 터치 좌표가 낮은 점프 버튼 영역인지 확인
+   */
+  isLowButton(x, y) {
+    const dx = x - this.lowX;
+    const dy = y - this.lowY;
+    return (dx * dx + dy * dy) <= (this.btnRadius + 10) * (this.btnRadius + 10);
+  }
+
+  /**
+   * 터치 좌표가 높은 점프 버튼 영역인지 확인
+   */
+  isHighButton(x, y) {
+    const dx = x - this.highX;
+    const dy = y - this.highY;
+    return (dx * dx + dy * dy) <= (this.btnRadius + 10) * (this.btnRadius + 10);
+  }
+
+  /** 낮은 버튼 눌림 효과 */
+  pressLow() {
+    this.lowBg.setFillStyle(0x2266dd, 0.9);
+  }
+
+  /** 높은 버튼 눌림 효과 */
+  pressHigh() {
+    this.highBg.setFillStyle(0xdd4422, 0.9);
+  }
+
+  /** 버튼 원래 색으로 복원 */
+  release() {
+    this.lowBg.setFillStyle(0x4488ff, 0.7);
+    this.highBg.setFillStyle(0xff6644, 0.7);
+  }
+
+  destroy() {
+    [this.lowBg, this.lowArrow, this.lowLabel,
+     this.highBg, this.highArrow, this.highLabel].forEach(obj => {
+      if (obj) obj.destroy();
     });
   }
 }

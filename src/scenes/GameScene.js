@@ -204,11 +204,9 @@ export class GameScene extends Phaser.Scene {
     // === 입력 설정 ===
     this._setupInput();
 
-    // === 점프 버튼 HUD (우하단 고정, 게임 내내 표시) ===
-    this.jumpButtons = new JumpButtonHUD(this,
-      () => this.dino.startJump(false),  // 낮은 점프 콜백
-      () => this.dino.startJump(true),   // 높은 점프 콜백
-    );
+    // === 점프 버튼 HUD (우하단 고정, 시각 표시만) ===
+    // 터치 입력은 _setupInput()의 pointerdown에서 좌표 체크로 처리
+    this.jumpButtons = new JumpButtonHUD(this);
 
     // === 효과음 + BGM (월드별 다른 멜로디!) ===
     soundGenerator.init();
@@ -288,14 +286,35 @@ export class GameScene extends Phaser.Scene {
     this._pointerStartY = 0;
     this._pointerStartTime = 0;
 
-    // 화면 터치 좌표 기록 (슬라이드 스와이프 판정용)
-    // 점프는 우하단 버튼(JumpButtonHUD)에서만 처리 (중복 호출 방지)
+    // === 화면 터치 = 점프 (버튼 영역 판정 + 전체 화면 백업) ===
     this.input.on('pointerdown', (pointer) => {
       this._pointerStartY = pointer.y;
       this._pointerStartTime = Date.now();
+
+      if (this.isGameOver || this.isStageClear) return;
+
+      // 버튼 영역 체크: 낮은 점프 버튼
+      if (this.jumpButtons && this.jumpButtons.isLowButton(pointer.x, pointer.y)) {
+        this.jumpButtons.pressLow();
+        this.dino.startJump(false);
+        return;
+      }
+      // 버튼 영역 체크: 높은 점프 버튼
+      if (this.jumpButtons && this.jumpButtons.isHighButton(pointer.x, pointer.y)) {
+        this.jumpButtons.pressHigh();
+        this.dino.startJump(true);
+        return;
+      }
+
+      // 버튼 밖 터치: 화면 좌/우로 점프 (백업)
+      const isHigh = pointer.x > this.cameras.main.width / 2;
+      this.dino.startJump(isHigh);
     });
 
     this.input.on('pointerup', (pointer) => {
+      // 버튼 색 복원
+      if (this.jumpButtons) this.jumpButtons.release();
+
       if (!this.isGameOver && !this.isStageClear) {
         // 아래로 50px 이상 스와이프 = 슬라이드 (기존 유지)
         const deltaY = pointer.y - this._pointerStartY;
@@ -303,7 +322,6 @@ export class GameScene extends Phaser.Scene {
         if (deltaY > 50 && elapsed < 500) {
           this.dino.slide();
         }
-        // executeJump 호출 제거: 버튼 분리로 홀드 판정 불필요
       }
     });
 
