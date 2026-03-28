@@ -255,16 +255,13 @@ export class Dino extends Phaser.Physics.Arcade.Sprite {
 
     this.isSliding = true;
 
-    // 히트박스를 낮게 변경 (몸을 숙임 = 높이를 40%로)
-    const slideHeight = GAME.DINO_SIZE * GAME.SLIDE.HITBOX_HEIGHT_RATIO;
+    // 히트박스만 낮게 변경 (scaleY는 건드리지 않음! 바닥뚫기 방지)
+    const slideHeight = GAME.DINO_SIZE * 0.3;  // 슬라이드 히트박스 높이 (30%)
     this.body.setSize(GAME.DINO_SIZE * 0.7, slideHeight);
-    // offset: 히트박스를 바닥에 붙이기 (위쪽 빈 공간은 판정 없음)
+    // offset: 히트박스를 스프라이트 하단에 맞추기 (바닥에 붙어있도록)
     this.body.setOffset(GAME.DINO_SIZE * 0.15, GAME.DINO_SIZE - slideHeight);
 
-    // 스프라이트를 납작하게 (scaleY를 절반으로)
-    this.setScale(GAME.DINO_SCALE, GAME.DINO_SCALE * 0.5);
-
-    // 슬라이드 애니메이션 재생 (납작한 포즈)
+    // 슬라이드 애니메이션 재생 (납작한 포즈 - scaleY 변경 없이 애니메이션으로 표현)
     this.play(`${this.dinoKey}_slide`);
 
     // 슬라이드 효과음
@@ -283,12 +280,9 @@ export class Dino extends Phaser.Physics.Arcade.Sprite {
     if (!this.isSliding) return;
     this.isSliding = false;
 
-    // 히트박스 원래대로 복원
+    // 히트박스 원래대로 복원 (setScale 복원 불필요 - 스케일을 변경하지 않았으므로)
     this.body.setSize(GAME.DINO_SIZE * 0.5, GAME.DINO_SIZE * 0.6);
     this.body.setOffset(GAME.DINO_SIZE * 0.25, GAME.DINO_SIZE * 0.35);
-
-    // 스프라이트 크기 원래대로
-    this.setScale(GAME.DINO_SCALE, GAME.DINO_SCALE);
 
     // 타이머 정리
     if (this.slideTimer) {
@@ -296,10 +290,8 @@ export class Dino extends Phaser.Physics.Arcade.Sprite {
       this.slideTimer = null;
     }
 
-    // 달리기 애니메이션으로 복귀 (바닥이면)
-    if (this.body.blocked.down) {
-      this.play(`${this.dinoKey}_run`);
-    }
+    // 달리기 애니메이션으로 복귀
+    this.play(`${this.dinoKey}_run`);
   }
 
   // =========================================================

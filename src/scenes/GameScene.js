@@ -283,6 +283,11 @@ export class GameScene extends Phaser.Scene {
       this.wasInAir = true;
     }
 
+    // 슬라이드 중 바닥 뚫기 방지: y좌표가 groundY 아래로 내려가지 않도록 보정
+    if (this.dino.y > this.groundY) {
+      this.dino.y = this.groundY;
+    }
+
     // 공룡 업데이트
     this.dino.update();
 
