@@ -345,11 +345,11 @@ export class Background {
     this.sky.setOrigin(0, 0);
     this.sky.setDepth(-1);
 
-    // 구름 레이어 (가장 느리게 = 가장 멀리)
+    // 구름 레이어 (가장 느리게 = 가장 멀리, 장애물 뒤에 배치)
     this.clouds = scene.add.tileSprite(0, 0, width, 200, `bg_cloud_w${worldId}`);
     this.clouds.setOrigin(0, 0);
-    this.clouds.setDepth(0);
-    this.clouds.setAlpha(0.8);
+    this.clouds.setDepth(-0.5); // 하늘(-1)과 산(1) 사이, 장애물보다 뒤에 배치하여 가리지 않게
+    this.clouds.setAlpha(0.5);  // 투명도 낮춰서 시야 확보 (0.8 → 0.5)
     this.cloudSpeed = 0.2;
 
     // 산 레이어 (중간 속도)

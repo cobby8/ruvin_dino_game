@@ -14,8 +14,8 @@ export const DIFFICULTIES = [
     color: '#FFE0E0',               // 연분홍 카드 배경
     borderColor: '#FF9999',         // 카드 테두리
     // 게임 파라미터
-    initialSpeed: 100,              // 아주 느린 시작 속도
-    maxSpeed: 200,                  // 최대 속도도 낮음
+    initialSpeed: 130,              // 아주 느린 시작 속도 (100 x 1.3 = 130)
+    maxSpeed: 260,                  // 최대 속도도 낮음 (200 x 1.3 = 260)
     obstacleGapMin: 2500,           // 장애물 간격 넓음 (여유롭게)
     obstacleGapMax: 4000,
     obstacleScale: 0.8,             // 장애물 크기 작게 (더 쉽게)
@@ -31,8 +31,8 @@ export const DIFFICULTIES = [
     description: '조금 빨라!',
     color: '#FFE8C8',               // 연주황
     borderColor: '#FFB366',
-    initialSpeed: 120,
-    maxSpeed: 250,
+    initialSpeed: 156,              // 120 x 1.3 = 156
+    maxSpeed: 325,                  // 250 x 1.3 = 325
     obstacleGapMin: 2000,
     obstacleGapMax: 3500,
     obstacleScale: 0.9,
@@ -48,8 +48,8 @@ export const DIFFICULTIES = [
     description: '나는 용감해!',
     color: '#FFFFC8',               // 연노랑
     borderColor: '#FFD700',
-    initialSpeed: 140,
-    maxSpeed: 300,
+    initialSpeed: 182,              // 140 x 1.3 = 182
+    maxSpeed: 390,                  // 300 x 1.3 = 390
     obstacleGapMin: 1800,
     obstacleGapMax: 3000,
     obstacleScale: 1.0,
@@ -65,8 +65,8 @@ export const DIFFICULTIES = [
     description: '도전이 좋아!',
     color: '#C8FFD4',               // 연초록
     borderColor: '#66CC77',
-    initialSpeed: 160,
-    maxSpeed: 350,
+    initialSpeed: 208,              // 160 x 1.3 = 208
+    maxSpeed: 455,                  // 350 x 1.3 = 455
     obstacleGapMin: 1500,
     obstacleGapMax: 2500,
     obstacleScale: 1.1,
@@ -82,8 +82,8 @@ export const DIFFICULTIES = [
     description: '최강 도전!',
     color: '#C8D4FF',               // 연파랑
     borderColor: '#6688FF',
-    initialSpeed: 180,
-    maxSpeed: 400,
+    initialSpeed: 234,              // 180 x 1.3 = 234
+    maxSpeed: 520,                  // 400 x 1.3 = 520
     obstacleGapMin: 1200,
     obstacleGapMax: 2000,
     obstacleScale: 1.2,

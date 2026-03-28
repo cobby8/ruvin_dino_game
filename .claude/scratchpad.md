@@ -2,16 +2,16 @@
 
 ## 현재 작업
 - **요청**: 3가지 대규모 기능 추가 (점프 시스템 개편 + 난이도 5단계 + 스테이지 30개)
-- **상태**: 페이즈 1 구현 완료 → 테스트 대기
-- **현재 담당**: tester
+- **상태**: ✅ 전체 완료 (3페이즈 모두 커밋됨)
+- **현재 담당**: pm
 
 ## 진행 현황
 | 단계 | 상태 | 담당 |
 |------|------|------|
 | 1. 기획설계 | 완료 | planner-architect |
-| 2. 페이즈1 구현 | 완료 | developer |
-| 3. 페이즈1 테스트 | 완료 | tester |
-| 4. 커밋 | 대기 | pm |
+| 2. 페이즈1 (점프+난이도) | ✅ 커밋됨 | developer+tester |
+| 3. 페이즈2 (스테이지+월드) | ✅ 커밋됨 | developer+tester |
+| 4. 페이즈3 (씬흐름+저장) | ✅ 커밋됨 | developer+tester |
 
 ## 작업 로그
 | 날짜 | 작업 | 결과 |
@@ -106,6 +106,25 @@ reviewer 참고:
 - StageClearScene._saveProgress(): localStorage에 클리어 스테이지 + 최고별 누적 저장
 - WorldMapScene._isStageUnlocked(): 스테이지1 항상 열림, 나머지 이전 클리어 체크
 
+### 피드백 수정 3건
+
+| 파일 | 변경 내용 | 신규/수정 |
+|------|----------|----------|
+| src/scenes/WorldMapScene.js | 월드맵 전면 리디자인: 양피지 배경 + 테마별 카드 + 예쁜 버튼 + 점선 경로 + 진행도 바 + 공룡 위치 표시 + 드래그 스크롤 | 수정(전면) |
+| src/objects/Background.js | 구름 레이어 depth -0.5 + alpha 0.5로 변경 (장애물 가림 방지) | 수정 |
+| src/config.js | 점프 10% 향상: LOW -300->-330, HIGH -500->-550, DOUBLE -350->-385 | 수정 |
+| src/data/difficulties.js | 전 난이도 속도 30% 향상: 아기(100/200->130/260), 꼬마(120/250->156/325), 씩씩(140/300->182/390), 용감(160/350->208/455), 전설(180/400->234/520) | 수정 |
+
+tester 참고:
+- 월드맵: 양피지 느낌 배경, 각 월드가 파스텔 카드로 표시되는지 확인
+- 클리어 스테이지=금색원+체크마크, 열린 스테이지=테마색+흰숫자, 잠김=회색+자물쇠
+- 월드 카드 사이에 점선 화살표 경로가 보이는지 확인
+- 6개 월드가 화면에 안 들어가면 드래그 스크롤 동작하는지 확인
+- 하단 "공룡 바꾸기"+"난이도 변경" 버튼이 고정되어 스크롤에 영향 안 받는지 확인
+- 안개/구름 효과: 게임 플레이 중 장애물이 구름에 가려지지 않는지 확인
+- 점프: 이전보다 10% 높이 점프하는지 체감 확인
+- 속도: 이전보다 30% 빠른지 체감 확인 (아기공룡도 제법 빠를 수 있음)
+
 ## 기획설계 (planner-architect)
 (상세 내용은 작업 로그로 요약됨. 원본은 git 이력 참조)
 - 3개 페이즈 계획: P1(점프+난이도) → P2(스테이지+월드) → P3(씬흐름+저장)
@@ -113,128 +132,66 @@ reviewer 참고:
 
 ## 테스트 결과 (tester)
 
-### 페이즈 3 빌드 + 코드 검증 (2026-03-28)
+### 피드백 수정 3건 빌드 + 코드 검증 (2026-03-28)
 
 **1. 빌드 테스트**
 
 | 테스트 항목 | 결과 | 비고 |
 |-----------|------|------|
-| npm run build 성공 | PASS | 24 modules, 646ms, 경고: chunk 1257KB (phaser 포함이라 정상) |
+| npm run build 성공 | PASS | 24 modules, 652ms, 경고: chunk 1262KB (phaser 포함이라 정상) |
 
-**2. 신규 파일 3개 확인**
-
-| 테스트 항목 | 결과 | 비고 |
-|-----------|------|------|
-| StageClearScene.js 존재 + Phaser.Scene 상속 | PASS | super('StageClearScene') |
-| StageClearScene: init()에서 7개 데이터 수신 | PASS | score, stageData, worldData, targetScore, deathCount, nextStageId, isLastStage |
-| StageClearScene: 별 계산 _calculateStars() | PASS | 1=기본, 2=score>=target*1.2, 3=deathCount===0 |
-| StageClearScene: 별 3개 연출 _showStars() | PASS | 순서대로 0.4초 간격, scale 0->1.2->1 바운스 |
-| StageClearScene: 획득/미획득 별 구분 | PASS | 획득=alpha 1+scale 1.2, 미획득=alpha 0.3+scale 0.8 |
-| StageClearScene: 공룡 기뻐하는 애니메이션 | PASS | selectedDino 프레임1 + 위아래 통통 tween |
-| StageClearScene: 월드 마지막 스테이지 해금 메시지 | PASS | stageId%5===0 && !isLastStage 분기 + getWorld(id+1) |
-| StageClearScene: "다음 스테이지" 버튼 (일반) | PASS | nextStageId registry 설정 + GameScene 전환 |
-| StageClearScene: "엔딩 보기" 버튼 (isLastStage) | PASS | EndingScene 전환 |
-| StageClearScene: "월드맵" 버튼 | PASS | WorldMapScene 전환 |
-| StageClearScene: _saveProgress() localStorage 저장 | PASS | key='ruvin_dino_progress', clearedStages+bestStars |
-| StageClearScene: 최고 별 수 갱신 로직 | PASS | starCount > currentBest 시에만 덮어쓰기 |
-| WorldMapScene.js 존재 + Phaser.Scene 상속 | PASS | super('WorldMapScene') |
-| WorldMapScene: _loadProgress() 불러오기 | PASS | localStorage 파싱 + 실패 시 빈 객체 반환 |
-| WorldMapScene: 6월드 x 5스테이지 = 30개 버튼 배치 | PASS | 3행2열 그리드, STAGES.filter(s=>s.world===world.id) |
-| WorldMapScene: 3가지 상태 (잠금/해제/클리어) | PASS | 잠금=회색원+자물쇠, 해제=흰원+숫자, 클리어=금원+별 |
-| WorldMapScene: _isStageUnlocked() 잠금 해제 로직 | PASS | id===1 항상열림, 나머지 이전스테이지 클리어 체크 |
-| WorldMapScene: 스테이지 버튼 -> GameScene 전환 | PASS | currentStage registry 설정 후 scene.start |
-| WorldMapScene: 잠금 스테이지는 인터랙션 없음 | PASS | if(isUnlocked) 조건부 setInteractive |
-| WorldMapScene: bestStars 별 표시 (원 아래 미니) | PASS | isCleared && bestStar>0 시 repeat(bestStar) |
-| WorldMapScene: "공룡 바꾸기"+"난이도 변경" 하단 버튼 | PASS | SelectScene/DifficultyScene 전환 |
-| WorldMapScene: resize 대응 | PASS | _onResize -> scene.restart + shutdown에서 off |
-| EndingScene.js 존재 + Phaser.Scene 상속 | PASS | super('EndingScene') |
-| EndingScene: 금->보라 그라디언트 배경 | PASS | fillGradientStyle(0xFFD700, ..., 0xD4A5FF) |
-| EndingScene: playEnding() 호출 | PASS | soundGenerator.playEnding() |
-| EndingScene: 12개 반짝이 이모지 랜덤 배치 | PASS | sparkleChars 4종, fade+rotate+scale tween |
-| EndingScene: 4마리 공룡 나란히 달리기 | PASS | DINOS.forEach, sprite.play(key+'_run'), 통통 tween |
-| EndingScene: "축하해요!" + "루빈이의 대모험 완료!" 텍스트 | PASS | Back.easeOut 바운스 + 페이드인 |
-| EndingScene: "처음부터 다시" 버튼 | PASS | localStorage.removeItem + currentStage=1 + SelectScene |
-| EndingScene: "자유 모드" 버튼 | PASS | currentStage=0 + GameScene 전환 |
-| EndingScene: 버튼 1.5초 지연 등장 | PASS | time.delayedCall(1500) |
-
-**3. 수정 파일 검증 (5개)**
+**2. 월드맵 (WorldMapScene.js) 리디자인 검증**
 
 | 테스트 항목 | 결과 | 비고 |
 |-----------|------|------|
-| main.js: 8개 씬 import | PASS | Boot, Select, Difficulty, WorldMap, Game, StageClear, GameOver, Ending |
-| main.js: scene 배열 8개 등록 | PASS | 순서: Boot->Select->Difficulty->WorldMap->Game->StageClear->GameOver->Ending |
-| GameScene.js: isFreeMode 판별 | PASS | currentStage===0 이면 자유모드 |
-| GameScene.js: 자유모드 targetScore=Infinity | PASS | 절대 클리어 안됨 (무한 러너) |
-| GameScene.js: deathCount 초기화 | PASS | this.deathCount=0 (별 3개 조건에 사용) |
-| GameScene.js: isStageClear 상태 추가 | PASS | 클리어 시 입력차단+update 조기반환 |
-| GameScene.js: _onStageClear() StageClearScene 전환 | PASS | 1.5초 딜레이 후 scene.start('StageClearScene', data) |
-| GameScene.js: 클리어 데이터 전달 7개 필드 | PASS | score, stageData, worldData, targetScore, deathCount, isLastStage, nextStageId |
-| GameScene.js: _onHitObstacle에서 isFreeMode 전달 | PASS | GameOverScene에 isFreeMode 전달 |
-| GameOverScene.js: 실패 전용 (클리어 분기 제거) | PASS | init()에 stageClear 없음, create()에 분기 없음 |
-| GameOverScene.js: init()에서 isFreeMode 수신 | PASS | data.isFreeMode || false |
-| GameOverScene.js: "재도전" 버튼 | PASS | 같은 스테이지로 GameScene 재시작 |
-| GameOverScene.js: "월드맵" 버튼 (자유모드 아닐때만) | PASS | if(!isFreeMode) WorldMapScene |
-| GameOverScene.js: "공룡 바꾸기" 버튼 위치 분기 | PASS | 자유모드면 0.80, 아니면 0.90 |
-| GameOverScene.js: 스테이지 정보 표시 (자유모드 아닐때) | PASS | stageData && worldData && !isFreeMode |
-| DifficultyScene.js: _loadProgress() 추가 | PASS | localStorage 'ruvin_dino_progress' 파싱 |
-| DifficultyScene.js: 진행도 분기 (출발 버튼) | PASS | clearedStages.length>0 -> WorldMap, 아니면 스테이지1 |
-| SoundGenerator.js: playStageClear() | PASS | 도-미-솔-높은도 4음계, 0.15초 간격 |
-| SoundGenerator.js: playEnding() | PASS | 도-레-미-파-솔-라-시-도 8음계 + 트릴 |
+| 양피지 배경: 베이지 세로 그라디언트 | PASS | 10단계 그라디언트 (255,245,220)->(235,220,190) |
+| 양피지 테두리 장식 (이중 라운드 사각형) | PASS | 3px+1.5px 선, 갈색(0xC8A882/0xD4B896) |
+| 상단 리본 타이틀 "루빈이의 공룡 모험" | PASS | 빨간 리본(0xFF6B6B) + 흰 글씨 + 스트로크 |
+| 진행도 텍스트 "N / 30 클리어!" | PASS | clearedCount / totalStages 표시 |
+| 진행도 바 (금색 프로그레스) | PASS | 화면 50% 너비, 비율 계산 정확 |
+| 6개 월드 카드 테마색 구분 | PASS | 풀밭=연녹, 사막=연노랑, 숲=진녹, 화산=연빨강, 바다=연파랑, 하늘=연보라 |
+| 열린 월드: 테마 배경+테두리+그림자 | PASS | fillRoundedRect + strokeRoundedRect + shadow |
+| 잠긴 월드: 반투명 회색+자물쇠 텍스트 | PASS | 0xDDDDDD alpha 0.5 + "잠겨있어요" |
+| 클리어 스테이지: 금색 원+체크마크 | PASS | 0xFFD700 원 + 0xFFA500 테두리 + 하이라이트 + 체크 기호 |
+| 열린 스테이지: 테마색 원+흰 숫자 | PASS | WORLD_STAGE_COLORS[worldId] + 흰색 테두리 + 하이라이트 |
+| 잠긴 스테이지: 회색 원+자물쇠 이모지 | PASS | 0x999999 alpha 0.5 + 자물쇠 이모지 |
+| 스테이지 버튼 사이 점선 연결선 | PASS | 카드 내 가로 점선 (dashLen=4, gapLen=3) |
+| 월드 카드 사이 세로 점선 경로 | PASS | _drawPathBetweenCards(), 잠김 여부별 색상 분기 |
+| 점선 끝 화살표 삼각형 (열린 경로만) | PASS | fillTriangle, !isLocked 조건 |
+| 선택 공룡 현재 위치 표시 | PASS | _currentStagePos에 공룡 스프라이트 + 통통 tween |
+| 드래그 스크롤 코드 | PASS | _setupScroll(): pointerdown/move/up + Clamp(0, maxScrollY) |
+| 하단 버튼 영역 스크롤 무시 | PASS | pointer.y > screenH*0.88이면 드래그 안 시작 |
+| 하단 배경 고정 (depth 50) | PASS | bottomBg.setDepth(50), 테두리 장식 depth 100 |
+| "공룡 바꾸기" 버튼 | PASS | 보라색(0x9B72CF), 라운드+그림자+호버, SelectScene 전환 |
+| "난이도 변경" 버튼 | PASS | 파란색(0x4EAEFF), 라운드+그림자+호버, DifficultyScene 전환 |
+| 버튼 크기/스타일 개선 | PASS | Math.min으로 최대크기 제한(140x42), 그림자+하이라이트+호버+눌림효과 |
+| 별 표시 (클리어 버튼 아래) | PASS | bestStar>0이면 별 이모지 repeat, fontSize 8px |
 
-**4. 씬 흐름 검증 (코드 추적)**
-
-| 테스트 항목 | 결과 | 비고 |
-|-----------|------|------|
-| Boot -> Select (기존) | PASS | BootScene 로딩 완료 후 SelectScene 전환 |
-| Select -> Difficulty (기존) | PASS | 공룡 선택 후 DifficultyScene 전환 |
-| Difficulty -> Game (첫 플레이) | PASS | clearedStages.length===0 -> currentStage=1 -> GameScene |
-| Difficulty -> WorldMap (이어하기) | PASS | clearedStages.length>0 -> WorldMapScene |
-| Game -> StageClear (클리어) | PASS | score>=targetScore -> _onStageClear -> StageClearScene |
-| Game -> GameOver (실패) | PASS | _onHitObstacle -> GameOverScene |
-| StageClear -> Game (다음 스테이지) | PASS | currentStage=nextStageId -> GameScene |
-| StageClear -> WorldMap | PASS | "월드맵" 버튼 -> WorldMapScene |
-| StageClear -> Ending (스테이지 30) | PASS | isLastStage -> EndingScene |
-| GameOver -> Game (재도전) | PASS | 같은 currentStage로 GameScene |
-| GameOver -> WorldMap | PASS | "월드맵" 버튼 -> WorldMapScene |
-| GameOver -> Select (공룡 바꾸기) | PASS | SelectScene 전환 |
-| WorldMap -> Game (스테이지 선택) | PASS | currentStage=stageId -> GameScene |
-| WorldMap -> Select (공룡 바꾸기) | PASS | SelectScene 전환 |
-| WorldMap -> Difficulty (난이도 변경) | PASS | DifficultyScene 전환 |
-| Ending -> Select (처음부터) | PASS | localStorage 초기화 + currentStage=1 + SelectScene |
-| Ending -> Game (자유 모드) | PASS | currentStage=0 -> GameScene (isFreeMode=true) |
-
-**5. localStorage 진행도 검증**
+**3. 안개/구름 (Background.js) 수정 검증**
 
 | 테스트 항목 | 결과 | 비고 |
 |-----------|------|------|
-| 저장 키: 'ruvin_dino_progress' | PASS | StageClearScene, WorldMapScene, DifficultyScene 모두 동일 키 |
-| clearedStages 배열 구조 | PASS | 중복 방지: includes() 체크 후 push |
-| bestStars 객체 구조 | PASS | { [stageId]: starCount } 형식 |
-| 최고 별만 저장 (하향 방지) | PASS | starCount > currentBest 시에만 갱신 |
-| JSON.parse 에러 처리 | PASS | try-catch + 빈 객체 반환 (3개 파일 모두) |
-| "처음부터 다시" 시 초기화 | PASS | localStorage.removeItem('ruvin_dino_progress') |
-| 자유모드에서 진행도 저장 안됨 | PASS | 자유모드는 StageClearScene을 거치지 않음 (targetScore=Infinity) |
+| 구름 depth가 장애물보다 뒤 | PASS | clouds.setDepth(-0.5), 장애물 depth=0(기본값), Dino depth=10 |
+| 구름 alpha 낮아짐 | PASS | clouds.setAlpha(0.5) (기존 0.8에서 감소) |
+| 주석에 변경 이유 명시 | PASS | "장애물보다 뒤에 배치하여 가리지 않게", "0.8->0.5" |
 
-**6. import/export 검증 (신규 3개 + 수정 5개)**
+**4. 밸런스 (config.js + difficulties.js) 검증**
 
 | 테스트 항목 | 결과 | 비고 |
 |-----------|------|------|
-| StageClearScene: export class | PASS | named export |
-| StageClearScene: import soundGenerator | PASS | ../utils/SoundGenerator.js |
-| StageClearScene: import getWorld | PASS | ../data/worlds.js |
-| WorldMapScene: export class | PASS | named export |
-| WorldMapScene: import WORLDS | PASS | ../data/worlds.js |
-| WorldMapScene: import STAGES | PASS | ../data/stages.js |
-| WorldMapScene: import soundGenerator | PASS | ../utils/SoundGenerator.js |
-| EndingScene: export class | PASS | named export |
-| EndingScene: import DINOS | PASS | ../config.js |
-| EndingScene: import soundGenerator | PASS | ../utils/SoundGenerator.js |
-| main.js: 3개 신규 씬 import 경로 | PASS | ./scenes/StageClearScene.js, WorldMapScene.js, EndingScene.js |
+| config.js LOW_VELOCITY = -330 | PASS | -300 x 1.1 = -330 (10% 향상) |
+| config.js HIGH_VELOCITY = -550 | PASS | -500 x 1.1 = -550 (10% 향상) |
+| config.js DOUBLE_VELOCITY = -385 | PASS | -350 x 1.1 = -385 (10% 향상) |
+| 아기공룡: 130/260 | PASS | 100x1.3=130, 200x1.3=260 |
+| 꼬마공룡: 156/325 | PASS | 120x1.3=156, 250x1.3=325 |
+| 씩씩한공룡: 182/390 | PASS | 140x1.3=182, 300x1.3=390 |
+| 용감한공룡: 208/455 | PASS | 160x1.3=208, 350x1.3=455 |
+| 전설의공룡: 234/520 | PASS | 180x1.3=234, 400x1.3=520 |
 
 ### 종합
 
-총 **78개** 항목 중 **78개 통과 / 0개 실패**
+총 **34개** 항목 중 **34개 통과 / 0개 실패**
 
-빌드 성공, 신규 3개 씬(StageClear/WorldMap/Ending) 구현 완전, 수정 5개 파일 정상 통합.
-씬 흐름 17개 경로 모두 코드상 연결 확인, localStorage 저장/불러오기/초기화 로직 정상.
-별 계산(1~3개), 잠금 해제, 자유 모드, 첫플레이/이어하기 분기 모두 논리적 오류 없음.
+빌드 성공. 피드백 3건(월드맵 리디자인 + 안개 수정 + 밸런스 조정) 모두 코드상 정상 반영 확인.
+월드맵은 양피지 배경, 테마별 카드, 3종 스테이지 버튼 상태, 점선 경로, 드래그 스크롤, 진행도 바, 하단 고정 버튼 모두 구현됨.
+구름 depth -0.5 + alpha 0.5로 장애물 가림 해결. 점프/속도 수치 모두 정확히 계산됨.
