@@ -438,12 +438,10 @@ export class Dino extends Phaser.Physics.Arcade.Sprite {
       this.setRotation(0);
     }
 
-    // === 프테라노 비행 능력: 점프 정점에서 0.3초 이상 터치 유지 시 비행 ===
+    // === 프테라노 비행: 공중에서 터치 유지 시 떠있기 ===
+    // 점프 상승이 끝나고(velocity.y >= 0) 터치를 누르고 있으면 비행 발동
     if (this.ability === 'glide' && !this.body.blocked.down && !this.isFlying) {
-      // 정점 근처 + 0.3초 이상 누르고 있어야 비행 발동
-      // (짧은 터치로 점프만 할 때는 비행 안 됨)
-      const holdTime = this.isHoldingJump ? (this.scene.time.now - (this._holdStartTime || 0)) : 0;
-      if (Math.abs(this.body.velocity.y) < 50 && this.isHoldingJump && holdTime >= 300) {
+      if (this.isHoldingJump && this.body.velocity.y >= 0) {
         this.startFly();
       }
     }
