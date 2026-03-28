@@ -26,7 +26,9 @@ export class StageClearScene extends Phaser.Scene {
    * data.targetScore, data.deathCount, data.nextStageId, data.isLastStage
    */
   init(data) {
-    this.finalScore = data.score || 0;
+    // clearScore = 장애물/적 넘긴 횟수 (클리어 기준), starCount = 별 수집 수
+    this.finalScore = data.clearScore || 0;
+    this.finalStarCount = data.starCount || 0;
     this.stageData = data.stageData || null;
     this.worldData = data.worldData || null;
     this.targetScore = data.targetScore || 0;
@@ -105,14 +107,23 @@ export class StageClearScene extends Phaser.Scene {
       ease: 'Sine.easeInOut',
     });
 
-    // === 넘은 장애물 수 표시 ===
-    this.add.text(width / 2, height * 0.63, `넘은 장애물: ${this.finalScore}`, {
+    // === 넘은 장애물 수 + 별 수집 수 표시 ===
+    this.add.text(width / 2, height * 0.61, `넘은 장애물: ${this.finalScore}`, {
       fontFamily: 'Jua, sans-serif',
       fontSize: '22px',
       color: '#5A4A00',
       stroke: '#FFFFFF',
       strokeThickness: 2,
     }).setOrigin(0.5);
+
+    // 별 수집 수 (장애물 아래에 작게 표시)
+    if (this.finalStarCount > 0) {
+      this.add.text(width / 2, height * 0.66, `모은 별: ${this.finalStarCount}`, {
+        fontFamily: 'Jua, sans-serif',
+        fontSize: '16px',
+        color: '#B8960A',
+      }).setOrigin(0.5);
+    }
 
     // === 월드 마지막 스테이지 클리어 시 새 나라 해금 메시지 ===
     // 스테이지 5, 10, 15, 20, 25, 30이 월드의 마지막

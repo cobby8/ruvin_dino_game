@@ -75,6 +75,15 @@ export class StageHUD {
       color: '#CCCCCC',
     }).setOrigin(1, 0).setDepth(depth);
 
+    // === 우상단: 별 수집 카운터 (난이도 아래) ===
+    this.starCountText = scene.add.text(width - 10, 42, '0/100', {
+      fontFamily: 'Jua, sans-serif',
+      fontSize: '13px',
+      color: '#FFD700',
+      stroke: '#333333',
+      strokeThickness: 1,
+    }).setOrigin(1, 0).setDepth(depth);
+
     // === 프로그레스 바 (점수 텍스트 아래) ===
     const barWidth = 120;
     const barHeight = 8;
@@ -135,6 +144,15 @@ export class StageHUD {
       this.barWidth * progress, this.barHeight,
       4
     );
+  }
+
+  /**
+   * 별 수집 수 업데이트 (우상단 카운터)
+   * @param {number} starCount - 현재 별 수집 수
+   */
+  updateStarCount(starCount) {
+    // 별 수집 진행도 표시 (예: "23/100")
+    this.starCountText.setText(`${starCount}/100`);
   }
 
   /**

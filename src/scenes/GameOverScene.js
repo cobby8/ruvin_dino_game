@@ -21,7 +21,9 @@ export class GameOverScene extends Phaser.Scene {
    * @param {object} data - GameScene에서 전달받은 데이터
    */
   init(data) {
-    this.finalScore = data.score || 0;
+    // clearScore = 장애물/적 넘긴 횟수, starCount = 별 수집 수
+    this.finalScore = data.clearScore || 0;
+    this.finalStarCount = data.starCount || 0;
     this.stageData = data.stageData || null;
     this.worldData = data.worldData || null;
     this.isFreeMode = data.isFreeMode || false;
@@ -104,9 +106,18 @@ export class GameOverScene extends Phaser.Scene {
       color: '#CCCCCC',
     }).setOrigin(0.5);
 
+    // 별 수집 수 표시
+    if (this.finalStarCount > 0) {
+      this.add.text(width / 2, height * 0.63, `모은 별: ${this.finalStarCount}`, {
+        fontFamily: 'Jua, sans-serif',
+        fontSize: '16px',
+        color: '#FFD700',
+      }).setOrigin(0.5);
+    }
+
     // [P1] 피격 횟수 표시 (맞은 횟수가 있을 때만)
     if (this.hitCount > 0) {
-      this.add.text(width / 2, height * 0.64, `${this.hitCount}번 맞았어!`, {
+      this.add.text(width / 2, height * 0.67, `${this.hitCount}번 맞았어!`, {
         fontFamily: 'Jua, sans-serif',
         fontSize: '14px',
         color: '#FF9999',

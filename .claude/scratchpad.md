@@ -31,54 +31,24 @@
 
 ## 구현 기록 (developer)
 
-### 슬라이드 바닥뚫기 버그 수정
-- Dino.js: setScale 제거, 히트박스만 변경으로 수정
-- GameScene.js: y좌표 보정 코드 추가
-
-### 3가지 버그 수정 (debugger, 2026-03-28)
-
-#### 수정 이력
-| 회차 | 수정 내용 | 수정 파일 | 비고 |
-|------|----------|----------|------|
-| 1차 | body offsetY 0.35->0.4 (바닥 뚫기 수정) | Dino.js L54, L285 | 생성자+endSlide 둘 다 수정 |
-| 1차 | setCollideWorldBounds(true) 제거 | Dino.js L49 | ground collider 간섭 방지, 2단점프 정상화 |
-| 2차 | _onStageClear 중복호출 방지 가드 추가 | GameScene.js L430 | if (this.isStageClear) return |
-| 2차 | forEach->for+break 변환 (점수체크 루프) | GameScene.js L351-381 | 클리어 후 추가 점수 방지 |
-| 2차 | _onCollectItem에 isStageClear 가드 추가 | GameScene.js L641 | 아이템 수집 중 클리어 중복 방지 |
-
-### P4: 스프링 점프대 + 부스트 구간 + 밸런스 조정
+### 3단점프 수정 + 점수 시스템 재설계 (2026-03-28)
 
 | 파일 | 변경 내용 | 신규/수정 |
 |------|----------|----------|
-| src/objects/Spring.js | 스프링 텍스처(빨간코일+파란받침대) + Spring 클래스(밟기+압축애니) + SpringManager(풀링5개) | 신규 |
-| src/objects/BoostPad.js | 부스트패드 텍스처(노란+주황 화살표 ▶▶) + BoostPad 클래스 + BoostPadManager(풀링5개) | 신규 |
-| src/config.js | SPRING(VELOCITY:-900, SPAWN_CHANCE:8%) + BOOST(SPEED_MULTIPLIER:2x, DURATION:2초, SPAWN_CHANCE:6%) | 수정 |
-| src/data/stages.js | 30개 스테이지에 enemyChance/itemChance/springChance/boostChance 4개 밸런스 속성 추가 | 수정 |
-| src/scenes/GameScene.js | SpringManager/BoostPadManager 생성 + 충돌(스프링밟기/부스트패드) + 부스트모드(속도2배+무적+속도선) + cleanup/shutdown | 수정 |
-| src/scenes/BootScene.js | createSpringTextures + createBoostPadTextures import + 로딩 단계 추가 | 수정 |
-| src/utils/SoundGenerator.js | playSpring(200→800Hz 상승음) + playBoost(sawtooth 가속음) 2개 효과음 추가 | 수정 |
+| src/objects/Dino.js | startJump()에 !isDoubleJumpUsed 조건 추가 → 3단 점프 차단 | 수정 |
+| src/config.js | STAR.LIFE_BONUS_COUNT:100 추가 (별 100개=목숨+1) | 수정 |
+| src/scenes/GameScene.js | this.score → this.clearScore + this.starCount 분리, 별 수집 시 클리어점수 불포함, 100개=목숨+1 | 수정 |
+| src/objects/StageHUD.js | 우상단 별 카운터 UI 추가 + updateStarCount() 메서드 | 수정 |
+| src/scenes/StageClearScene.js | data.score → data.clearScore/starCount, 별 수집 수 표시 추가 | 수정 |
+| src/scenes/GameOverScene.js | data.score → data.clearScore/starCount, 별 수집 수 표시 추가 | 수정 |
 
 tester 참고:
-- 스프링 점프대: 바닥에 빨간 코일+파란 받침대 모양, 월드2부터 등장 (3~10% 확률)
-  - 공중에서 떨어지며 밟으면 초고점프(-900)! + 스프링 위에 별 5개 아치형 배치
-  - "뿅!" 상승 효과음 + 카메라 살짝 흔들림
-  - 올라가는 중(상승)에 닿으면 발동 안 됨 (하강 중에만)
-- 부스트 패드: 바닥에 납작한 노란 화살표 패드, 월드2 후반부터 등장 (2~8% 확률)
-  - 바닥에서 밟으면 2초간: 속도 2배 + 무적 + 주황색 공룡 + 속도선 이펙트
-  - "쉬이익!" 가속 효과음 + 화면 노란 플래시
-  - 부스트 끝나면 속도/색상 자동 복귀 (기존 파워업 색상 유지)
-  - 중복 부스트 불가 (이미 부스트 중이면 패드만 소모)
-- 밸런스: 월드1은 적/스프링/부스트 전부 없음, 월드2부터 점진적 등장
-  - 적: 0% → 15% → 35% → 42% → 47% → 50%
-  - 아이템: 50% → 40% → 33% → 30% → 28% → 25%
-  - 스프링: 0% → 3% → 5% → 7% → 8% → 10%
-  - 부스트: 0% → 0% → 3% → 5% → 6% → 8%
-
-reviewer 참고:
-- Spring/BoostPad: Obstacle/Enemy/Item과 동일 풀링 패턴 (각 5개 풀)
-- 부스트 무적 해제: _endBoost에서 피격무적(blinkTimer)/파워업무적(powerUp=invincible)과 구분
-- 속도선: Rectangle 6개를 Tween repeat:-1로 반복, _hideSpeedLines에서 killTweensOf+destroy
-- 스테이지 밸런스: springChance/boostChance를 stageData에서 먼저 찾고, 없으면 config 기본값 사용
+- 3단 점프 테스트: 바닥→점프→공중점프→공중에서 또 누르기 → 3단째는 무반응이어야 함
+- 별 수집: 별 먹어도 상단 중앙 "N/목표" 숫자가 안 올라가야 함 (우상단 별 카운터만 증가)
+- 장애물 넘기/적 처치만 클리어 점수에 반영
+- 별 100개 모으면 목숨+1 + "1UP!" 팝업 + 카운터 리셋
+- HUD 배치: 좌상단=하트, 상단중앙=클리어점수/목표, 우상단=난이도별+별카운터
+- 클리어/게임오버 화면에 "넘은 장애물: N" + "모은 별: N" 분리 표시
 
 ## 기획설계 (planner-architect)
 

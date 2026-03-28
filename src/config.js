@@ -42,9 +42,14 @@ export const GAME = {
     HITBOX_HEIGHT_RATIO: 0.4,    // 슬라이드 중 히트박스 높이 비율 (몸을 40%로 낮춤)
   },
 
+  // === 별(star) 수집 시스템 ===
+  STAR: {
+    LIFE_BONUS_COUNT: 100,    // 별 100개 모으면 목숨 +1
+  },
+
   // === [P3] 수집 아이템 설정 ===
   ITEMS: {
-    STAR_POINTS: 1,           // 별 하나 먹으면 +1점
+    STAR_POINTS: 1,           // 별 하나 먹으면 starCount +1
     SPAWN_CHANCE: 0.4,        // 장애물 스폰 시 아이템도 같이 나올 확률 (40%)
     HEART_CHANCE: 0.05,       // 하트 아이템 출현 확률 (5%)
     POWERUP_DURATION: 5000,   // 파워업 지속 시간 (5초)

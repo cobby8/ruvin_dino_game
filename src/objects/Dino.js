@@ -113,7 +113,7 @@ export class Dino extends Phaser.Physics.Arcade.Sprite {
     if (this.isSliding) return;
 
     if (this.body.blocked.down) {
-      // 바닥에 있으면 → 즉시 낮은 점프 실행
+      // 바닥에 있으면 → 즉시 낮은 점프 실행 (1단 점프)
       this.body.setVelocityY(GAME.JUMP.LOW_VELOCITY);
       this.play(`${this.dinoKey}_jump`);
       soundGenerator.playJump();
@@ -122,10 +122,12 @@ export class Dino extends Phaser.Physics.Arcade.Sprite {
       this.jumpStartTime = Date.now();
       this.isJumpHeld = true;
       this.isDoubleJumpUsed = false; // 새 점프이므로 2단 점프 리셋
-    } else {
-      // 공중에 있으면 → 2단 점프 시도
+    } else if (!this.isDoubleJumpUsed) {
+      // 공중 + 아직 2단 점프 안 씀 → 2단 점프 시도
+      // (이미 2단 점프를 쓴 경우 아무것도 안 함 = 3단 점프 차단)
       this.doubleJump();
     }
+    // 그 외 (공중 + 이미 2단 점프 씀) → 입력 무시하여 3단 점프 방지
   }
 
   /**

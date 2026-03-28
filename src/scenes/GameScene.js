@@ -67,7 +67,9 @@ export class GameScene extends Phaser.Scene {
     }
 
     // === 게임 상태 초기화 ===
-    this.score = 0;
+    // 점수 분리: clearScore = 장애물/적 넘긴 횟수 (클리어 조건), starCount = 별 수집 (100개=목숨+1)
+    this.clearScore = 0;  // 클리어 조건에만 사용되는 점수
+    this.starCount = 0;   // 별 수집 수 (클리어와 무관, 100개=목숨+1)
     // 시작 속도 = 난이도 기본속도 + 스테이지 보너스
     this.currentSpeed = this.difficulty.initialSpeed + this.stageData.speedBonus;
     this.isGameOver = false;
@@ -296,13 +298,13 @@ export class GameScene extends Phaser.Scene {
       this._spawnObstacle();
       this.lastObstacleTime = time;
 
-      // 다음 장애물 간격 (난이도별)
+      // 다음 장애물 간격 (난이도별, clearScore 기준으로 간격 조절)
       const gapMin = Math.max(
-        this.difficulty.obstacleGapMin - this.score * GAME.OBSTACLE_GAP_DECREASE,
+        this.difficulty.obstacleGapMin - this.clearScore * GAME.OBSTACLE_GAP_DECREASE,
         800
       );
       const gapMax = Math.max(
-        this.difficulty.obstacleGapMax - this.score * GAME.OBSTACLE_GAP_DECREASE,
+        this.difficulty.obstacleGapMax - this.clearScore * GAME.OBSTACLE_GAP_DECREASE,
         1200
       );
       this.nextObstacleDelay = Phaser.Math.Between(gapMin, gapMax);
@@ -355,20 +357,20 @@ export class GameScene extends Phaser.Scene {
       if (this.isStageClear) break;
       if (obstacle.active && !obstacle.scored && obstacle.x < this.dino.x - 20) {
         obstacle.scored = true;
-        this.score++;
+        this.clearScore++;  // 클리어 점수 +1 (장애물 넘기)
         soundGenerator.playScore();
 
-        // HUD 업데이트
-        this.stageHUD.updateScore(this.score);
+        // HUD 업데이트 (클리어 점수)
+        this.stageHUD.updateScore(this.clearScore);
 
-        // === 스테이지 클리어 체크 ===
-        if (this.score >= this.targetScore) {
+        // === 스테이지 클리어 체크 (clearScore만 사용, 별은 제외) ===
+        if (this.clearScore >= this.targetScore) {
           this._onStageClear();
           break; // 클리어 후 즉시 루프 종료 (추가 점수 방지)
         }
 
         // 속도 증가 (10점마다)
-        if (this.score % 10 === 0) {
+        if (this.clearScore % 10 === 0) {
           this.currentSpeed = Math.min(
             this.currentSpeed + GAME.SPEED_INCREMENT * 5,
             this.difficulty.maxSpeed
@@ -377,7 +379,7 @@ export class GameScene extends Phaser.Scene {
         }
 
         // 칭찬 메시지 (PRAISE_INTERVAL마다)
-        if (this.score % GAME.PRAISE_INTERVAL === 0) {
+        if (this.clearScore % GAME.PRAISE_INTERVAL === 0) {
           this._showPraise();
         }
       }
@@ -465,7 +467,8 @@ export class GameScene extends Phaser.Scene {
 
       // StageClearScene으로 이동 (별 계산 + 진행도 저장은 그쪽에서)
       this.scene.start('StageClearScene', {
-        score: this.score,
+        clearScore: this.clearScore,    // 장애물/적 넘긴 횟수 (클리어 기준)
+        starCount: this.starCount,      // 별 수집 수
         stageData: this.stageData,
         worldData: this.worldData,
         targetScore: this.targetScore,
@@ -532,7 +535,8 @@ export class GameScene extends Phaser.Scene {
 
     this.time.delayedCall(800, () => {
       this.scene.start('GameOverScene', {
-        score: this.score,
+        clearScore: this.clearScore,   // 장애물/적 넘긴 횟수
+        starCount: this.starCount,     // 별 수집 수
         stageData: this.stageData,
         worldData: this.worldData,
         isFreeMode: this.isFreeMode,
@@ -595,9 +599,9 @@ export class GameScene extends Phaser.Scene {
       this.effectManager.showDefeatEffect(enemy.x, enemy.y);
       this.effectManager.showScorePopup(enemy.x, enemy.y, enemy.enemyData.points);
 
-      // 점수 추가
-      this.score += enemy.enemyData.points;
-      this.stageHUD.updateScore(this.score);
+      // 적 처치 → clearScore에 추가 (적도 넘긴 것으로 카운트)
+      this.clearScore += enemy.enemyData.points;
+      this.stageHUD.updateScore(this.clearScore);
 
       // 처치 효과음
       soundGenerator.playEnemyDefeat();
@@ -607,8 +611,8 @@ export class GameScene extends Phaser.Scene {
         dino.body.setVelocityY(-250);
       }
 
-      // 스테이지 클리어 체크
-      if (this.score >= this.targetScore) {
+      // 스테이지 클리어 체크 (clearScore 기준)
+      if (this.clearScore >= this.targetScore) {
         this._onStageClear();
       }
     } else {
@@ -644,16 +648,22 @@ export class GameScene extends Phaser.Scene {
     const type = item.itemType;
 
     if (type === 'star') {
-      // 별: 점수 +1
-      this.score += GAME.ITEMS.STAR_POINTS;
-      this.stageHUD.updateScore(this.score);
+      // 별: starCount +1 (클리어 점수와 별도, 100개=목숨+1)
+      this.starCount += GAME.ITEMS.STAR_POINTS;
       soundGenerator.playItemCollect();
 
-      // 스테이지 클리어 체크
-      if (this.score >= this.targetScore) {
-        item.collect();
-        this._onStageClear();
-        return;
+      // 별 카운터 HUD 업데이트
+      this.stageHUD.updateStarCount(this.starCount);
+
+      // 100개마다 목숨 +1
+      if (this.starCount >= GAME.STAR.LIFE_BONUS_COUNT) {
+        this.starCount -= GAME.STAR.LIFE_BONUS_COUNT; // 100 차감 (나머지 유지)
+        this.heartHUD.heal(); // 목숨 +1
+        // "1UP!" 팝업 표시
+        this.effectManager.showScorePopup(this.dino.x, this.dino.y - 50, '1UP!');
+        soundGenerator.playPowerUp();
+        // 별 카운터 다시 갱신 (차감 후)
+        this.stageHUD.updateStarCount(this.starCount);
       }
     } else if (type === 'heart') {
       // 하트: HP +1 회복
