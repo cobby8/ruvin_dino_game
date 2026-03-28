@@ -59,8 +59,7 @@ export class Dino extends Phaser.Physics.Arcade.Sprite {
 
     // 물리 설정
     this.body.setGravityY(GAME.GRAVITY);
-    // setCollideWorldBounds 제거: ground collider가 있으므로 월드 경계 충돌 불필요
-    // (월드 하단 경계와 ground가 동시에 blocked.down을 true로 만들어 간섭 발생)
+    this.body.setCollideWorldBounds(true); // 월드 경계 충돌 (바닥 판정 안전장치)
     this.body.setBounce(0);
 
     // 관대한 히트박스 (6살 배려: 몸 중심부만 판정)
@@ -84,6 +83,7 @@ export class Dino extends Phaser.Physics.Arcade.Sprite {
     this.isDoubleJumpUsed = false;   // 이번 점프에서 2단 점프를 썼는지
     this._isJumping = false;         // 점프 중인지 (착지 전까지 true 유지)
     this._lastJumpTime = 0;          // 마지막 바닥 점프 시각 (쿨다운용)
+    this._jumpCount = 0;             // 현재 점프 횟수 (0=바닥, 1=1단점프, 2=2단점프)
     this.canDoubleJump = true;       // 난이도에 따라 2단 점프 허용 여부
     this.doubleJumpLimit = Infinity; // 스테이지 내 2단 점프 최대 횟수
     this.doubleJumpCount = 0;        // 현재까지 사용한 2단 점프 횟수
@@ -134,10 +134,11 @@ export class Dino extends Phaser.Physics.Arcade.Sprite {
 
   /**
    * 점프 시작 (터치 / SPACE / Z / X 모두 동일)
-   * - 바닥에 있으면: 항상 낮은 점프 (높은/낮은 구분 없음!)
-   * - 공중에 있으면: 2단 점프 시도
-   * - 비행 중이면: 무시 (프테라노가 날고 있을 때 점프 불가)
-   * @param {boolean} isHigh - 미사용 (하위 호환용으로 파라미터만 유지)
+   * - _jumpCount로 1단/2단 판정 (blocked.down 불안정 문제 우회)
+   *   0 = 바닥 → 1단 점프 가능
+   *   1 = 1단 점프 중 → 2단 점프 가능
+   *   2 = 2단 점프 사용 완료 → 점프 불가
+   * - blocked.down은 보조 리셋 수단으로만 사용
    */
   startJump() {
     // 슬라이드 중에는 점프 불가
@@ -145,17 +146,22 @@ export class Dino extends Phaser.Physics.Arcade.Sprite {
     // 비행 중에는 점프 불가 (프테라노 전용)
     if (this.isFlying) return;
 
-    if (this.body.blocked.down) {
-      // 바닥 → 점프!
+    // _jumpCount로 1단/2단 판정 (blocked.down에 의존하지 않음!)
+    // 0 → 1단 점프, 1 → 2단 점프, 2 → 점프 불가
+    // _jumpCount는 onLand()에서만 0으로 리셋됨
+    if (this._jumpCount === 0) {
+      // 1단 점프!
       const jumpMulti = this.ability === 'highJump' ? 1.2 : 1.0;
       this.body.setVelocityY(GAME.JUMP.LOW_VELOCITY * jumpMulti);
       this.play(`${this.dinoKey}_jump`);
       soundGenerator.playJump();
+      this._jumpCount = 1;
       this.isDoubleJumpUsed = false;
-    } else {
-      // 공중 → 2단 점프 시도 (doubleJump 내부에서 제한 체크)
+    } else if (this._jumpCount === 1) {
+      // 2단 점프! (doubleJump 내부에서 난이도 제한 체크)
       this.doubleJump();
     }
+    // _jumpCount >= 2: 이미 2단 점프 완료, 착지 전까지 점프 불가
   }
 
   /**
@@ -183,6 +189,7 @@ export class Dino extends Phaser.Physics.Arcade.Sprite {
     this.body.setVelocityY(GAME.JUMP.DOUBLE_VELOCITY);
     soundGenerator.playJump();
     this.isDoubleJumpUsed = true;
+    this._jumpCount = 2;  // 2단 점프 완료, 추가 점프 차단
     this.doubleJumpCount++;
 
     // 2단 점프 시각적 피드백 (별 파티클)
@@ -197,6 +204,7 @@ export class Dino extends Phaser.Physics.Arcade.Sprite {
    */
   onLand() {
     this._isJumping = false;         // 착지! 공중 상태 해제
+    this._jumpCount = 0;             // 점프 카운트 리셋 (다시 점프 가능)
     this.isJumpHeld = false;
     this.isDoubleJumpUsed = false;
 

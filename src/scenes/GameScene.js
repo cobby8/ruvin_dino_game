@@ -358,14 +358,16 @@ export class GameScene extends Phaser.Scene {
       this.wasInAir = true;
     }
 
-    // 슬라이드 중 바닥 뚫기 방지: y좌표가 groundY 아래로 내려가지 않도록 보정
-    if (this.dino.y > this.groundY) {
+    // 슬라이드 중 바닥 뚫기 방지: body가 ground 아래로 내려가면 velocity를 0으로
+    // (sprite.y 직접 변경 대신 velocity 제어 → physics body 동기화 유지)
+    if (this.dino.y > this.groundY + 5) {
+      this.dino.body.setVelocityY(0);
       this.dino.y = this.groundY;
     }
 
     // 프테라노 비행용: 터치/키보드를 누르고 있는지 매 프레임 전달
     // (프테라노가 점프 정점에서 이 값이 true면 비행 모드 발동)
-    this.dino.isHoldingJump = this._isPointerDown || this.spaceIsDown || this._zIsDown || this._xIsDown;
+    this.dino.isHoldingJump = this._isPointerDown || this.spaceIsDown;
 
     // 공룡 업데이트
     this.dino.update();
