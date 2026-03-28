@@ -102,6 +102,8 @@ export class BoostPad extends Phaser.Physics.Arcade.Sprite {
     this.setVisible(true);
     this.isUsed = false;
     this.setAlpha(1);
+    // Graphics 텍스처 3배 확대
+    this.setScale(3);
 
     // 왼쪽으로 이동
     this.body.setVelocityX(-speed);
@@ -115,11 +117,11 @@ export class BoostPad extends Phaser.Physics.Arcade.Sprite {
     if (this.isUsed) return;
     this.isUsed = true;
 
-    // 밟히는 이펙트: 반짝 + 투명해지며 사라짐
+    // 밟히는 이펙트: 반짝 + 투명해지며 사라짐 (3배 기준)
     this.scene.tweens.add({
       targets: this,
       alpha: 0.3,
-      scaleX: 1.2,
+      scaleX: 1.2 * 3, // 3배 기준에서 약간 더 커짐
       duration: 300,
       ease: 'Sine.easeOut',
     });
@@ -131,7 +133,7 @@ export class BoostPad extends Phaser.Physics.Arcade.Sprite {
     this.setVisible(false);
     this.body.setVelocityX(0);
     this.isUsed = false;
-    this.setScale(1);
+    this.setScale(3);
   }
 }
 

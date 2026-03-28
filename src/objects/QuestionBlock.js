@@ -123,10 +123,12 @@ export class QuestionBlock extends Phaser.Physics.Arcade.Sprite {
     const useImage = this.scene.textures.exists('img_items');
     if (useImage) {
       this.setTexture('img_items', 5);
-      this.setScale(40 / 352); // 이미지(352px)를 블록 크기(40px)에 맞게 축소
+      // 이미지 스케일 3배 확대 (기존 40/352 → *3)
+      this.setScale((40 / 352) * 3);
     } else {
       this.setTexture('qblock_question');
-      this.setScale(1);
+      // Graphics 텍스처도 3배 확대
+      this.setScale(3);
     }
     this._useImage = useImage;
 
@@ -153,7 +155,8 @@ export class QuestionBlock extends Phaser.Physics.Arcade.Sprite {
 
     // 블록 텍스처를 빈 블록으로 변경 (이미지 사용 시 Graphics 빈 블록으로 전환)
     this.setTexture('qblock_used');
-    this.setScale(1); // Graphics 텍스처는 원본 크기 그대로
+    // 사용 후 빈 블록도 3배 확대 유지
+    this.setScale(3);
 
     // 위로 톡 튀는 애니메이션
     const originalY = this.y;

@@ -231,11 +231,13 @@ export class Item extends Phaser.Physics.Arcade.Sprite {
     this.setVisible(true);
     this.setAlpha(1);
 
-    // 이미지(366x352)를 기존 아이템 크기(약 30px)에 맞게 축소
+    // 이미지/Graphics 스케일 3배 확대
     if (useImage) {
-      this.setScale(30 / 352);
+      // 기존 30/352 → *3 = 90/352 ≈ 0.256
+      this.setScale((30 / 352) * 3);
     } else {
-      this.setScale(1);
+      // Graphics 텍스처도 3배 확대
+      this.setScale(3);
     }
 
     // 왼쪽으로 이동 (장애물과 같은 속도)

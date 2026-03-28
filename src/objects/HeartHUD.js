@@ -26,8 +26,8 @@ export class HeartHUD {
     this.currentHearts = maxHearts; // 시작 시 꽉 참
     this.x = x;
     this.y = y;
-    this.heartSize = 14;           // 하트 아이콘 크기 (반지름 기준)
-    this.spacing = 32;             // 하트 간격 (px)
+    this.heartSize = 22;           // 하트 아이콘 크기 1.5배 확대 (14→22)
+    this.spacing = 48;             // 하트 간격도 확대 (32→48)
     this.hearts = [];              // 하트 Graphics 배열
 
     this._createHearts();

@@ -29,66 +29,67 @@ export class StageHUD {
     // 깊이를 높게 설정해서 항상 맨 위에 표시 (depth: 100)
     const depth = 100;
 
-    // === 상단 왼쪽: 월드 + 스테이지 이름 ===
-    // 월드 내 스테이지 번호 계산 (예: 스테이지 13 = 월드3의 3번째 = "3-3")
+    // === 1줄 좌측: 월드명 + 스테이지 (폰트 28px, 확대) ===
     const stageInWorld = ((stageData.id - 1) % 5) + 1;
     const worldLabel = `${worldData.emoji} ${worldData.name} ${worldData.id}-${stageInWorld}`;
 
-    this.worldText = scene.add.text(10, 8, worldLabel, {
-      fontFamily: 'Jua, sans-serif',
-      fontSize: '16px',
-      color: '#FFFFFF',
-      stroke: '#333333',
-      strokeThickness: 2,
-    }).setOrigin(0, 0).setDepth(depth);
-
-    // === 스테이지 이름 (월드 아래 작게) ===
-    this.stageNameText = scene.add.text(10, 28, `"${stageData.name}"`, {
-      fontFamily: 'Jua, sans-serif',
-      fontSize: '12px',
-      color: '#FFE066',
-      stroke: '#333333',
-      strokeThickness: 1,
-    }).setOrigin(0, 0).setDepth(depth);
-
-    // === 상단 중앙: 점수 / 목표 ===
-    this.scoreText = scene.add.text(width / 2, 10, `0 / ${targetScore}`, {
+    this.worldText = scene.add.text(15, 10, worldLabel, {
       fontFamily: 'Jua, sans-serif',
       fontSize: '28px',
       color: '#FFFFFF',
       stroke: '#333333',
       strokeThickness: 3,
+    }).setOrigin(0, 0).setDepth(depth);
+
+    // === 스테이지 이름 (월드명 오른쪽에 작게 표시) ===
+    this.stageNameText = scene.add.text(15, 42, `"${stageData.name}"`, {
+      fontFamily: 'Jua, sans-serif',
+      fontSize: '16px',
+      color: '#FFE066',
+      stroke: '#333333',
+      strokeThickness: 2,
+    }).setOrigin(0, 0).setDepth(depth);
+
+    // === 1줄 중앙: 클리어 점수 (폰트 32px, 확대) ===
+    this.scoreText = scene.add.text(width / 2, 10, `0 / ${targetScore}`, {
+      fontFamily: 'Jua, sans-serif',
+      fontSize: '32px',
+      color: '#FFFFFF',
+      stroke: '#333333',
+      strokeThickness: 4,
     }).setOrigin(0.5, 0).setDepth(depth);
 
-    // === 상단 오른쪽: 난이도 별 표시 ===
+    // === 1줄 우측: 난이도 별 + 별 카운터 (폰트 24px, 확대) ===
     const stars = '⭐'.repeat(difficulty.stars);
-    this.difficultyText = scene.add.text(width - 10, 8, stars, {
+    this.difficultyText = scene.add.text(width - 15, 8, `${stars}  0/100`, {
       fontFamily: 'Jua, sans-serif',
-      fontSize: '14px',
+      fontSize: '24px',
       color: '#FFD700',
+      stroke: '#333333',
+      strokeThickness: 2,
     }).setOrigin(1, 0).setDepth(depth);
 
-    // 난이도 이름 (별 아래 작게)
-    this.diffNameText = scene.add.text(width - 10, 26, difficulty.name, {
+    // 난이도 이름 (별 아래)
+    this.diffNameText = scene.add.text(width - 15, 36, difficulty.name, {
       fontFamily: 'Jua, sans-serif',
-      fontSize: '11px',
+      fontSize: '16px',
       color: '#CCCCCC',
-    }).setOrigin(1, 0).setDepth(depth);
-
-    // === 우상단: 별 수집 카운터 (난이도 아래) ===
-    this.starCountText = scene.add.text(width - 10, 42, '0/100', {
-      fontFamily: 'Jua, sans-serif',
-      fontSize: '13px',
-      color: '#FFD700',
       stroke: '#333333',
       strokeThickness: 1,
     }).setOrigin(1, 0).setDepth(depth);
 
-    // === 프로그레스 바 (점수 텍스트 아래) ===
-    const barWidth = 120;
-    const barHeight = 8;
+    // === 별 수집 카운터는 difficultyText에 통합 (별도 텍스트 유지하되 숨김) ===
+    this.starCountText = scene.add.text(width - 15, 36, '', {
+      fontFamily: 'Jua, sans-serif',
+      fontSize: '1px',
+      color: '#FFD700',
+    }).setOrigin(1, 0).setDepth(depth).setVisible(false);
+
+    // === 2줄 중앙: 프로그레스 바 (확대) ===
+    const barWidth = 160;
+    const barHeight = 12;
     const barX = width / 2 - barWidth / 2;
-    const barY = 42;
+    const barY = 48;
 
     // 바 배경 (어두운 반투명)
     this.barBg = scene.add.graphics().setDepth(depth);
@@ -151,8 +152,9 @@ export class StageHUD {
    * @param {number} starCount - 현재 별 수집 수
    */
   updateStarCount(starCount) {
-    // 별 수집 진행도 표시 (예: "23/100")
-    this.starCountText.setText(`${starCount}/100`);
+    // 별 카운터를 우측 난이도 텍스트에 통합 표시
+    const starsEmoji = this.difficultyText.text.split('  ')[0]; // 별 이모지 부분 유지
+    this.difficultyText.setText(`${starsEmoji}  ${starCount}/100`);
   }
 
   /**

@@ -106,7 +106,8 @@ export class GameScene extends Phaser.Scene {
 
     // === [P1] 하트 HUD 생성 (화면 왼쪽 상단) ===
     const maxHearts = this.difficulty.maxHearts || 3;
-    this.heartHUD = new HeartHUD(this, maxHearts, 30, 30);
+    // 하트 위치: y=65 (스테이지명 28px+스테이지이름 아래, 겹치지 않게)
+    this.heartHUD = new HeartHUD(this, maxHearts, 20, 68);
     this.hitCount = 0; // 이번 스테이지에서 피격 횟수 (통계용)
 
     // === [P2] 적 캐릭터 매니저 (월드별 적 스폰) ===
