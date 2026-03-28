@@ -79,6 +79,20 @@ export class SoundGenerator {
     }, 100);
   }
 
+  /** [P1] 피격 소리: 짧은 하강음 "아야!" (200Hz→100Hz, 0.15초) */
+  playHit() {
+    this._playTone(300, 100, 0.15, 'square', 0.25);
+    // 약간 뒤에 낮은 울림 추가 (아픈 느낌 강조)
+    setTimeout(() => {
+      this._playTone(100, 80, 0.1, 'sine', 0.15);
+    }, 100);
+  }
+
+  /** [P1] 슬라이드 소리: 빠른 하강 스윕 "쉭~" */
+  playSlide() {
+    this._playTone(500, 200, 0.12, 'sine', 0.15);
+  }
+
   /** 선택 소리: 가볍게 "딩!" */
   playSelect() {
     this._playTone(600, 800, 0.08, 'sine', 0.15);

@@ -29,6 +29,19 @@ export const GAME = {
   DINO_SIZE: 96,             // 공룡 그리기 기본 크기 (px) - 96px로 확대하여 디테일 향상
   DINO_SCALE: 1.0,           // 스프라이트 자체가 96px이므로 확대 불필요
 
+  // === 하트(HP) 시스템 ===
+  HEART: {
+    DEFAULT_MAX: 3,            // 기본 최대 하트 수 (난이도별로 덮어씀)
+    INVINCIBLE_DURATION: 2000, // 피격 후 무적 시간 (2초) - 이 동안 다시 안 맞음
+    BLINK_INTERVAL: 100,       // 무적 중 깜빡이는 간격 (ms) - 100ms마다 투명/불투명 전환
+  },
+
+  // === 슬라이드(구르기) 설정 ===
+  SLIDE: {
+    DURATION: 800,               // 슬라이드 지속 시간 (0.8초 후 자동 복귀)
+    HITBOX_HEIGHT_RATIO: 0.4,    // 슬라이드 중 히트박스 높이 비율 (몸을 40%로 낮춤)
+  },
+
   // === 칭찬 시스템 ===
   PRAISE_INTERVAL: 10,       // 10점마다 칭찬 메시지 표시
   PRAISE_MESSAGES: [

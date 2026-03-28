@@ -11,6 +11,11 @@
  * 1. 버튼 누르는 순간(DOWN) → 바닥이면 낮은 점프로 즉시 띄움 + 시간 기록
  * 2. 버튼 떼는 순간(UP) → 100ms 이상 눌렀고 아직 올라가는 중이면 높은 점프로 부스트
  * 3. 공중에서 다시 누르면(DOWN) → 2단 점프 발동
+ *
+ * [P1 추가] 슬라이드(구르기) + 피격 무적:
+ * - 아래 키 → 납작하게 엎드림 (히트박스 높이 40%)
+ * - 장애물에 닿으면 → 하트 -1 + 2초 무적 (깜빡깜빡)
+ * - 무적 중에는 다시 안 맞음
  */
 
 import Phaser from 'phaser';
@@ -61,6 +66,16 @@ export class Dino extends Phaser.Physics.Arcade.Sprite {
     this.canDoubleJump = true;       // 난이도에 따라 2단 점프 허용 여부
     this.doubleJumpLimit = Infinity; // 스테이지 내 2단 점프 최대 횟수
     this.doubleJumpCount = 0;        // 현재까지 사용한 2단 점프 횟수
+
+    // === [P1] 슬라이드 시스템 속성 ===
+    this.isSliding = false;          // 슬라이드(구르기) 중인지
+    this.slideTimer = null;          // 슬라이드 자동 해제 타이머
+
+    // === [P1] 피격 무적 시스템 속성 ===
+    this.isInvincible = false;       // 무적 상태인지 (피격 직후 일정시간)
+    this.invincibleTimer = null;     // 무적 해제 타이머
+    this.blinkTimer = null;          // 깜빡이 효과 타이머
+    this.invincibleDuration = GAME.HEART.INVINCIBLE_DURATION; // 기본 2초, 난이도로 덮어씀
   }
 
   /**
@@ -73,6 +88,11 @@ export class Dino extends Phaser.Physics.Arcade.Sprite {
     this.canDoubleJump = difficulty.canDoubleJump;
     this.doubleJumpLimit = difficulty.doubleJumpLimit;
     this.doubleJumpCount = 0; // 스테이지 시작 시 리셋
+
+    // [P1] 난이도별 피격 무적시간 적용 (아기=3초, 전설=1초)
+    if (difficulty.invincibleDuration) {
+      this.invincibleDuration = difficulty.invincibleDuration;
+    }
   }
 
   /**
@@ -81,6 +101,9 @@ export class Dino extends Phaser.Physics.Arcade.Sprite {
    * - 공중에 있으면: 2단 점프 시도
    */
   startJump() {
+    // [P1] 슬라이드 중에는 점프 불가 (엎드린 상태에서 뛸 수 없음)
+    if (this.isSliding) return;
+
     if (this.body.blocked.down) {
       // 바닥에 있으면 → 즉시 낮은 점프 실행
       this.body.setVelocityY(GAME.JUMP.LOW_VELOCITY);
@@ -143,7 +166,8 @@ export class Dino extends Phaser.Physics.Arcade.Sprite {
     this.isDoubleJumpUsed = false;
 
     // 점프 애니메이션 → 달리기 애니메이션으로 전환
-    if (this.anims.currentAnim) {
+    // (슬라이드 중이면 슬라이드 애니메이션 유지)
+    if (!this.isSliding && this.anims.currentAnim) {
       const currentKey = this.anims.currentAnim.key;
       if (currentKey === `${this.dinoKey}_jump`) {
         this.play(`${this.dinoKey}_run`);
@@ -151,10 +175,125 @@ export class Dino extends Phaser.Physics.Arcade.Sprite {
     }
   }
 
+  // =========================================================
+  // [P1] 슬라이드(구르기) 시스템
+  // =========================================================
+
+  /**
+   * 슬라이드 시작 (아래 키 / 아래 스와이프)
+   * 공룡이 납작하게 엎드려서 높은 장애물을 피하는 동작.
+   * 바닥에서만 가능 (공중에서는 무시).
+   */
+  slide() {
+    // 이미 슬라이드 중이면 무시
+    if (this.isSliding) return;
+    // 바닥에 있을 때만 슬라이드 가능 (공중에서는 X)
+    if (!this.body.blocked.down) return;
+
+    this.isSliding = true;
+
+    // 히트박스를 낮게 변경 (몸을 숙임 = 높이를 40%로)
+    const slideHeight = GAME.DINO_SIZE * GAME.SLIDE.HITBOX_HEIGHT_RATIO;
+    this.body.setSize(GAME.DINO_SIZE * 0.7, slideHeight);
+    // offset: 히트박스를 바닥에 붙이기 (위쪽 빈 공간은 판정 없음)
+    this.body.setOffset(GAME.DINO_SIZE * 0.15, GAME.DINO_SIZE - slideHeight);
+
+    // 스프라이트를 납작하게 (scaleY를 절반으로)
+    this.setScale(GAME.DINO_SCALE, GAME.DINO_SCALE * 0.5);
+
+    // 슬라이드 애니메이션 재생 (납작한 포즈)
+    this.play(`${this.dinoKey}_slide`);
+
+    // 슬라이드 효과음
+    soundGenerator.playSlide();
+
+    // 일정 시간 후 자동 복귀 (0.8초)
+    this.slideTimer = this.scene.time.delayedCall(GAME.SLIDE.DURATION, () => {
+      this.endSlide();
+    });
+  }
+
+  /**
+   * 슬라이드 종료: 히트박스와 스프라이트를 원래대로 복원
+   */
+  endSlide() {
+    if (!this.isSliding) return;
+    this.isSliding = false;
+
+    // 히트박스 원래대로 복원
+    this.body.setSize(GAME.DINO_SIZE * 0.5, GAME.DINO_SIZE * 0.6);
+    this.body.setOffset(GAME.DINO_SIZE * 0.25, GAME.DINO_SIZE * 0.35);
+
+    // 스프라이트 크기 원래대로
+    this.setScale(GAME.DINO_SCALE, GAME.DINO_SCALE);
+
+    // 타이머 정리
+    if (this.slideTimer) {
+      this.slideTimer.destroy();
+      this.slideTimer = null;
+    }
+
+    // 달리기 애니메이션으로 복귀 (바닥이면)
+    if (this.body.blocked.down) {
+      this.play(`${this.dinoKey}_run`);
+    }
+  }
+
+  // =========================================================
+  // [P1] 피격 + 무적 시스템
+  // =========================================================
+
+  /**
+   * 피격! 장애물/적에 닿았을 때 호출.
+   * 무적이면 무시, 아니면 무적 모드 돌입 + 깜빡깜빡.
+   * @returns {boolean} true=실제로 피격됨, false=무적이라 무시됨
+   */
+  hit() {
+    // 무적 상태면 피격 무시 (이미 한 대 맞은 직후)
+    if (this.isInvincible) return false;
+
+    // 슬라이드 강제 해제 (맞으면 일어남)
+    if (this.isSliding) {
+      this.endSlide();
+    }
+
+    // 무적 모드 시작
+    this.isInvincible = true;
+
+    // 깜빡깜빡 효과 (투명 <-> 불투명 100ms마다 전환)
+    this.blinkTimer = this.scene.time.addEvent({
+      delay: GAME.HEART.BLINK_INTERVAL,
+      callback: () => {
+        // 현재 투명이면 불투명으로, 불투명이면 투명으로
+        this.setAlpha(this.alpha === 1 ? 0.3 : 1);
+      },
+      loop: true,
+    });
+
+    // 무적 해제 타이머 (난이도별 다른 시간)
+    this.invincibleTimer = this.scene.time.delayedCall(this.invincibleDuration, () => {
+      this.isInvincible = false;
+      this.setAlpha(1); // 투명도 원래대로
+      if (this.blinkTimer) {
+        this.blinkTimer.destroy();
+        this.blinkTimer = null;
+      }
+    });
+
+    return true; // 피격됨
+  }
+
   /**
    * 넘어짐 (게임오버 시 호출)
    */
   fall() {
+    // 슬라이드/무적 상태 모두 정리
+    if (this.isSliding) this.endSlide();
+    if (this.blinkTimer) { this.blinkTimer.destroy(); this.blinkTimer = null; }
+    if (this.invincibleTimer) { this.invincibleTimer.destroy(); this.invincibleTimer = null; }
+    this.isInvincible = false;
+    this.setAlpha(1);
+
     this.play(`${this.dinoKey}_fall`);
   }
 

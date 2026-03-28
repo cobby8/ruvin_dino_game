@@ -3,8 +3,9 @@
  * Phaser Graphics API로 4마리 공룡을 코드로 직접 그린 뒤,
  * 각각 384x96 스프라이트시트(4프레임 x 96px)로 만들어 텍스처에 등록함.
  *
- * 프레임 구성: [달리기1, 달리기2, 점프, 넘어짐]
- * 각 프레임 96x96px, 가로로 이어붙여 384x96
+ * 프레임 구성: [달리기1, 달리기2, 점프, 넘어짐, 슬라이드]
+ * 각 프레임 96x96px, 가로로 이어붙여 480x96 (5프레임)
+ * [P1] 슬라이드 프레임 추가: 몸을 납작하게 숙인 포즈
  *
  * 디자인 원칙:
  * - 입체감: 몸통에 밝은톤(위) + 어두운톤(아래) 2색 이상 사용
@@ -95,6 +96,28 @@ function drawSurprisedFace(g, x, y) {
 }
 
 /**
+ * [P1] 슬라이드 얼굴: 감은 눈(일자) + 볼터치 + 입 꾹
+ * 몸을 납작하게 숙이고 있는 집중한 표정
+ */
+function drawSlideFace(g, x, y) {
+  const spacing = 14;
+
+  // 감은 눈 (일자선 - 집중하는 느낌)
+  g.lineStyle(3, 0x444444, 1);
+  g.lineBetween(x - spacing / 2 - 5, y, x - spacing / 2 + 5, y);
+  g.lineBetween(x + spacing / 2 - 5, y, x + spacing / 2 + 5, y);
+
+  // 볼터치
+  g.fillStyle(0xFFB0C0, 0.5);
+  g.fillEllipse(x - 18, y + 10, 10, 6);
+  g.fillEllipse(x + 18, y + 10, 10, 6);
+
+  // 꾹 다문 입 (일자)
+  g.lineStyle(2, 0x444444, 1);
+  g.lineBetween(x - 3, y + 10, x + 6, y + 10);
+}
+
+/**
  * 넘어짐 얼굴: X 눈 + 혀 내밀기
  */
 function drawFallenFace(g, x, y) {
@@ -129,6 +152,7 @@ function drawFallenFace(g, x, y) {
 function drawBrachio(g, ox, frame) {
   const isJump = frame === 2;
   const isFall = frame === 3;
+  const isSlide = frame === 4; // [P1] 슬라이드 프레임
   // 다리 오프셋: 달리기 프레임간 차이를 12px로 확실하게
   const legL = frame === 0 ? -6 : frame === 1 ? 6 : 0;
   const legR = frame === 0 ? 6 : frame === 1 ? -6 : 0;
@@ -170,7 +194,9 @@ function drawBrachio(g, ox, frame) {
   g.fillCircle(ox + 30 + tilt, SIZE - 76, 8);
 
   // --- 얼굴 ---
-  if (isFall) {
+  if (isSlide) {
+    drawSlideFace(g, ox + 34 + tilt, SIZE - 76);
+  } else if (isFall) {
     drawFallenFace(g, ox + 34 + tilt, SIZE - 76);
   } else if (isJump) {
     drawSurprisedFace(g, ox + 34 + tilt, SIZE - 76);
@@ -203,6 +229,7 @@ function drawBrachio(g, ox, frame) {
 function drawTrex(g, ox, frame) {
   const isJump = frame === 2;
   const isFall = frame === 3;
+  const isSlide = frame === 4; // [P1]
   const legL = frame === 0 ? -6 : frame === 1 ? 6 : 0;
   const legR = frame === 0 ? 6 : frame === 1 ? -6 : 0;
   const tilt = isFall ? 4 : 0;
@@ -246,7 +273,9 @@ function drawTrex(g, ox, frame) {
   g.fillTriangle(ox + 76 + tilt, SIZE - 43, ox + 79 + tilt, SIZE - 38, ox + 73 + tilt, SIZE - 38);
 
   // --- 얼굴 ---
-  if (isFall) {
+  if (isSlide) {
+    drawSlideFace(g, ox + 56 + tilt, SIZE - 62);
+  } else if (isFall) {
     drawFallenFace(g, ox + 56 + tilt, SIZE - 62);
   } else if (isJump) {
     drawSurprisedFace(g, ox + 56 + tilt, SIZE - 62);
@@ -281,6 +310,7 @@ function drawTrex(g, ox, frame) {
 function drawTricera(g, ox, frame) {
   const isJump = frame === 2;
   const isFall = frame === 3;
+  const isSlide = frame === 4; // [P1]
   const legL = frame === 0 ? -6 : frame === 1 ? 6 : 0;
   const legR = frame === 0 ? 6 : frame === 1 ? -6 : 0;
   const tilt = isFall ? 4 : 0;
@@ -344,7 +374,9 @@ function drawTricera(g, ox, frame) {
   );
 
   // --- 얼굴 ---
-  if (isFall) {
+  if (isSlide) {
+    drawSlideFace(g, ox + 66 + tilt, SIZE - 54);
+  } else if (isFall) {
     drawFallenFace(g, ox + 66 + tilt, SIZE - 54);
   } else if (isJump) {
     drawSurprisedFace(g, ox + 66 + tilt, SIZE - 54);
@@ -374,6 +406,7 @@ function drawTricera(g, ox, frame) {
 function drawPtera(g, ox, frame) {
   const isJump = frame === 2;
   const isFall = frame === 3;
+  const isSlide = frame === 4; // [P1]
   const tilt = isFall ? 3 : 0;
 
   // 날개 각도: 달리기1 위, 달리기2 아래, 점프 활짝 위로
@@ -438,7 +471,9 @@ function drawPtera(g, ox, frame) {
   );
 
   // --- 얼굴 ---
-  if (isFall) {
+  if (isSlide) {
+    drawSlideFace(g, ox + 58 + tilt, SIZE - 58);
+  } else if (isFall) {
     drawFallenFace(g, ox + 58 + tilt, SIZE - 58);
   } else if (isJump) {
     drawSurprisedFace(g, ox + 58 + tilt, SIZE - 58);
@@ -474,12 +509,12 @@ export function createDinoTextures(scene) {
   const drawFunctions = [drawBrachio, drawTrex, drawTricera, drawPtera];
 
   DINOS.forEach((dino, index) => {
-    // 384x96 RenderTexture 생성 (4프레임 x 96px = 384px 너비)
-    const rt = scene.add.renderTexture(0, 0, SIZE * 4, SIZE);
+    // 480x96 RenderTexture 생성 (5프레임 x 96px = 480px 너비) [P1: 슬라이드 프레임 추가]
+    const rt = scene.add.renderTexture(0, 0, SIZE * 5, SIZE);
     rt.setVisible(false); // 화면에는 안 보이게
 
-    // 4프레임 그리기 (달리기1, 달리기2, 점프, 넘어짐)
-    for (let frame = 0; frame < 4; frame++) {
+    // 5프레임 그리기 (달리기1, 달리기2, 점프, 넘어짐, 슬라이드)
+    for (let frame = 0; frame < 5; frame++) {
       const g = scene.add.graphics();
       drawFunctions[index](g, 0, frame);
 
@@ -499,6 +534,7 @@ export function createDinoTextures(scene) {
     texture.add(1, 0, SIZE, 0, SIZE, SIZE);        // 프레임 1: 달리기2
     texture.add(2, 0, SIZE * 2, 0, SIZE, SIZE);    // 프레임 2: 점프
     texture.add(3, 0, SIZE * 3, 0, SIZE, SIZE);    // 프레임 3: 넘어짐
+    texture.add(4, 0, SIZE * 4, 0, SIZE, SIZE);    // 프레임 4: 슬라이드 [P1]
 
     // 애니메이션 등록
     scene.anims.create({
@@ -518,6 +554,14 @@ export function createDinoTextures(scene) {
     scene.anims.create({
       key: `${dino.key}_fall`,
       frames: [{ key: dino.key, frame: 3 }],
+      frameRate: 1,
+      repeat: 0,
+    });
+
+    // [P1] 슬라이드 애니메이션 (납작하게 엎드린 포즈)
+    scene.anims.create({
+      key: `${dino.key}_slide`,
+      frames: [{ key: dino.key, frame: 4 }],
       frameRate: 1,
       repeat: 0,
     });

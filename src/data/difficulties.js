@@ -22,6 +22,8 @@ export const DIFFICULTIES = [
     canDoubleJump: true,            // 2단 점프 항상 가능
     doubleJumpLimit: Infinity,      // 무제한 2단 점프
     targetObstacles: 5,             // 스테이지당 넘어야 할 장애물 수
+    maxHearts: 5,                   // 하트 5개 (가장 넉넉 - 아기라서 관대하게)
+    invincibleDuration: 3000,       // 피격 무적 3초 (기본보다 길게)
   },
   {
     id: 2,
@@ -39,6 +41,8 @@ export const DIFFICULTIES = [
     canDoubleJump: true,
     doubleJumpLimit: Infinity,
     targetObstacles: 8,
+    maxHearts: 4,                   // 하트 4개
+    invincibleDuration: 2500,       // 피격 무적 2.5초
   },
   {
     id: 3,
@@ -56,6 +60,8 @@ export const DIFFICULTIES = [
     canDoubleJump: true,
     doubleJumpLimit: Infinity,
     targetObstacles: 10,
+    maxHearts: 3,                   // 하트 3개 (기본)
+    invincibleDuration: 2000,       // 피격 무적 2초 (기본)
   },
   {
     id: 4,
@@ -73,6 +79,8 @@ export const DIFFICULTIES = [
     canDoubleJump: true,
     doubleJumpLimit: 3,             // 스테이지 내 2단 점프 3회만 가능
     targetObstacles: 12,
+    maxHearts: 2,                   // 하트 2개 (적어서 긴장감 있음)
+    invincibleDuration: 1500,       // 피격 무적 1.5초
   },
   {
     id: 5,
@@ -90,6 +98,8 @@ export const DIFFICULTIES = [
     canDoubleJump: false,           // 2단 점프 불가!
     doubleJumpLimit: 0,
     targetObstacles: 15,
+    maxHearts: 1,                   // 하트 1개! (원래처럼 한 방에 게임오버)
+    invincibleDuration: 1000,       // 피격 무적 1초 (거의 없는 셈)
   },
 ];
 

@@ -22,6 +22,7 @@ import { Background } from '../objects/Background.js';
 import { StageHUD } from '../objects/StageHUD.js';
 import { soundGenerator } from '../utils/SoundGenerator.js';
 import { DEFAULT_DIFFICULTY } from '../data/difficulties.js';
+import { HeartHUD } from '../objects/HeartHUD.js';
 import { getStage, getStageTarget } from '../data/stages.js';
 import { getWorld } from '../data/worlds.js';
 
@@ -92,6 +93,11 @@ export class GameScene extends Phaser.Scene {
       this
     );
 
+    // === [P1] 하트 HUD 생성 (화면 왼쪽 상단) ===
+    const maxHearts = this.difficulty.maxHearts || 3;
+    this.heartHUD = new HeartHUD(this, maxHearts, 30, 30);
+    this.hitCount = 0; // 이번 스테이지에서 피격 횟수 (통계용)
+
     // === StageHUD (스테이지 정보 표시) ===
     // 자유 모드에서는 목표를 999로 표시 (무한 느낌)
     const displayTarget = this.isFreeMode ? 999 : this.targetScore;
@@ -120,19 +126,34 @@ export class GameScene extends Phaser.Scene {
    * 입력 설정: 터치 + 키보드 둘 다 지원
    */
   _setupInput() {
-    // 터치/마우스
-    this.input.on('pointerdown', () => {
+    // === 터치/마우스: 스와이프 감지 ===
+    // 터치 시작 위치를 기록하여 위/아래 스와이프 구분
+    this._pointerStartY = 0;
+    this._pointerStartTime = 0;
+
+    this.input.on('pointerdown', (pointer) => {
+      this._pointerStartY = pointer.y;
+      this._pointerStartTime = Date.now();
       if (!this.isGameOver && !this.isStageClear) {
         this.dino.startJump();
       }
     });
-    this.input.on('pointerup', () => {
+
+    this.input.on('pointerup', (pointer) => {
       if (!this.isGameOver && !this.isStageClear) {
-        this.dino.executeJump();
+        // [P1] 아래로 50px 이상 스와이프 = 슬라이드
+        const deltaY = pointer.y - this._pointerStartY;
+        const elapsed = Date.now() - this._pointerStartTime;
+        if (deltaY > 50 && elapsed < 500) {
+          // 아래로 빠르게 스와이프 → 슬라이드!
+          this.dino.slide();
+        } else {
+          this.dino.executeJump();
+        }
       }
     });
 
-    // 키보드 (스페이스바)
+    // === 키보드 (스페이스바 = 점프) ===
     this.spaceIsDown = false;
 
     this.input.keyboard.on('keydown-SPACE', (event) => {
@@ -149,6 +170,14 @@ export class GameScene extends Phaser.Scene {
       if (!this.isGameOver && !this.isStageClear) {
         this.dino.executeJump();
       }
+    });
+
+    // === [P1] 키보드 (아래 화살표 = 슬라이드) ===
+    this.input.keyboard.on('keydown-DOWN', (event) => {
+      if (!this.isGameOver && !this.isStageClear) {
+        this.dino.slide();
+      }
+      event.preventDefault();
     });
   }
 
@@ -281,15 +310,54 @@ export class GameScene extends Phaser.Scene {
     });
   }
 
-  /** 공룡이 장애물에 부딪혔을 때 (게임오버) */
+  /**
+   * [P1] 공룡이 장애물에 부딪혔을 때 (하트 시스템 적용)
+   * 기존: 즉시 게임오버
+   * 변경: 하트 -1, 하트 0이면 게임오버
+   */
   _onHitObstacle(dino, obstacle) {
     if (this.isGameOver || this.isStageClear) return;
+
+    // 무적 상태면 피격 무시 (이미 한 대 맞은 직후)
+    if (dino.isInvincible) return;
+
+    // 슬라이드 중이고, 장애물이 높은 종류면 통과 (납작해서 피함)
+    // 장애물의 y 위치가 바닥보다 높으면 = 높은 장애물 (새, 날아다니는 것)
+    // 현재는 모든 장애물이 바닥 위에 있으므로, 슬라이드로는 피할 수 없음
+    // (나중에 날아다니는 장애물이 추가되면 여기서 분기)
+
+    // 공룡에게 피격 알림
+    const damaged = dino.hit();
+    if (!damaged) return; // 무적이라 무시됨
+
+    // 피격 횟수 증가
+    this.hitCount++;
+
+    // 피격 효과음 "아야!"
+    soundGenerator.playHit();
+
+    // 화면 빨간색 플래시 (아이가 "맞았다"를 인지하게)
+    this.cameras.main.flash(200, 255, 50, 50);
+
+    // 하트 HUD에서 하트 1개 감소
+    const isDead = this.heartHUD.takeDamage();
+
+    if (isDead) {
+      // 하트 0 = 게임오버!
+      this._gameOver();
+    }
+  }
+
+  /**
+   * [P1] 게임오버 처리 (하트가 0이 되었을 때)
+   */
+  _gameOver() {
     this.isGameOver = true;
 
     soundGenerator.stopBGM();
     soundGenerator.playGameOver();
 
-    dino.fall();
+    this.dino.fall();
     this.physics.pause();
     this.cameras.main.flash(300, 255, 100, 100);
 
@@ -302,6 +370,7 @@ export class GameScene extends Phaser.Scene {
         stageData: this.stageData,
         worldData: this.worldData,
         isFreeMode: this.isFreeMode,
+        hitCount: this.hitCount, // [P1] 피격 횟수도 전달
       });
     });
   }
@@ -354,5 +423,10 @@ export class GameScene extends Phaser.Scene {
     this.scale.off('resize', this._onResize, this);
     this.input.keyboard.off('keydown-SPACE');
     this.input.keyboard.off('keyup-SPACE');
+    this.input.keyboard.off('keydown-DOWN'); // [P1] 슬라이드 키 정리
+    // [P1] 하트 HUD 정리
+    if (this.heartHUD) {
+      this.heartHUD.destroy();
+    }
   }
 }

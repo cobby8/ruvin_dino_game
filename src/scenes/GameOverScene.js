@@ -25,6 +25,7 @@ export class GameOverScene extends Phaser.Scene {
     this.stageData = data.stageData || null;
     this.worldData = data.worldData || null;
     this.isFreeMode = data.isFreeMode || false;
+    this.hitCount = data.hitCount || 0; // [P1] 피격 횟수
   }
 
   create() {
@@ -102,6 +103,15 @@ export class GameOverScene extends Phaser.Scene {
       fontSize: '18px',
       color: '#CCCCCC',
     }).setOrigin(0.5);
+
+    // [P1] 피격 횟수 표시 (맞은 횟수가 있을 때만)
+    if (this.hitCount > 0) {
+      this.add.text(width / 2, height * 0.64, `${this.hitCount}번 맞았어!`, {
+        fontFamily: 'Jua, sans-serif',
+        fontSize: '14px',
+        color: '#FF9999',
+      }).setOrigin(0.5);
+    }
 
     // === 신기록 효과 ===
     if (isNewRecord && this.finalScore > 0) {

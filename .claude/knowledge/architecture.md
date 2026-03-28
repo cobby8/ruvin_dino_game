@@ -47,3 +47,15 @@
 - **발견자**: planner-architect
 - **내용**: 배경: bg_sky_{worldId}, bg_cloud_{worldId}, bg_mountain_{worldId}, bg_grass_{worldId}. 장애물: obstacle_w{worldId}_{종류} (예: obstacle_w2_skull). 6개 월드 x 4레이어 = 24개 배경 텍스처 + 6월드 x 3종 = 18개 장애물 텍스처. 모두 BootScene에서 일괄 생성.
 - **참조횟수**: 0
+
+### [2026-03-28] 액션 시스템 확장 구조
+- **분류**: architecture
+- **발견자**: planner-architect
+- **내용**: 기존 장애물 전용 구조에서 "적(Enemy) + 아이템(Item) + 특수오브젝트(Spring/Block)" 구조로 확장. 모두 오브젝트 풀링 패턴 사용. GameScene이 통합 스폰 타이머로 장애물/적/아이템 출현을 관리. Dino에 하트(HP) + 무적 + 슬라이드 상태 추가. depth 체계: 배경(0-3) < 아이템(4) < 장애물/적(5) < 공룡(6) < 이펙트(7) < HUD(10).
+- **참조횟수**: 0
+
+### [2026-03-28] 신규 파일 9개 + 수정 파일 9개 (액션 시스템)
+- **분류**: architecture
+- **발견자**: planner-architect
+- **내용**: 신규: Enemy.js, Item.js, Spring.js, QuestionBlock.js, EffectManager.js, HeartHUD.js, PowerUpHUD.js, enemies.js(data), items.js(data). 수정: Dino.js, Obstacle.js, GameScene.js, BootScene.js, config.js, difficulties.js, stages.js, StageHUD.js, SoundGenerator.js. 4페이즈 구현: P1(하트+슬라이드) -> P2(적+밟기) -> P3(아이템+블록) -> P4(스프링+밸런스).
+- **참조횟수**: 0
