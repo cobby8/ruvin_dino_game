@@ -1,0 +1,113 @@
+/**
+ * SoundGenerator.js - 효과음 공장
+ * Web Audio API로 코드만으로 소리를 만드는 유틸리티
+ * (외부 오디오 파일 없이 순수 코드로 "삐-", "뿅-" 같은 소리 생성)
+ */
+
+export class SoundGenerator {
+  constructor() {
+    // AudioContext: 소리를 만들고 재생하는 공장 설비
+    this.ctx = null;
+  }
+
+  /** AudioContext 초기화 (사용자 터치/클릭 후에만 가능 - 브라우저 정책) */
+  init() {
+    if (!this.ctx) {
+      this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+    }
+    // 일시정지 상태면 재개 (모바일에서 필요)
+    if (this.ctx.state === 'suspended') {
+      this.ctx.resume();
+    }
+  }
+
+  /**
+   * 기본 소리 재생 함수
+   * @param {number} startFreq - 시작 주파수 (높을수록 높은 음)
+   * @param {number} endFreq - 끝 주파수 (주파수가 변하면 "삐이~" 효과)
+   * @param {number} duration - 재생 시간 (초)
+   * @param {string} type - 파형 타입 ('sine'=부드러운, 'square'=8비트풍)
+   * @param {number} volume - 볼륨 (0~1)
+   */
+  _playTone(startFreq, endFreq, duration, type = 'sine', volume = 0.3) {
+    if (!this.ctx) return;
+
+    const now = this.ctx.currentTime;
+
+    // OscillatorNode: 소리를 만드는 진동자 (피아노 건반 하나라고 생각)
+    const osc = this.ctx.createOscillator();
+    osc.type = type;
+    osc.frequency.setValueAtTime(startFreq, now);
+    // 주파수를 서서히 변경 (올라가면 "삐이~↑", 내려가면 "뿌우~↓")
+    osc.frequency.linearRampToValueAtTime(endFreq, now + duration);
+
+    // GainNode: 볼륨 조절기
+    const gain = this.ctx.createGain();
+    gain.gain.setValueAtTime(volume, now);
+    // 끝날 때 서서히 소리 줄이기 (뚝 끊기지 않게)
+    gain.gain.linearRampToValueAtTime(0, now + duration);
+
+    // 연결: 진동자 -> 볼륨 -> 스피커
+    osc.connect(gain);
+    gain.connect(this.ctx.destination);
+
+    osc.start(now);
+    osc.stop(now + duration);
+  }
+
+  /** 점프 소리: 짧고 상승하는 "뾰잉~" */
+  playJump() {
+    this._playTone(300, 600, 0.1, 'sine', 0.2);
+  }
+
+  /** 점수 획득 소리: 높은 "띵!" */
+  playScore() {
+    this._playTone(800, 800, 0.08, 'sine', 0.15);
+  }
+
+  /** 게임오버 소리: 내려가는 "뿌우~" */
+  playGameOver() {
+    this._playTone(500, 200, 0.3, 'square', 0.2);
+  }
+
+  /** 칭찬 소리: 올라가는 팡파레 느낌 "빠밤!" */
+  playPraise() {
+    // 두 음을 연속으로 재생해서 팡파레 느낌
+    this._playTone(523, 523, 0.1, 'sine', 0.15);         // 도
+    setTimeout(() => {
+      this._playTone(659, 784, 0.15, 'sine', 0.15);      // 미 -> 솔
+    }, 100);
+  }
+
+  /** 선택 소리: 가볍게 "딩!" */
+  playSelect() {
+    this._playTone(600, 800, 0.08, 'sine', 0.15);
+  }
+
+  /** BGM 시작: 단순한 멜로디 루프 */
+  startBGM() {
+    if (!this.ctx) return;
+    // BGM은 간단한 도레미 패턴을 반복
+    const melody = [262, 294, 330, 349, 330, 294, 262]; // 도레미파미레도
+    const noteLength = 0.3; // 한 음 길이 (초)
+
+    this._bgmInterval = setInterval(() => {
+      melody.forEach((freq, i) => {
+        setTimeout(() => {
+          this._playTone(freq, freq, noteLength * 0.8, 'sine', 0.05);
+        }, i * noteLength * 1000);
+      });
+    }, melody.length * noteLength * 1000);
+  }
+
+  /** BGM 정지 */
+  stopBGM() {
+    if (this._bgmInterval) {
+      clearInterval(this._bgmInterval);
+      this._bgmInterval = null;
+    }
+  }
+}
+
+// 싱글턴: 게임 전체에서 하나의 인스턴스만 사용
+export const soundGenerator = new SoundGenerator();
