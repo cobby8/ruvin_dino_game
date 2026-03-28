@@ -35,7 +35,10 @@
       "Bash(pip install:*)",
       "Bash(pip3 install:*)",
       "Bash(python -m pip install Pillow)",
-      "Bash(python:*)"
+      "Bash(python:*)",
+      "Bash(mv \"배경 제거 프로젝트.png\" ptera.png)",
+      "Bash(mv \"배경 제거 프로젝트 \\(1\\).png\" trex.png)",
+      "Bash(mv \"배경 제거 프로젝트 \\(2\\).png\" tricera.png)"
     ]
   }
 }

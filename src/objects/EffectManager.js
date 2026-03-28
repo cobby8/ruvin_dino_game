@@ -233,6 +233,55 @@ export class EffectManager {
   }
 
   /**
+   * 높은 점프 이펙트: 위쪽으로 짧은 흰색 선 3개 (바람 느낌)
+   * 길게 눌러서 높은 점프가 발동될 때 호출
+   * @param {number} x - 공룡 중심 x
+   * @param {number} y - 공룡 중심 y
+   */
+  showHighJumpEffect(x, y) {
+    const scene = this.scene;
+    // 흰색 선 3개가 위로 올라가며 사라짐 (바람이 부는 느낌)
+    for (let i = 0; i < 3; i++) {
+      const line = scene.add.rectangle(x - 10 + i * 10, y, 3, 15, 0xFFFFFF);
+      line.setDepth(7);
+      scene.tweens.add({
+        targets: line,
+        y: y - 30,
+        alpha: 0,
+        duration: 300,
+        ease: 'Sine.easeOut',
+        onComplete: () => line.destroy(),
+      });
+    }
+  }
+
+  /**
+   * 2단 점프 이펙트: 발 아래에 노란 별 3개가 사방으로 퍼지며 사라짐
+   * 공중에서 2단 점프 발동 시 호출
+   * @param {number} x - 공룡 발 x
+   * @param {number} y - 공룡 발 y
+   */
+  showDoubleJumpEffect(x, y) {
+    const scene = this.scene;
+    // 노란 별 3개가 랜덤 방향으로 퍼지며 사라짐 (반짝!)
+    for (let i = 0; i < 3; i++) {
+      const star = scene.add.star(x, y, 5, 4, 8, 0xFFD700);
+      star.setDepth(7);
+      const angle = Math.random() * Math.PI * 2;
+      scene.tweens.add({
+        targets: star,
+        x: x + Math.cos(angle) * 30,
+        y: y + Math.sin(angle) * 30,
+        alpha: 0,
+        scale: 0,
+        duration: 400,
+        ease: 'Sine.easeOut',
+        onComplete: () => star.destroy(),
+      });
+    }
+  }
+
+  /**
    * 착지 충격파: 공중에서 바닥에 착지하는 순간 양쪽으로 먼지가 퍼짐
    * 작은 원 5~8개가 양쪽으로 퍼지며 투명해짐
    * @param {number} x - 착지 위치 x

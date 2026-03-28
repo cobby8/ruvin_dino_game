@@ -609,9 +609,10 @@ export class ObstacleManager {
    * @param {number} x - 생성 위치 x
    * @param {number} groundY - 바닥 y좌표
    * @param {number} speed - 현재 게임 속도
+   * @param {number} sizeScale - 난이도별 장애물 크기 배율 (아기=0.8 ~ 전설=1.2)
    * @returns {Phaser.Physics.Arcade.Sprite} 생성된 장애물
    */
-  spawn(x, groundY, speed) {
+  spawn(x, groundY, speed, sizeScale = 1.0) {
     // 장애물 종류 랜덤 선택 (확률: 1번 50%, 2번 30%, 3번 20%)
     const rand = Math.random();
     let keyIndex;
@@ -640,8 +641,8 @@ export class ObstacleManager {
         obstacle = this.group.create(x, groundY - yOffset, imgKey, keyIndex);
         obstacle.setOrigin(0.5, 1);
       }
-      // 이미지 크기 1.5배 확대 (기존 0.3에서 절반으로 축소)
-      obstacle.setScale(0.15);
+      // 이미지 크기 1.5배 확대 x 난이도별 크기 배율 (아기공룡은 작게, 전설은 크게)
+      obstacle.setScale(0.15 * sizeScale);
     } else {
       // 기존 Graphics 텍스처 사용
       if (obstacle) {
@@ -653,8 +654,8 @@ export class ObstacleManager {
         obstacle = this.group.create(x, groundY - yOffset, graphicsKey);
         obstacle.setOrigin(0.5, 1);
       }
-      // Graphics 텍스처도 1.5배 확대 (기존 3에서 절반으로 축소)
-      obstacle.setScale(1.5);
+      // Graphics 텍스처도 1.5배 확대 x 난이도별 크기 배율
+      obstacle.setScale(1.5 * sizeScale);
     }
 
     // 장애물은 반드시 배경(depth 0~3)보다 앞에 표시 (depth 5)

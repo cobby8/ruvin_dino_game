@@ -94,6 +94,8 @@ export class GameScene extends Phaser.Scene {
 
     // === 장애물 관리자 (현재 월드 장애물 세트) ===
     this.obstacleManager = new ObstacleManager(this, this.worldData.id);
+    // 난이도별 장애물 크기 배율 (아기=0.8 작게, 전설=1.2 크게)
+    this.obstacleScale = this.difficulty.obstacleScale || 1.0;
 
     // 공룡과 장애물 충돌 = 게임오버
     this.physics.add.overlap(
@@ -462,7 +464,7 @@ export class GameScene extends Phaser.Scene {
   /** 장애물 하나 생성 + [P3] 아이템/블록 스폰 */
   _spawnObstacle() {
     const { width } = this.scale;
-    this.obstacleManager.spawn(width + 50, this.groundY, this.currentSpeed);
+    this.obstacleManager.spawn(width + 50, this.groundY, this.currentSpeed, this.obstacleScale);
 
     // === [P3] 장애물과 함께 아이템/블록 스폰 ===
     // 장애물 뒤쪽(더 오른쪽)에 아이템을 배치하여 보상으로 느끼게 함

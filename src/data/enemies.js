@@ -95,7 +95,7 @@ export const ENEMIES = {
     width: 45, height: 35,
     color: 0x8B6914,       // 갈색
     speed: 100,
-    flyHeight: 0.4,
+    flyHeight: 0.45,          // 0.40→0.45: 높은 점프(306px)로 여유있게 닿도록 완화
     amplitude: 35,
     points: 5,
   },

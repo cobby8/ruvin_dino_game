@@ -172,6 +172,11 @@ export class Dino extends Phaser.Physics.Arcade.Sprite {
       // 브라키오 특수능력: 높은 점프도 20% 더 높음
       const jumpMulti = this.ability === 'highJump' ? 1.2 : 1.0;
       this.body.setVelocityY(GAME.JUMP.HIGH_VELOCITY * jumpMulti);
+
+      // 높은 점프 시각적 피드백 (바람 이펙트)
+      if (this.scene.effectManager) {
+        this.scene.effectManager.showHighJumpEffect(this.x, this.y);
+      }
     }
     // 100ms 미만이면 → 이미 LOW_VELOCITY로 점프 중이므로 자연스럽게 낮은 점프가 됨
   }
@@ -192,6 +197,11 @@ export class Dino extends Phaser.Physics.Arcade.Sprite {
     soundGenerator.playJump();
     this.isDoubleJumpUsed = true;
     this.doubleJumpCount++;
+
+    // 2단 점프 시각적 피드백 (별 파티클)
+    if (this.scene.effectManager) {
+      this.scene.effectManager.showDoubleJumpEffect(this.x, this.y);
+    }
   }
 
   /**
