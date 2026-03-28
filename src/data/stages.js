@@ -11,52 +11,46 @@
 
 export const STAGES = [
   // === 월드 1: 풀밭 나라 - 초반이라 적/스프링/부스트 없음, 아이템 넉넉 ===
-  // target 하향: 6살 집중력(1~2분)에 맞게 8~20으로 조정 (기존 50~90)
-  { id: 1,  world: 1, name: '첫걸음',       target: 8,   speedBonus: 0,  enemyChance: 0,    itemChance: 0.5,  springChance: 0,    boostChance: 0 },
-  { id: 2,  world: 1, name: '풀밭 산책',    target: 12,  speedBonus: 5,  enemyChance: 0,    itemChance: 0.5,  springChance: 0,    boostChance: 0 },
-  { id: 3,  world: 1, name: '나비를 따라',  target: 15,  speedBonus: 10, enemyChance: 0,    itemChance: 0.45, springChance: 0,    boostChance: 0 },
-  { id: 4,  world: 1, name: '꽃밭 건너기',  target: 18,  speedBonus: 15, enemyChance: 0,    itemChance: 0.45, springChance: 0,    boostChance: 0 },
-  { id: 5,  world: 1, name: '풀밭의 왕',    target: 20,  speedBonus: 20, enemyChance: 0,    itemChance: 0.4,  springChance: 0,    boostChance: 0 },
+  { id: 1,  world: 1, name: '첫걸음',       target: 50,  speedBonus: 0,  enemyChance: 0,    itemChance: 0.5,  springChance: 0,    boostChance: 0 },
+  { id: 2,  world: 1, name: '풀밭 산책',    target: 60,  speedBonus: 5,  enemyChance: 0,    itemChance: 0.5,  springChance: 0,    boostChance: 0 },
+  { id: 3,  world: 1, name: '나비를 따라',  target: 70,  speedBonus: 10, enemyChance: 0,    itemChance: 0.45, springChance: 0,    boostChance: 0 },
+  { id: 4,  world: 1, name: '꽃밭 건너기',  target: 80,  speedBonus: 15, enemyChance: 0,    itemChance: 0.45, springChance: 0,    boostChance: 0 },
+  { id: 5,  world: 1, name: '풀밭의 왕',    target: 90,  speedBonus: 20, enemyChance: 0,    itemChance: 0.4,  springChance: 0,    boostChance: 0 },
 
   // === 월드 2: 사막 나라 - 적 등장 시작, 스프링 소량 등장 ===
-  // target 하향: 12~28 (기존 70~110)
-  { id: 6,  world: 2, name: '뜨거운 모래',    target: 12,  speedBonus: 0,  enemyChance: 0.15, itemChance: 0.4,  springChance: 0.03, boostChance: 0 },
-  { id: 7,  world: 2, name: '오아시스를 찾아', target: 16,  speedBonus: 5,  enemyChance: 0.18, itemChance: 0.4,  springChance: 0.04, boostChance: 0 },
-  { id: 8,  world: 2, name: '사막의 바람',    target: 20,  speedBonus: 10, enemyChance: 0.2,  itemChance: 0.38, springChance: 0.04, boostChance: 0.02 },
-  { id: 9,  world: 2, name: '신기루 너머',    target: 24,  speedBonus: 15, enemyChance: 0.22, itemChance: 0.38, springChance: 0.05, boostChance: 0.02 },
-  { id: 10, world: 2, name: '사막의 별',      target: 28,  speedBonus: 20, enemyChance: 0.25, itemChance: 0.35, springChance: 0.05, boostChance: 0.03 },
+  { id: 6,  world: 2, name: '뜨거운 모래',    target: 70,  speedBonus: 0,  enemyChance: 0.15, itemChance: 0.4,  springChance: 0.03, boostChance: 0 },
+  { id: 7,  world: 2, name: '오아시스를 찾아', target: 80,  speedBonus: 5,  enemyChance: 0.18, itemChance: 0.4,  springChance: 0.04, boostChance: 0 },
+  { id: 8,  world: 2, name: '사막의 바람',    target: 90,  speedBonus: 10, enemyChance: 0.2,  itemChance: 0.38, springChance: 0.04, boostChance: 0.02 },
+  { id: 9,  world: 2, name: '신기루 너머',    target: 100, speedBonus: 15, enemyChance: 0.22, itemChance: 0.38, springChance: 0.05, boostChance: 0.02 },
+  { id: 10, world: 2, name: '사막의 별',      target: 110, speedBonus: 20, enemyChance: 0.25, itemChance: 0.35, springChance: 0.05, boostChance: 0.03 },
 
   // === 월드 3: 숲 나라 - 적 본격화, 스프링/부스트 가끔 ===
-  // target 하향: 15~35 (기존 80~120)
-  { id: 11, world: 3, name: '숲속 탐험',      target: 15,  speedBonus: 0,  enemyChance: 0.25, itemChance: 0.38, springChance: 0.05, boostChance: 0.03 },
-  { id: 12, world: 3, name: '버섯 마을',      target: 20,  speedBonus: 5,  enemyChance: 0.28, itemChance: 0.35, springChance: 0.06, boostChance: 0.03 },
-  { id: 13, world: 3, name: '나무 위로!',     target: 25,  speedBonus: 10, enemyChance: 0.3,  itemChance: 0.35, springChance: 0.06, boostChance: 0.04 },
-  { id: 14, world: 3, name: '비밀의 오솔길',  target: 30,  speedBonus: 15, enemyChance: 0.32, itemChance: 0.33, springChance: 0.07, boostChance: 0.04 },
-  { id: 15, world: 3, name: '숲의 수호자',    target: 35,  speedBonus: 20, enemyChance: 0.35, itemChance: 0.33, springChance: 0.07, boostChance: 0.05 },
+  { id: 11, world: 3, name: '숲속 탐험',      target: 80,  speedBonus: 0,  enemyChance: 0.25, itemChance: 0.38, springChance: 0.05, boostChance: 0.03 },
+  { id: 12, world: 3, name: '버섯 마을',      target: 90,  speedBonus: 5,  enemyChance: 0.28, itemChance: 0.35, springChance: 0.06, boostChance: 0.03 },
+  { id: 13, world: 3, name: '나무 위로!',     target: 100, speedBonus: 10, enemyChance: 0.3,  itemChance: 0.35, springChance: 0.06, boostChance: 0.04 },
+  { id: 14, world: 3, name: '비밀의 오솔길',  target: 110, speedBonus: 15, enemyChance: 0.32, itemChance: 0.33, springChance: 0.07, boostChance: 0.04 },
+  { id: 15, world: 3, name: '숲의 수호자',    target: 120, speedBonus: 20, enemyChance: 0.35, itemChance: 0.33, springChance: 0.07, boostChance: 0.05 },
 
   // === 월드 4: 화산 나라 - 적 많아짐, 스프링/부스트 보통 ===
-  // target 하향: 18~40 (기존 90~130)
-  { id: 16, world: 4, name: '뜨거운 땅',        target: 18,  speedBonus: 0,  enemyChance: 0.35, itemChance: 0.33, springChance: 0.07, boostChance: 0.05 },
-  { id: 17, world: 4, name: '용암 강 건너기',   target: 24,  speedBonus: 5,  enemyChance: 0.37, itemChance: 0.32, springChance: 0.07, boostChance: 0.05 },
-  { id: 18, world: 4, name: '불꽃 터널',        target: 30,  speedBonus: 10, enemyChance: 0.38, itemChance: 0.32, springChance: 0.08, boostChance: 0.06 },
-  { id: 19, world: 4, name: '화산의 심장',      target: 36,  speedBonus: 15, enemyChance: 0.4,  itemChance: 0.3,  springChance: 0.08, boostChance: 0.06 },
-  { id: 20, world: 4, name: '불의 시련',        target: 40,  speedBonus: 20, enemyChance: 0.42, itemChance: 0.3,  springChance: 0.08, boostChance: 0.06 },
+  { id: 16, world: 4, name: '뜨거운 땅',        target: 90,  speedBonus: 0,  enemyChance: 0.35, itemChance: 0.33, springChance: 0.07, boostChance: 0.05 },
+  { id: 17, world: 4, name: '용암 강 건너기',   target: 100, speedBonus: 5,  enemyChance: 0.37, itemChance: 0.32, springChance: 0.07, boostChance: 0.05 },
+  { id: 18, world: 4, name: '불꽃 터널',        target: 110, speedBonus: 10, enemyChance: 0.38, itemChance: 0.32, springChance: 0.08, boostChance: 0.06 },
+  { id: 19, world: 4, name: '화산의 심장',      target: 120, speedBonus: 15, enemyChance: 0.4,  itemChance: 0.3,  springChance: 0.08, boostChance: 0.06 },
+  { id: 20, world: 4, name: '불의 시련',        target: 130, speedBonus: 20, enemyChance: 0.42, itemChance: 0.3,  springChance: 0.08, boostChance: 0.06 },
 
   // === 월드 5: 바다 나라 - 적 많음, 스프링/부스트 자주 ===
-  // target 하향: 20~45 (기존 100~140)
-  { id: 21, world: 5, name: '파도를 타고',    target: 20,  speedBonus: 0,  enemyChance: 0.4,  itemChance: 0.32, springChance: 0.08, boostChance: 0.06 },
-  { id: 22, world: 5, name: '산호초 미로',    target: 28,  speedBonus: 5,  enemyChance: 0.42, itemChance: 0.3,  springChance: 0.09, boostChance: 0.06 },
-  { id: 23, world: 5, name: '심해 탐험',      target: 35,  speedBonus: 10, enemyChance: 0.43, itemChance: 0.3,  springChance: 0.09, boostChance: 0.07 },
-  { id: 24, world: 5, name: '해저 동굴',      target: 40,  speedBonus: 15, enemyChance: 0.45, itemChance: 0.28, springChance: 0.09, boostChance: 0.07 },
-  { id: 25, world: 5, name: '바다의 보물',    target: 45,  speedBonus: 20, enemyChance: 0.47, itemChance: 0.28, springChance: 0.1,  boostChance: 0.07 },
+  { id: 21, world: 5, name: '파도를 타고',    target: 100, speedBonus: 0,  enemyChance: 0.4,  itemChance: 0.32, springChance: 0.08, boostChance: 0.06 },
+  { id: 22, world: 5, name: '산호초 미로',    target: 110, speedBonus: 5,  enemyChance: 0.42, itemChance: 0.3,  springChance: 0.09, boostChance: 0.06 },
+  { id: 23, world: 5, name: '심해 탐험',      target: 120, speedBonus: 10, enemyChance: 0.43, itemChance: 0.3,  springChance: 0.09, boostChance: 0.07 },
+  { id: 24, world: 5, name: '해저 동굴',      target: 130, speedBonus: 15, enemyChance: 0.45, itemChance: 0.28, springChance: 0.09, boostChance: 0.07 },
+  { id: 25, world: 5, name: '바다의 보물',    target: 140, speedBonus: 20, enemyChance: 0.47, itemChance: 0.28, springChance: 0.1,  boostChance: 0.07 },
 
   // === 월드 6: 하늘 나라 - 최종, 적 가장 많음, 스프링/부스트 최대 ===
-  // target 하향: 25~50 (기존 110~150)
-  { id: 26, world: 6, name: '구름 위 산책',   target: 25,  speedBonus: 0,  enemyChance: 0.45, itemChance: 0.3,  springChance: 0.09, boostChance: 0.07 },
-  { id: 27, world: 6, name: '별빛 길',        target: 32,  speedBonus: 5,  enemyChance: 0.47, itemChance: 0.28, springChance: 0.09, boostChance: 0.07 },
-  { id: 28, world: 6, name: '달나라 여행',    target: 38,  speedBonus: 10, enemyChance: 0.48, itemChance: 0.28, springChance: 0.1,  boostChance: 0.08 },
-  { id: 29, world: 6, name: '무지개 다리',    target: 44,  speedBonus: 15, enemyChance: 0.48, itemChance: 0.25, springChance: 0.1,  boostChance: 0.08 },
-  { id: 30, world: 6, name: '하늘의 끝',      target: 50,  speedBonus: 20, enemyChance: 0.5,  itemChance: 0.25, springChance: 0.1,  boostChance: 0.08 },
+  { id: 26, world: 6, name: '구름 위 산책',   target: 110, speedBonus: 0,  enemyChance: 0.45, itemChance: 0.3,  springChance: 0.09, boostChance: 0.07 },
+  { id: 27, world: 6, name: '별빛 길',        target: 120, speedBonus: 5,  enemyChance: 0.47, itemChance: 0.28, springChance: 0.09, boostChance: 0.07 },
+  { id: 28, world: 6, name: '달나라 여행',    target: 130, speedBonus: 10, enemyChance: 0.48, itemChance: 0.28, springChance: 0.1,  boostChance: 0.08 },
+  { id: 29, world: 6, name: '무지개 다리',    target: 140, speedBonus: 15, enemyChance: 0.48, itemChance: 0.25, springChance: 0.1,  boostChance: 0.08 },
+  { id: 30, world: 6, name: '하늘의 끝',      target: 150, speedBonus: 20, enemyChance: 0.5,  itemChance: 0.25, springChance: 0.1,  boostChance: 0.08 },
 ];
 
 /**
