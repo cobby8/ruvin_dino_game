@@ -44,14 +44,14 @@ export const GAME = {
 
   // === 별(star) 수집 시스템 ===
   STAR: {
-    LIFE_BONUS_COUNT: 100,    // 별 100개 모으면 목숨 +1
+    LIFE_BONUS_COUNT: 30,     // 별 30개 모으면 목숨 +1 (100→30 하향, 스테이지 내 실제 회복 가능)
   },
 
   // === [P3] 수집 아이템 설정 ===
   ITEMS: {
     STAR_POINTS: 1,           // 별 하나 먹으면 starCount +1
     SPAWN_CHANCE: 0.4,        // 장애물 스폰 시 아이템도 같이 나올 확률 (40%)
-    HEART_CHANCE: 0.05,       // 하트 아이템 출현 확률 (5%)
+    HEART_CHANCE: 0.15,       // 하트 아이템 출현 확률 (15%) - 6살 기준 회복 기회 상향
     POWERUP_DURATION: 5000,   // 파워업 지속 시간 (5초)
     MAGNET_RANGE: 150,        // 자석 흡수 범위 (px)
     MAGNET_SPEED: 5,          // 자석 흡수 속도 (px/프레임)
