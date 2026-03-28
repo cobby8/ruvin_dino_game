@@ -421,6 +421,22 @@ export class Dino extends Phaser.Physics.Arcade.Sprite {
    * isHoldingJump은 GameScene에서 매 프레임 설정 (터치 누르고 있는지)
    */
   update() {
+    // === 달리기 바운스 효과 (PNG 정지 이미지를 살아있게!) ===
+    // 바닥에서 달리는 중이면 통통 뛰는 효과 + 미세한 기울기
+    if (this.body.blocked.down && !this.isSliding && !this.isFlying) {
+      const time = this.scene.time.now;
+      // Math.abs로 항상 위로만 바운스 (0 ~ -3px), groundY 아래로 안 내려감
+      const bounceY = Math.abs(Math.sin(time * 0.008)) * -3;
+      const tiltAngle = Math.sin(time * 0.006) * 0.03; // 미세한 좌우 기울기 (0.03 라디안)
+
+      // 기본 위치에서 바운스 오프셋 적용
+      this.y += bounceY;
+      this.setRotation(tiltAngle);
+    } else if (!this.body.blocked.down) {
+      // 공중에서는 바운스 없이 정자세
+      this.setRotation(0);
+    }
+
     // === 프테라노 비행 능력: 점프 정점에서 터치 유지 시 3초간 공중 정지 ===
     // (기존 glide=하강 중 중력 50%를 완전 교체)
     if (this.ability === 'glide' && !this.body.blocked.down && !this.isFlying) {

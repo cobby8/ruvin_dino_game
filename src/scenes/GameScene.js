@@ -704,9 +704,9 @@ export class GameScene extends Phaser.Scene {
     // === 밟기 판정 ===
     // 조건: 공룡이 아래로 떨어지고 있고(velocity.y > 0),
     //       공룡의 발(bottom)이 적의 머리(top) 근처에 있음
-    // 밟기 허용 범위를 2배로 확대 (15px → 30px, 더 쉽게 밟기 성공)
+    // 밟기 허용 범위 확대 (히트박스 상단 이동에 맞춰 40px로 확장)
     const isStomping = dino.body.velocity.y > 0 &&
-                       dino.body.bottom <= enemy.body.top + 30;
+                       dino.body.bottom <= enemy.body.top + 40;
 
     // === 슬라이드 공격 판정 ===
     // 조건: 슬라이드(구르기) 중 + 바닥 적(ground 타입)
