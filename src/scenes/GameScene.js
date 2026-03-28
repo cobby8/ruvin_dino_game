@@ -143,6 +143,7 @@ export class GameScene extends Phaser.Scene {
     this.isBoosting = false;       // 부스트 모드 활성 여부
     this._speedLines = [];         // 속도선 이펙트 배열
     this._boostTimer = null;       // 부스트 해제 타이머
+    this._boostBlinkTimer = null;  // 부스트 무적 반짝이 타이머
 
     // === [P3] 공룡 vs 아이템 충돌 (닿으면 수집) ===
     this.physics.add.overlap(
@@ -933,6 +934,17 @@ export class GameScene extends Phaser.Scene {
     // 공룡 색상 변경 (주황 빛 = 불타는 느낌)
     this.dino.setTint(0xFF8800);
 
+    // 부스트 무적 반짝이 효과 (피격 무적 blinkTimer와 별개로 _boostBlinkTimer 사용)
+    this._boostBlinkTimer = this.time.addEvent({
+      delay: GAME.HEART.BLINK_INTERVAL,
+      callback: () => {
+        if (this.dino && this.dino.active) {
+          this.dino.setAlpha(this.dino.alpha === 1 ? 0.5 : 1);
+        }
+      },
+      loop: true,
+    });
+
     // 속도선 이펙트 표시
     this._showSpeedLines();
 
@@ -953,10 +965,17 @@ export class GameScene extends Phaser.Scene {
     if (!this.isBoosting) return;
     this.isBoosting = false;
 
+    // 부스트 반짝이 정리
+    if (this._boostBlinkTimer) {
+      this._boostBlinkTimer.destroy();
+      this._boostBlinkTimer = null;
+    }
+
     // 무적 해제 (피격 무적/파워업 무적이 아닌 부스트 무적만 해제)
     // 다른 무적 소스가 없으면 해제
     if (this.dino.powerUp !== 'invincible' && !this.dino.blinkTimer) {
       this.dino.isInvincible = false;
+      this.dino.setAlpha(1); // 투명도 복원
     }
 
     // 속도 원래대로
@@ -1478,6 +1497,9 @@ export class GameScene extends Phaser.Scene {
     }
     if (this._boostTimer) {
       this._boostTimer.destroy();
+    }
+    if (this._boostBlinkTimer) {
+      this._boostBlinkTimer.destroy();
     }
     this._hideSpeedLines();
 

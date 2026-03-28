@@ -236,10 +236,19 @@ export class Dino extends Phaser.Physics.Arcade.Sprite {
     this.clearPowerUp();
 
     if (type === 'invincible') {
-      // 무적별: 5초간 무적 + 금색 빛
+      // 무적별: 5초간 무적 + 금색 빛 + 반짝이 효과
       this.powerUp = 'invincible';
       this.isInvincible = true;
       this.setTint(0xFFD700); // 금색 틴트
+
+      // 무적 반짝이 효과 (피격 무적과 동일한 시각 피드백)
+      this.blinkTimer = this.scene.time.addEvent({
+        delay: GAME.HEART.BLINK_INTERVAL,
+        callback: () => {
+          this.setAlpha(this.alpha === 1 ? 0.5 : 1);
+        },
+        loop: true,
+      });
 
       this.powerUpTimer = this.scene.time.delayedCall(GAME.ITEMS.POWERUP_DURATION, () => {
         this.clearPowerUp();
@@ -265,9 +274,15 @@ export class Dino extends Phaser.Physics.Arcade.Sprite {
    * 파워업 해제 (시간 종료 또는 새 파워업 적용 시)
    */
   clearPowerUp() {
-    // 무적별이었으면 무적 해제 (피격 무적과 구분: blinkTimer가 없으면 파워업 무적)
-    if (this.powerUp === 'invincible' && !this.blinkTimer) {
+    // 무적별이었으면 무적 해제 + 반짝이 정리
+    if (this.powerUp === 'invincible') {
       this.isInvincible = false;
+      // 무적별 반짝이 타이머 정리
+      if (this.blinkTimer) {
+        this.blinkTimer.destroy();
+        this.blinkTimer = null;
+      }
+      this.setAlpha(1); // 투명도 원래대로
     }
 
     this.powerUp = null;
@@ -365,6 +380,11 @@ export class Dino extends Phaser.Physics.Arcade.Sprite {
       this.clearPowerUp();
       // 방어막 깨지는 느낌: 파란색 플래시
       this.scene.cameras.main.flash(150, 78, 174, 255);
+      // 방어막 깨진 후 0.5초 무적 (연속 피격 방지)
+      this.isInvincible = true;
+      this.invincibleTimer = this.scene.time.delayedCall(500, () => {
+        this.isInvincible = false;
+      });
       return false; // 피격 무시됨
     }
 
@@ -424,7 +444,8 @@ export class Dino extends Phaser.Physics.Arcade.Sprite {
   update() {
     // === 달리기 바운스 효과 (PNG 정지 이미지를 살아있게!) ===
     // 바닥에서 달리는 중이면 통통 뛰는 효과 + 미세한 기울기
-    if (this.body.blocked.down && !this.isSliding && !this.isFlying) {
+    // 점프 중(_jumpCount > 0)에는 바운스 건너뛰기 (착지 직전 blocked.down 잠깐 true 되는 경우 간섭 방지)
+    if (this.body.blocked.down && !this.isSliding && !this.isFlying && this._jumpCount === 0) {
       const time = this.scene.time.now;
       // Math.abs로 항상 위로만 바운스 (0 ~ -3px), groundY 아래로 안 내려감
       const bounceY = Math.abs(Math.sin(time * 0.008)) * -3;
