@@ -123,12 +123,12 @@ export class QuestionBlock extends Phaser.Physics.Arcade.Sprite {
     const useImage = this.scene.textures.exists('img_items');
     if (useImage) {
       this.setTexture('img_items', 5);
-      // 이미지 스케일 3배 확대 (기존 40/352 → *3)
-      this.setScale((40 / 352) * 3);
+      // 이미지 스케일 1.5배 확대 (기존 3배에서 절반으로 축소)
+      this.setScale((40 / 352) * 1.5);
     } else {
       this.setTexture('qblock_question');
-      // Graphics 텍스처도 3배 확대
-      this.setScale(3);
+      // Graphics 텍스처도 1.5배 확대 (기존 3에서 절반으로 축소)
+      this.setScale(1.5);
     }
     this._useImage = useImage;
 
@@ -142,7 +142,7 @@ export class QuestionBlock extends Phaser.Physics.Arcade.Sprite {
     this.body.setVelocityX(-speed);
     this.body.setAllowGravity(false);
     this.body.setImmovable(true);
-    this.body.setSize(36, 36); // 히트박스
+    this.body.setSize(18, 18); // 히트박스 (절반으로 축소)
   }
 
   /**
@@ -155,8 +155,8 @@ export class QuestionBlock extends Phaser.Physics.Arcade.Sprite {
 
     // 블록 텍스처를 빈 블록으로 변경 (이미지 사용 시 Graphics 빈 블록으로 전환)
     this.setTexture('qblock_used');
-    // 사용 후 빈 블록도 3배 확대 유지
-    this.setScale(3);
+    // 사용 후 빈 블록도 1.5배 확대 유지
+    this.setScale(1.5);
 
     // 위로 톡 튀는 애니메이션
     const originalY = this.y;

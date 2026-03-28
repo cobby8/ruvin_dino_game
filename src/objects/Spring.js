@@ -77,9 +77,9 @@ export class Spring extends Phaser.Physics.Arcade.Sprite {
     this.body.setImmovable(true);
     this.setDepth(5); // 장애물과 같은 레이어
 
-    // 히트박스를 윗부분에 맞춤 (밟기 판정용)
-    this.body.setSize(30, 15);
-    this.body.setOffset(5, 0);
+    // 히트박스를 윗부분에 맞춤 (밟기 판정용, 절반으로 축소)
+    this.body.setSize(15, 7.5);
+    this.body.setOffset(2.5, 0);
 
     // 초기 상태: 비활성
     this.isUsed = false;
@@ -99,8 +99,8 @@ export class Spring extends Phaser.Physics.Arcade.Sprite {
     this.setActive(true);
     this.setVisible(true);
     this.isUsed = false;
-    // Graphics 텍스처 3배 확대
-    this.setScale(3, 3);
+    // Graphics 텍스처 1.5배 확대 (기존 3에서 절반으로 축소)
+    this.setScale(1.5, 1.5);
     this.setAlpha(1);
 
     // 왼쪽으로 이동 (장애물과 같은 속도)
@@ -115,10 +115,10 @@ export class Spring extends Phaser.Physics.Arcade.Sprite {
     if (this.isUsed) return;
     this.isUsed = true;
 
-    // 스프링 압축 → 복원 트윈 (scaleY를 줄였다가 복귀, 3배 기준)
+    // 스프링 압축 → 복원 트윈 (scaleY를 줄였다가 복귀, 1.5배 기준)
     this.scene.tweens.add({
       targets: this,
-      scaleY: 0.4 * 3, // 눌린 상태 (40%로 압축, 3배 기준 = 1.2)
+      scaleY: 0.4 * 1.5, // 눌린 상태 (40%로 압축, 1.5배 기준 = 0.6)
       duration: 80,
       yoyo: true,      // 다시 원래로 복귀
       ease: 'Bounce.easeOut',

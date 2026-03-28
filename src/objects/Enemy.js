@@ -519,14 +519,14 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
 
     if (useImage) {
       this.setTexture('img_enemies', ENEMY_FRAME_MAP[enemyKey]);
-      // 이미지 크기 3배 확대 (기존 targetH/720 → *3)
+      // 이미지 크기 1.5배 확대 (기존 3배에서 절반으로 축소)
       const targetH = this.enemyData.height;
-      this.setScale((targetH / 720) * 3);
+      this.setScale((targetH / 720) * 1.5);
     } else {
       const textureKey = `enemy_${enemyKey}`;
       this.setTexture(textureKey, 0);
-      // Graphics 텍스처도 3배 확대
-      this.setScale(3, 3);
+      // Graphics 텍스처도 1.5배 확대 (기존 3에서 절반으로 축소)
+      this.setScale(1.5, 1.5);
     }
 
     this.setPosition(x, y);

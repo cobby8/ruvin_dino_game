@@ -79,9 +79,9 @@ export class BoostPad extends Phaser.Physics.Arcade.Sprite {
     this.body.setImmovable(true);
     this.setDepth(3); // 바닥 장식 레이어 (장애물보다 뒤)
 
-    // 히트박스 설정
-    this.body.setSize(55, 12);
-    this.body.setOffset(2, 2);
+    // 히트박스 설정 (절반으로 축소)
+    this.body.setSize(27.5, 6);
+    this.body.setOffset(1, 1);
 
     // 초기 상태
     this.isUsed = false;
@@ -102,8 +102,8 @@ export class BoostPad extends Phaser.Physics.Arcade.Sprite {
     this.setVisible(true);
     this.isUsed = false;
     this.setAlpha(1);
-    // Graphics 텍스처 3배 확대
-    this.setScale(3);
+    // Graphics 텍스처 1.5배 확대 (기존 3에서 절반으로 축소)
+    this.setScale(1.5);
 
     // 왼쪽으로 이동
     this.body.setVelocityX(-speed);
@@ -117,11 +117,11 @@ export class BoostPad extends Phaser.Physics.Arcade.Sprite {
     if (this.isUsed) return;
     this.isUsed = true;
 
-    // 밟히는 이펙트: 반짝 + 투명해지며 사라짐 (3배 기준)
+    // 밟히는 이펙트: 반짝 + 투명해지며 사라짐 (1.5배 기준)
     this.scene.tweens.add({
       targets: this,
       alpha: 0.3,
-      scaleX: 1.2 * 3, // 3배 기준에서 약간 더 커짐
+      scaleX: 1.2 * 1.5, // 1.5배 기준에서 약간 더 커짐
       duration: 300,
       ease: 'Sine.easeOut',
     });
@@ -133,7 +133,7 @@ export class BoostPad extends Phaser.Physics.Arcade.Sprite {
     this.setVisible(false);
     this.body.setVelocityX(0);
     this.isUsed = false;
-    this.setScale(3);
+    this.setScale(1.5);
   }
 }
 

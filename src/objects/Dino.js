@@ -43,13 +43,13 @@ export class Dino extends Phaser.Physics.Arcade.Sprite {
     scene.add.existing(this);
     scene.physics.add.existing(this);
 
-    // 크기 설정: 이미지(516x512) 스케일 3배 확대 (기존 0.1875 → 0.5625)
+    // 크기 설정: 이미지(516x512) 스케일 1.5배 확대 (기존 3배에서 절반으로 축소)
     if (this.useImage) {
-      // 96 / 512 * 3 = 0.5625 → 이미지를 288px 높이로 3배 확대
-      this.setScale((GAME.DINO_SIZE / 512) * 3);
+      // 96 / 512 * 1.5 = 0.28125 → 이미지를 144px 높이로 1.5배 확대
+      this.setScale((GAME.DINO_SIZE / 512) * 1.5);
     } else {
-      // Graphics 텍스처도 3배 확대
-      this.setScale(GAME.DINO_SCALE * 3);
+      // Graphics 텍스처도 1.5배 확대
+      this.setScale(GAME.DINO_SCALE * 1.5);
     }
 
     // 기준점을 아래쪽 중앙으로 (바닥에 발이 닿도록)

@@ -640,8 +640,8 @@ export class ObstacleManager {
         obstacle = this.group.create(x, groundY - yOffset, imgKey, keyIndex);
         obstacle.setOrigin(0.5, 1);
       }
-      // 이미지 크기 3배 확대 (기존 0.1 → 0.3)
-      obstacle.setScale(0.3);
+      // 이미지 크기 1.5배 확대 (기존 0.3에서 절반으로 축소)
+      obstacle.setScale(0.15);
     } else {
       // 기존 Graphics 텍스처 사용
       if (obstacle) {
@@ -653,8 +653,8 @@ export class ObstacleManager {
         obstacle = this.group.create(x, groundY - yOffset, graphicsKey);
         obstacle.setOrigin(0.5, 1);
       }
-      // Graphics 텍스처도 3배 확대
-      obstacle.setScale(3);
+      // Graphics 텍스처도 1.5배 확대 (기존 3에서 절반으로 축소)
+      obstacle.setScale(1.5);
     }
 
     // 장애물은 반드시 배경(depth 0~3)보다 앞에 표시 (depth 5)

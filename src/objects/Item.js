@@ -231,13 +231,13 @@ export class Item extends Phaser.Physics.Arcade.Sprite {
     this.setVisible(true);
     this.setAlpha(1);
 
-    // 이미지/Graphics 스케일 3배 확대
+    // 이미지/Graphics 스케일 1.5배 확대 (기존 3배에서 절반으로 축소)
     if (useImage) {
-      // 기존 30/352 → *3 = 90/352 ≈ 0.256
-      this.setScale((30 / 352) * 3);
+      // 기존 30/352 → *1.5 = 45/352 ≈ 0.128
+      this.setScale((30 / 352) * 1.5);
     } else {
-      // Graphics 텍스처도 3배 확대
-      this.setScale(3);
+      // Graphics 텍스처도 1.5배 확대
+      this.setScale(1.5);
     }
 
     // 왼쪽으로 이동 (장애물과 같은 속도)
