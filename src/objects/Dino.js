@@ -80,6 +80,7 @@ export class Dino extends Phaser.Physics.Arcade.Sprite {
     this.jumpStartTime = 0;          // 점프 버튼 누른 시각 (ms)
     this.isJumpHeld = false;         // 버튼을 누르고 있는 중인지
     this.isDoubleJumpUsed = false;   // 이번 점프에서 2단 점프를 썼는지
+    this._isJumping = false;         // 점프 중인지 (착지 전까지 true 유지)
     this.canDoubleJump = true;       // 난이도에 따라 2단 점프 허용 여부
     this.doubleJumpLimit = Infinity; // 스테이지 내 2단 점프 최대 횟수
     this.doubleJumpCount = 0;        // 현재까지 사용한 2단 점프 횟수
@@ -132,7 +133,8 @@ export class Dino extends Phaser.Physics.Arcade.Sprite {
     // 슬라이드 중에는 점프 불가 (엎드린 상태에서 뛸 수 없음)
     if (this.isSliding) return;
 
-    if (this.body.blocked.down) {
+    // _isJumping 플래그로 공중 판정 (body.blocked.down은 같은 프레임에서 부정확할 수 있음)
+    if (!this._isJumping && this.body.blocked.down) {
       // 바닥에 있으면 → isHigh에 따라 낮은/높은 점프 즉시 실행
       // 브라키오 특수능력: 목이 긴 초식공룡이라 점프가 20% 더 높음!
       const jumpMulti = this.ability === 'highJump' ? 1.2 : 1.0;
@@ -147,10 +149,11 @@ export class Dino extends Phaser.Physics.Arcade.Sprite {
         this.scene.effectManager.showHighJumpEffect(this.x, this.y);
       }
 
+      this._isJumping = true;        // 점프 시작! 착지 전까지 공중 상태
       this.isJumpHeld = false;
       this.isDoubleJumpUsed = false; // 새 점프이므로 2단 점프 리셋
-    } else if (!this.isDoubleJumpUsed) {
-      // 공중 + 아직 2단 점프 안 씀 → 2단 점프 시도 (좌우 구분 없음)
+    } else if (this._isJumping && !this.isDoubleJumpUsed) {
+      // 점프 중 + 아직 2단 점프 안 씀 → 2단 점프 시도 (좌우 구분 없음)
       this.doubleJump();
     }
     // 그 외 (공중 + 이미 2단 점프 씀) → 입력 무시하여 3단 점프 방지
@@ -194,6 +197,7 @@ export class Dino extends Phaser.Physics.Arcade.Sprite {
    * 점프 관련 상태를 모두 리셋
    */
   onLand() {
+    this._isJumping = false;         // 착지! 공중 상태 해제
     this.isJumpHeld = false;
     this.isDoubleJumpUsed = false;
 
