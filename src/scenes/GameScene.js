@@ -275,7 +275,8 @@ export class GameScene extends Phaser.Scene {
     // 배경 스크롤
     this.background.update(this.currentSpeed, delta);
 
-    // 착지 감지
+    // 착지 감지 (body가 유효한지 먼저 확인)
+    if (!this.dino || !this.dino.body) return;
     if (this.dino.body.blocked.down) {
       if (this.wasInAir) {
         this.dino.onLand();
@@ -328,7 +329,7 @@ export class GameScene extends Phaser.Scene {
     // === [P3] 자석 파워업: 범위 내 아이템을 공룡 쪽으로 끌어당김 ===
     if (this.dino.powerUp === 'magnet') {
       this.itemManager.group.getChildren().forEach(item => {
-        if (item.active) {
+        if (item.active && item.body) {
           const dist = Phaser.Math.Distance.Between(
             this.dino.x, this.dino.y, item.x, item.y
           );
@@ -486,6 +487,8 @@ export class GameScene extends Phaser.Scene {
    */
   _onHitObstacle(dino, obstacle) {
     if (this.isGameOver || this.isStageClear) return;
+    // 오브젝트 유효성 체크 (destroy된 오브젝트 접근 방지)
+    if (!dino.active || !dino.body || !obstacle.active || !obstacle.body) return;
 
     // 무적 상태면 피격 무시 (이미 한 대 맞은 직후)
     if (dino.isInvincible) return;
@@ -521,6 +524,8 @@ export class GameScene extends Phaser.Scene {
    * [P1] 게임오버 처리 (하트가 0이 되었을 때)
    */
   _gameOver() {
+    // 중복 호출 방지 (동시에 장애물+적에 닿을 때)
+    if (this.isGameOver) return;
     this.isGameOver = true;
 
     soundGenerator.stopBGM();
@@ -579,6 +584,8 @@ export class GameScene extends Phaser.Scene {
    */
   _onHitEnemy(dino, enemy) {
     if (this.isGameOver || this.isStageClear) return;
+    // 오브젝트 유효성 체크
+    if (!dino.active || !dino.body || !enemy.active || !enemy.body) return;
     if (!enemy.alive) return;
 
     // === 밟기 판정 ===
@@ -614,6 +621,7 @@ export class GameScene extends Phaser.Scene {
       // 스테이지 클리어 체크 (clearScore 기준)
       if (this.clearScore >= this.targetScore) {
         this._onStageClear();
+        return; // 클리어 후 추가 처리 방지
       }
     } else {
       // 옆에서 닿음 = 피격!
@@ -642,7 +650,8 @@ export class GameScene extends Phaser.Scene {
    * 아이템 종류에 따라 다른 효과 적용
    */
   _onCollectItem(dino, item) {
-    if (!item.active) return;
+    if (!item.active || !item.body) return;
+    if (!dino.active || !dino.body) return;
     if (this.isGameOver || this.isStageClear) return;
 
     const type = item.itemType;
@@ -685,7 +694,8 @@ export class GameScene extends Phaser.Scene {
    * 조건: 공룡이 상승 중(velocity.y < 0) + 공룡 top이 블록 bottom 근처
    */
   _onHitBlock(dino, block) {
-    if (!block.active || block.isUsed) return;
+    if (!block.active || !block.body || block.isUsed) return;
+    if (!dino.active || !dino.body) return;
 
     // 아래에서 머리로 치는 판정:
     // 공룡이 위로 올라가는 중 (상승 중) + 공룡 머리가 블록 바닥 근처
@@ -728,6 +738,7 @@ export class GameScene extends Phaser.Scene {
    */
   _onHitSpring(dino, spring) {
     if (this.isGameOver || this.isStageClear) return;
+    if (!dino.active || !dino.body || !spring.active || !spring.body) return;
     if (spring.isUsed) return;
 
     // 하강 중에만 밟기 판정 (위에서 내려올 때만)
@@ -755,6 +766,7 @@ export class GameScene extends Phaser.Scene {
    */
   _onHitBoostPad(dino, pad) {
     if (this.isGameOver || this.isStageClear) return;
+    if (!dino.active || !dino.body || !pad.active || !pad.body) return;
     if (pad.isUsed) return;
     if (!dino.body.blocked.down) return; // 바닥에서만
 
@@ -926,6 +938,15 @@ export class GameScene extends Phaser.Scene {
     this.input.keyboard.off('keydown-SPACE');
     this.input.keyboard.off('keyup-SPACE');
     this.input.keyboard.off('keydown-DOWN'); // [P1] 슬라이드 키 정리
+
+    // 공룡의 타이머 정리 (씬 종료 후 타이머가 실행되어 에러 발생 방지)
+    if (this.dino) {
+      if (this.dino.slideTimer) { this.dino.slideTimer.destroy(); this.dino.slideTimer = null; }
+      if (this.dino.invincibleTimer) { this.dino.invincibleTimer.destroy(); this.dino.invincibleTimer = null; }
+      if (this.dino.blinkTimer) { this.dino.blinkTimer.destroy(); this.dino.blinkTimer = null; }
+      if (this.dino.powerUpTimer) { this.dino.powerUpTimer.destroy(); this.dino.powerUpTimer = null; }
+    }
+
     // [P1] 하트 HUD 정리
     if (this.heartHUD) {
       this.heartHUD.destroy();

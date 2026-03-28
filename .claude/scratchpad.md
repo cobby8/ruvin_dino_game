@@ -24,8 +24,22 @@
 | 2026-03-28 | P1 구현: 하트시스템+슬라이드+피격무적+HeartHUD (1신규+7수정) | 빌드 통과 |
 | 2026-03-28 | P2 구현: 적 캐릭터 9종+밟기/슬라이드 공격+이펙트 (3신규+4수정) | 빌드 통과 |
 | 2026-03-28 | 월드맵 버그2건 수정: 스테이지 클릭 충돌 해결 + "처음부터" 버튼 추가 (WorldMapScene.js) | 빌드 통과 |
+| 2026-03-28 | 게임 멈춤 방지: overlap 가드 8개소 + _gameOver 중복방지 + shutdown 타이머정리 + target 10배 (2파일) | 빌드 통과 |
 
 ## 구현 기록 (developer)
+
+### 게임 멈춤 방지 + target 10배 (2026-03-28, debugger)
+
+#### 수정 이력
+| 회차 | 수정 내용 | 수정 파일 | 비고 |
+|------|----------|----------|------|
+| 1차 | 모든 overlap 콜백(8개)에 body/active 가드 추가 | GameScene.js | null 참조 에러 방지 |
+| 1차 | _gameOver()에 중복 호출 방지 가드 추가 | GameScene.js | 동시 충돌 시 중복 씬 전환 방지 |
+| 1차 | _onHitEnemy()에서 클리어 후 return 추가 | GameScene.js | 클리어 후 추가 처리 방지 |
+| 1차 | update()에서 dino.body 유효성 체크 추가 | GameScene.js | 게임오버 후 body 접근 방지 |
+| 1차 | shutdown()에 Dino 타이머 4개 정리 추가 | GameScene.js | 씬 전환 후 타이머 에러 방지 |
+| 1차 | 자석 파워업 forEach 내 body 체크 추가 | GameScene.js | magnet 범위 계산 중 에러 방지 |
+| 2차 | 30개 스테이지 target 10배 증가 (5~15 -> 50~150) | stages.js | PM 요청 |
 
 ### 월드맵 버그 2건 수정 (2026-03-28, debugger)
 

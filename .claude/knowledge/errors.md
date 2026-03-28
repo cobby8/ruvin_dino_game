@@ -20,6 +20,24 @@
 - **내용**: scrollContainer 안의 interactive 오브젝트에 pointerdown으로 클릭 이벤트를 걸고, 동시에 씬 전체 input에 pointerdown으로 드래그 스크롤을 걸면 충돌 발생. 손가락이 조금만 움직여도 드래그로 인식되어 클릭이 작동하지 않음. 해결: 버튼 이벤트를 pointerup으로 변경하고, pointerdown 시작 위치와 pointerup 위치의 차이가 5px 미만이면 클릭으로 판정하는 _wasDragging 플래그를 사용.
 - **참조횟수**: 0
 
+### [2026-03-28] Phaser overlap 콜백에서 destroyed 오브젝트 접근 시 게임 멈춤
+- **분류**: error
+- **발견자**: debugger
+- **내용**: Phaser의 physics.add.overlap() 콜백에서 충돌 대상의 body가 null(이미 destroy됨)인 상태로 body.velocity, body.blocked 등에 접근하면 TypeError 발생 → 게임 멈춤. 모든 overlap 콜백 시작에 `if (!obj.active || !obj.body) return;` 가드를 반드시 추가해야 함. 특히 동시에 여러 충돌이 같은 프레임에 발생할 때 위험.
+- **참조횟수**: 0
+
+### [2026-03-28] _gameOver/_onStageClear 중복 호출 시 씬 전환 에러
+- **분류**: error
+- **발견자**: debugger
+- **내용**: 같은 프레임에 장애물+적이 동시에 공룡에 닿으면 _onHitObstacle과 _onHitEnemy가 모두 실행되어 _gameOver()가 두 번 호출될 수 있음. 두 번째 호출에서 이미 pause된 physics에 접근하거나 이미 시작된 씬 전환이 중복 발생하여 에러. _gameOver() 시작에 `if (this.isGameOver) return;` 가드 필수.
+- **참조횟수**: 0
+
+### [2026-03-28] 씬 종료 후 delayedCall/addEvent 타이머가 실행되어 에러
+- **분류**: error
+- **발견자**: debugger
+- **내용**: Dino의 slideTimer, invincibleTimer, blinkTimer 등이 씬 전환(scene.start) 후에도 콜백이 실행될 수 있음. 이때 this.scene이나 this.body가 이미 null이라 TypeError 발생. shutdown()에서 모든 타이머를 명시적으로 destroy()해야 함.
+- **참조횟수**: 0
+
 ### [2026-03-28] Phaser setCollideWorldBounds + ground collider 간섭
 - **분류**: error
 - **발견자**: debugger
