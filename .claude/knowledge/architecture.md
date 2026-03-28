@@ -29,3 +29,21 @@
 - **발견자**: planner-architect
 - **내용**: BootScene(에셋생성) -> SelectScene(공룡선택, registry에 저장) -> GameScene(게임플레이) -> GameOverScene(점수표시) -> GameScene 또는 SelectScene으로 분기
 - **참조횟수**: 0
+
+### [2026-03-28] 확장 씬 전환 흐름 (v2 설계)
+- **분류**: architecture
+- **발견자**: planner-architect
+- **내용**: Boot -> Select(공룡) -> Difficulty(난이도5단계) -> WorldMap(월드맵) -> Game(스테이지플레이) -> StageClear(축하) 또는 GameOver(실패). 30스테이지 전체 클리어 시 Ending. 새 씬 4개: DifficultyScene, WorldMapScene, StageClearScene, EndingScene. 진행도는 localStorage('ruvin_dino_progress')에 저장.
+- **참조횟수**: 0
+
+### [2026-03-28] 데이터 파일 분리 구조
+- **분류**: architecture
+- **발견자**: planner-architect
+- **내용**: src/data/ 폴더 신규. stages.js(30개 스테이지 정의), worlds.js(6개 월드 정의), difficulties.js(5단계 난이도 파라미터). config.js에 모든 데이터를 넣지 않고, 역할별로 분리하여 관리 편의성 향상.
+- **참조횟수**: 0
+
+### [2026-03-28] 월드별 텍스처 네이밍 규칙
+- **분류**: architecture
+- **발견자**: planner-architect
+- **내용**: 배경: bg_sky_{worldId}, bg_cloud_{worldId}, bg_mountain_{worldId}, bg_grass_{worldId}. 장애물: obstacle_w{worldId}_{종류} (예: obstacle_w2_skull). 6개 월드 x 4레이어 = 24개 배경 텍스처 + 6월드 x 3종 = 18개 장애물 텍스처. 모두 BootScene에서 일괄 생성.
+- **참조횟수**: 0

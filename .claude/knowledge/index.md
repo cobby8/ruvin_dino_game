@@ -3,18 +3,17 @@
 ## 파일별 요약
 | 파일 | 항목 수 | 최종 업데이트 |
 |------|--------|------------|
-| architecture.md | 4 | 2026-03-28 |
+| architecture.md | 7 | 2026-03-28 |
 | errors.md | 0 | - |
 | conventions.md | 0 | - |
-| decisions.md | 8 | 2026-03-28 |
+| decisions.md | 12 | 2026-03-28 |
 | lessons.md | 0 | - |
 
 ## 최근 추가된 지식 (최근 5건)
 | 날짜 | 파일 | 제목 |
 |------|------|------|
-| 2026-03-28 | decisions.md | 그래픽 고도화: PNG 스프라이트시트 1순위 추천 |
-| 2026-03-28 | decisions.md | 점프 밸런스: JUMP_VELOCITY -450 제안 |
-| 2026-03-28 | decisions.md | 밸런스 상수를 config.js에 분리 |
-| 2026-03-28 | decisions.md | Phaser Graphics로 모든 그래픽 생성 |
-| 2026-03-28 | architecture.md | 씬 전환 흐름 |
-| 2026-03-28 | architecture.md | 핵심 패턴: Graphics -> RenderTexture |
+| 2026-03-28 | decisions.md | 3페이즈 점진적 구현 전략 |
+| 2026-03-28 | decisions.md | 스테이지 데이터를 별도 파일로 분리 |
+| 2026-03-28 | decisions.md | 점프 시스템: 누른 시간 기반 높이 결정 |
+| 2026-03-28 | architecture.md | 월드별 텍스처 네이밍 규칙 |
+| 2026-03-28 | architecture.md | 데이터 파일 분리 구조 |

@@ -192,8 +192,8 @@ export class SelectScene extends Phaser.Scene {
 
         soundGenerator.playSelect();
 
-        // 게임 씬으로 전환
-        this.scene.start('GameScene');
+        // 난이도 선택 화면으로 전환 (페이즈 1: 공룡선택 → 난이도선택 → 게임)
+        this.scene.start('DifficultyScene');
       }
     });
   }

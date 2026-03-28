@@ -5,6 +5,7 @@
 import Phaser from 'phaser';
 import { BootScene } from './scenes/BootScene.js';
 import { SelectScene } from './scenes/SelectScene.js';
+import { DifficultyScene } from './scenes/DifficultyScene.js';
 import { GameScene } from './scenes/GameScene.js';
 import { GameOverScene } from './scenes/GameOverScene.js';
 
@@ -33,8 +34,8 @@ const config = {
   // 배경색 (하늘색)
   backgroundColor: '#87CEEB',
 
-  // 씬 등록 순서: Boot(로딩) -> Select(공룡선택) -> Game(플레이) -> GameOver(결과)
-  scene: [BootScene, SelectScene, GameScene, GameOverScene],
+  // 씬 등록 순서: Boot(로딩) -> Select(공룡선택) -> Difficulty(난이도) -> Game(플레이) -> GameOver(결과)
+  scene: [BootScene, SelectScene, DifficultyScene, GameScene, GameOverScene],
 
   // 렌더링 설정
   render: {
