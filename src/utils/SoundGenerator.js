@@ -98,6 +98,33 @@ export class SoundGenerator {
     }, 80);
   }
 
+  /** [P3] 파워업 획득 소리: 상승 화음 "짜잔~!" (밝고 화려한 느낌) */
+  playPowerUp() {
+    // 도-미-솔 화음 (동시에 재생)
+    this._playTone(523, 523, 0.15, 'sine', 0.12);   // 도
+    this._playTone(659, 659, 0.15, 'sine', 0.12);   // 미
+    this._playTone(784, 784, 0.15, 'sine', 0.12);   // 솔
+    // 약간 뒤에 높은 도 추가 (팡파레 느낌)
+    setTimeout(() => {
+      this._playTone(1047, 1047, 0.2, 'sine', 0.15);
+    }, 150);
+  }
+
+  /** [P3] 별/아이템 수집 소리: 짧은 "띵!" (playScore보다 가벼운 톤) */
+  playItemCollect() {
+    this._playTone(1000, 1200, 0.06, 'sine', 0.12);
+  }
+
+  /** [P3] 블록 타격 소리: 통통 + 띵 (마리오 블록 치는 느낌) */
+  playBlockHit() {
+    // 통통 (짧은 둔탁한 소리)
+    this._playTone(200, 400, 0.08, 'square', 0.2);
+    // 띵 (높은 음)
+    setTimeout(() => {
+      this._playTone(800, 1000, 0.1, 'sine', 0.15);
+    }, 80);
+  }
+
   /** [P1] 슬라이드 소리: 빠른 하강 스윕 "쉭~" */
   playSlide() {
     this._playTone(500, 200, 0.12, 'sine', 0.15);

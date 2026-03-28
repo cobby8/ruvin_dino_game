@@ -31,36 +31,37 @@
 
 ## 구현 기록 (developer)
 
-### P2: 적 캐릭터 9종 + 밟기/슬라이드 공격
+### P3: 수집 아이템 5종 + 물음표 블록 + 파워업 시스템
 
 | 파일 | 변경 내용 | 신규/수정 |
 |------|----------|----------|
-| src/data/enemies.js | 9종 적 데이터 정의 (ENEMIES + WORLD_ENEMIES 월드별 매핑) | 신규 |
-| src/objects/Enemy.js | EnemyGraphics(9종 텍스처) + Enemy 클래스 + EnemyManager(풀링/스폰) | 신규 |
-| src/objects/EffectManager.js | 처치 이펙트(별 파티클 + "퍽!" 텍스트) + 점수 팝업("+3") | 신규 |
-| src/data/worlds.js | 6개 월드에 enemies 배열 추가 | 수정 |
-| src/scenes/BootScene.js | createAllEnemyTextures() 호출 추가 (로딩 4단계) | 수정 |
-| src/scenes/GameScene.js | EnemyManager/EffectManager 생성, _trySpawnEnemy, _onHitEnemy 밟기/슬라이드 판정 | 수정 |
-| src/utils/SoundGenerator.js | playEnemyDefeat() 처치 효과음 추가 | 수정 |
+| src/objects/Item.js | 아이템 5종 텍스처(별/하트/무적별/자석/방어막) + Item 클래스 + ItemManager(풀링/스폰) | 신규 |
+| src/objects/QuestionBlock.js | 물음표 블록 텍스처(활성/사용됨) + QuestionBlock 클래스 + QuestionBlockManager | 신규 |
+| src/objects/PowerUpHUD.js | 화면 우측 상단 파워업 아이콘 + 남은 시간 바 + 깜빡 경고 | 신규 |
+| src/config.js | ITEMS(별점수/스폰확률/파워업지속/자석범위) + QUESTION_BLOCK(스폰확률/높이) 추가 | 수정 |
+| src/objects/Dino.js | applyPowerUp/clearPowerUp + 방어막 hit()처리 + fall()파워업정리 | 수정 |
+| src/scenes/GameScene.js | ItemManager/QuestionBlockManager/PowerUpHUD 생성 + 아이템수집/블록타격 충돌 + 자석효과 + 스폰 연동 | 수정 |
+| src/scenes/BootScene.js | createAllItemTextures + createQuestionBlockTextures 로딩 단계 추가 | 수정 |
+| src/utils/SoundGenerator.js | playPowerUp/playItemCollect/playBlockHit 3개 효과음 추가 | 수정 |
 
 tester 참고:
-- 월드 1(풀밭): 적이 나오면 안 됨 (입문 구간)
-- 월드 2(사막): 전갈(바닥)만 등장, 밟기/슬라이드로 처치 가능
-- 월드 3~6: ground + flying 적 모두 등장
-- 밟기 판정: 공룡이 위에서 떨어지면서 적 위에 닿으면 처치 + 바운스(-250)
-- 슬라이드 공격: 슬라이드 중 바닥 적(ground)에 닿으면 처치
-- 옆에서 닿으면: 하트 -1 + 무적 (P1 피격 시스템과 동일)
-- 처치 시: 별 파티클 + "퍽!" 텍스트 + "+N" 점수 팝업 + "퍽!" 효과음
-- 적 처치 점수: ground 적 +3, flying 적 +5 (장애물 넘기기 +1보다 높음)
-- 비행 적(박쥐/작은용/복어/독수리): 사인파로 위아래 흔들리며 비행
-- 적 스폰 확률: 35% 기본 + 월드당 3% 추가 (월드6은 50%)
-- 주의: 기존 장애물 시스템과 완전 독립. 장애물 넘기 점수는 기존과 동일
+- 테스트 방법: 게임 플레이 시 장애물 뒤에 아이템과 블록이 나타남
+- 별(노란 오각별): 공중에 3~5개 아치형 배치, 닿으면 +1점, "띵!" 소리
+- 하트(분홍): 높은 곳에 단독 배치(5% 확률), 닿으면 HP +1 회복
+- 물음표 블록: 공중에 배치(15% 확률), 아래에서 점프해서 머리로 치면 파워업 팝업
+- 블록에서 나오는 파워업: 무적별(40%), 자석(30%), 방어막(30%)
+- 무적별(큰 금별): 5초간 무적 + 금색 공룡 + 시간바 표시
+- 자석(U자석): 5초간 범위 150px 내 아이템 자동 흡수 + 보라색 공룡
+- 방어막(파란 방패): 다음 1번 피격 무시 + 파란색 공룡, 시간 제한 없음
+- 파워업 HUD: 우측 상단에 아이콘+남은시간바, 2초 남으면 깜빡
+- 방어막 작동 시: 파란 화면 플래시 + 방어막 소멸
+- 자석 효과: update마다 범위 내 아이템이 공룡 쪽으로 이동
 
 reviewer 참고:
-- Enemy.js: Phaser.Physics.Arcade.Sprite 상속, setup()으로 풀링 재활용
-- _onHitEnemy: body.bottom <= enemy.body.top + 15 으로 밟기 판정 (여유 15px)
-- EnemyManager: ObstacleManager와 동일 패턴 (풀링 + cleanup)
-- 텍스처: 2프레임 스프라이트시트, generateFrameNumbers로 애니메이션
+- Item.js: Obstacle/Enemy와 동일 풀링 패턴 (30개 풀, setup/deactivate/cleanup)
+- QuestionBlock: hit()이 파워업 종류 string을 반환 → GameScene에서 아이템 스폰
+- Dino.clearPowerUp: blinkTimer 유무로 피격무적과 파워업무적을 구분
+- 자석 효과: GameScene update()에서 직접 좌표 이동 (물리 velocity가 아닌 직접 이동)
 
 ## 기획설계 (planner-architect)
 
@@ -349,50 +350,56 @@ reviewer 참고:
 
 ## 테스트 결과 (tester)
 
-### P2 적 캐릭터 + 밟기/슬라이드 공격 빌드/코드 검증 (2026-03-28)
+### P3 아이템 5종 + 물음표 블록 + 파워업 빌드/코드 검증 (2026-03-28)
 
 | # | 테스트 항목 | 결과 | 비고 |
 |---|-----------|------|------|
-| 1 | npm run build 성공 | PASS | 28 modules, 681ms, chunk 1280KB |
-| 2 | enemies.js: 9종 적 데이터 | PASS | ENEMIES 객체 9개 키, width/height/color/speed/points 완비 |
-| 2a | enemies.js: ground/flying 타입 구분 | PASS | ground 5종(전갈,애벌레,불꽃슬라임,게,구름요정), flying 4종(박쥐,작은용,복어,독수리) |
-| 2b | enemies.js: WORLD_ENEMIES 매핑 | PASS | W1=[], W2=[전갈], W3~6=[ground+flying] |
-| 2c | enemies.js: flying 전용 필드 | PASS | flyHeight(0.4~0.5), amplitude(20~35) 모든 flying 적에 존재 |
-| 3 | Enemy.js: createAllEnemyTextures | PASS | 9종 순회, 2프레임 스프라이트시트, generateTexture+anims.create |
-| 3a | Enemy.js: 9종 그리기 함수 | PASS | _drawScorpion~_drawEagle 9개 함수, alt 파라미터로 2프레임 분기 |
-| 3b | Enemy.js: _drawEye 공통 함수 | PASS | 흰자+외곽+동공+하이라이트, 모든 적에서 호출 |
-| 4 | Enemy.js: Enemy 클래스 | PASS | Phaser.Physics.Arcade.Sprite 상속, allowGravity=false, immovable=true |
-| 4a | Enemy.js: setup() 풀링 재활용 | PASS | 텍스처/위치/속도/히트박스/애니메이션 재설정, 충돌박스 60% 관대 |
-| 4b | Enemy.js: updateMovement() | PASS | flying만 사인파 적용, flyTime 누적 + amplitude 사용 |
-| 4c | Enemy.js: defeat() | PASS | alive=false, body.enable=false, scaleY->0 트윈 후 비활성화 |
-| 5 | Enemy.js: EnemyManager | PASS | physics.add.group, setWorld(), spawnEnemy(), update(), cleanup() |
-| 5a | EnemyManager: setWorld() | PASS | WORLD_ENEMIES[worldId] 참조, 월드1은 빈 배열 |
-| 5b | EnemyManager: spawnEnemy() | PASS | ground=groundY-h/2, flying=height*flyHeight, 풀링 getFirstDead |
-| 5c | EnemyManager: cleanup() | PASS | x < -60 이면 비활성화+body.enable=false |
-| 6 | EffectManager.js: showDefeatEffect | PASS | 별 5~8개 파티클 + "퍽!" 텍스트 트윈, depth 20~21 |
-| 6a | EffectManager.js: showScorePopup | PASS | "+N" 텍스트, 위로 떠오르며 800ms 후 destroy |
-| 7 | worlds.js: enemies 배열 추가 | PASS | 6개 월드 모두 enemies 필드 존재, enemies.js와 키 일치 |
-| 8 | BootScene.js: 적 텍스처 생성 | PASS | import + 로딩 단계 3번째("적 캐릭터 그리는 중...") |
-| 9 | GameScene.js: EnemyManager 생성 | PASS | 104행, new EnemyManager(this, worldData.id) |
-| 9a | GameScene.js: EffectManager 생성 | PASS | 107행, new EffectManager(this) |
-| 9b | GameScene.js: overlap 충돌 등록 | PASS | dino vs enemyManager.group -> _onHitEnemy |
-| 9c | GameScene.js: 밟기 판정 | PASS | velocity.y>0 && body.bottom<=enemy.body.top+15 |
-| 9d | GameScene.js: 슬라이드 공격 판정 | PASS | dino.isSliding && enemy.enemyData.type==='ground' |
-| 9e | GameScene.js: 처치 체인 | PASS | defeat()+showDefeatEffect()+showScorePopup()+점수추가+playEnemyDefeat() |
-| 9f | GameScene.js: 밟기 바운스 | PASS | isStomping이면 setVelocityY(-250) |
-| 9g | GameScene.js: 피격 처리 | PASS | 밟기/슬라이드 아닌 경우 -> dino.hit() -> heartHUD.takeDamage() |
-| 9h | GameScene.js: _trySpawnEnemy | PASS | 35%+월드당3% 확률, nextEnemyDelay 간격 |
-| 9i | GameScene.js: update에서 enemy 갱신 | PASS | enemyManager.update(delta)+cleanup() 호출 |
-| 10 | SoundGenerator.js: playEnemyDefeat | PASS | 타격음 400Hz + 80ms 후 띵 800Hz |
-| 11 | import/export 정합성 | PASS | 빌드 28모듈 성공, 모든 import/export 쌍 확인 |
+| 1 | npm run build 성공 | PASS | 31 modules, 662ms, chunk 1292KB |
+| 2 | Item.js: 5종 텍스처 생성 | PASS | star(30x30 오각별), heart(25x25), invincible(35x35+무지개테두리), magnet(30x30 U자석), shield(30x30 방패) |
+| 2a | Item.js: createAllItemTextures | PASS | 5개 내부함수 순차호출, generateTexture 후 graphics.destroy() |
+| 2b | Item.js: Item 클래스 | PASS | Phaser.Physics.Arcade.Sprite 상속, allowGravity=false, depth=4 |
+| 2c | Item.js: setup() 풀링 재활용 | PASS | type별 텍스처 변경, velocityX, 히트박스 80%, floatTween(위아래 8px) |
+| 2d | Item.js: collect() 수집 이펙트 | PASS | scale 1.5+alpha 0 트윈 200ms, onComplete에서 비활성화+velocity 리셋 |
+| 2e | Item.js: deactivate() | PASS | floatTween destroy+비활성화+velocity 리셋 |
+| 2f | Item.js: ItemManager 풀링 | PASS | physics.add.group maxSize=30, 미리 30개 생성, spawnItem/spawnStarLine/cleanup |
+| 2g | ItemManager: spawnStarLine | PASS | 3~5개 별, spacing=35px, sin 아치형 높이 60px, groundY-80~140 |
+| 2h | ItemManager: cleanup | PASS | x < -50 비활성화 |
+| 3 | QuestionBlock.js: 텍스처 생성 | PASS | qblock_question(노란 40x40+"?" 모양), qblock_used(회색), qblock_active(미사용 여분) |
+| 3a | QuestionBlock.js: QuestionBlock 클래스 | PASS | allowGravity=false, immovable=true, depth=4, isUsed 플래그 |
+| 3b | QuestionBlock.js: setup() | PASS | 텍스처 qblock_question, isUsed=false, hitbox 36x36 |
+| 3c | QuestionBlock.js: hit() 메서드 | PASS | isUsed 중복방지, 텍스처->qblock_used, 위로15px yoyo 트윈, 확률분배(40%/30%/30%) |
+| 3d | QuestionBlock.js: QuestionBlockManager | PASS | maxSize=5, spawnBlock(groundY*HEIGHT_RATIO), cleanup x<-50 |
+| 4 | PowerUpHUD.js: 생성자 | PASS | bg/icon/label/barBg/barFill 5개 UI요소, depth=10, 50ms 타이머 갱신 |
+| 4a | PowerUpHUD.js: show() | PASS | type별 아이콘+라벨+배경+테두리 색상, shield는 바 숨김 |
+| 4b | PowerUpHUD.js: hide() | PASS | 5개 UI요소 모두 setVisible(false), currentType=null |
+| 4c | PowerUpHUD.js: _update() | PASS | remaining 계산, barFill 너비 갱신, 2초남으면 아이콘 깜빡(sin 기반) |
+| 4d | PowerUpHUD.js: destroy() | PASS | 타이머+5개 UI요소 모두 destroy |
+| 5 | config.js: ITEMS 상수 | PASS | STAR_POINTS=1, SPAWN_CHANCE=0.4, HEART_CHANCE=0.05, POWERUP_DURATION=5000, MAGNET_RANGE=150, MAGNET_SPEED=5 |
+| 5a | config.js: QUESTION_BLOCK 상수 | PASS | SPAWN_CHANCE=0.15, HEIGHT_RATIO=0.5 |
+| 6 | Dino.js: applyPowerUp() | PASS | clearPowerUp 선호출(중복방지), invincible(금색+5s타이머), magnet(보라+5s타이머), shield(파란+무기한) |
+| 6a | Dino.js: clearPowerUp() | PASS | invincible이면 blinkTimer 없을때만 isInvincible=false, powerUp/hasShield null, 틴트제거, 타이머 destroy |
+| 6b | Dino.js: hit()내 방어막 처리 | PASS | hasShield true이면 clearPowerUp+파란플래시+return false(피격무시) |
+| 6c | Dino.js: fall()내 파워업 정리 | PASS | clearPowerUp() 호출 확인 |
+| 7 | GameScene.js: 매니저 생성 | PASS | ItemManager+QuestionBlockManager+PowerUpHUD 3개 생성 |
+| 7a | GameScene.js: 충돌 등록 | PASS | dino vs itemManager.group->_onCollectItem, dino vs questionBlockManager.group->_onHitBlock |
+| 7b | GameScene.js: _onCollectItem | PASS | star(+1점+클리어체크), heart(heal+sound), 파워업3종(applyPowerUp+HUD show) + item.collect() |
+| 7c | GameScene.js: _onHitBlock | PASS | isFromBelow 판정(velocity.y<0+top<=bottom+10), block.hit()호출, 파워업아이템 팝업(위로30px yoyo) |
+| 7d | GameScene.js: 자석 효과 | PASS | update에서 dino.powerUp==='magnet'일 때 MAGNET_RANGE내 아이템을 MAGNET_SPEED로 직접좌표이동 |
+| 7e | GameScene.js: 스폰 연동 | PASS | 장애물 스폰시 40%별줄/5%하트/15%블록 동시 스폰, itemX=width+200 |
+| 7f | GameScene.js: cleanup 호출 | PASS | update에서 itemManager.cleanup()+questionBlockManager.cleanup() 호출 |
+| 8 | BootScene.js: 텍스처 로딩 | PASS | import 2개(createAllItemTextures, createQuestionBlockTextures) + 로딩단계 추가 |
+| 9 | SoundGenerator.js: 3개 효과음 | PASS | playPowerUp(도미솔 화음), playItemCollect(1000-1200Hz 짧은 띵), playBlockHit(통통+띵) |
+| 10 | import/export 정합성 | PASS | 빌드 31모듈 성공, 신규3파일 export + 수정5파일 import 모두 정상 |
 
 ### 종합
 
-총 **32개** 항목 중 **32개 통과 / 0개 실패**
+총 **36개** 항목 중 **36개 통과 / 0개 실패**
 
-빌드 성공. P2(적 캐릭터 9종 + 밟기/슬라이드 공격) 7파일 모두 코드상 정상.
-- enemies.js: 9종 데이터 완비, ground 5종 + flying 4종, WORLD_ENEMIES 월드별 매핑 정상
-- Enemy.js: 텍스처 9종 생성 + Enemy 클래스(풀링 재활용) + EnemyManager(스폰/업데이트/클린업)
-- EffectManager.js: 별 파티클 + "퍽!" + "+N" 점수 팝업, 트윈 후 destroy
-- GameScene.js: 밟기(velocity.y>0+top비교)/슬라이드(isSliding+ground)/피격 3분기 정상
-- 기존 P1 시스템(하트/무적/슬라이드)과 자연스럽게 연동됨
+빌드 성공. P3(아이템 5종 + 물음표 블록 + 파워업) 8파일 모두 코드상 정상.
+- Item.js: 5종 텍스처 + Item(collect/deactivate) + ItemManager(풀링30개, spawnStarLine 아치형)
+- QuestionBlock.js: 2종 텍스처 + QuestionBlock(hit->파워업 반환) + Manager(풀링5개)
+- PowerUpHUD.js: 아이콘+시간바+깜빡경고, shield는 바 없이 고정표시
+- config.js: ITEMS 6개 + QUESTION_BLOCK 2개 상수 정상
+- Dino.js: applyPowerUp/clearPowerUp 3종 분기 + 방어막 hit 처리 + fall 정리
+- GameScene.js: 충돌2건 + 자석효과(직접좌표이동) + 스폰연동(3종확률) + cleanup
+- 기존 P1/P2 시스템과 자연스럽게 연동됨 (하트회복, 무적중복방지 등)

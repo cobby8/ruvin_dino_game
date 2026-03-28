@@ -25,6 +25,9 @@ import { DEFAULT_DIFFICULTY } from '../data/difficulties.js';
 import { HeartHUD } from '../objects/HeartHUD.js';
 import { EnemyManager } from '../objects/Enemy.js';
 import { EffectManager } from '../objects/EffectManager.js';
+import { ItemManager } from '../objects/Item.js';
+import { QuestionBlockManager } from '../objects/QuestionBlock.js';
+import { PowerUpHUD } from '../objects/PowerUpHUD.js';
 import { getStage, getStageTarget } from '../data/stages.js';
 import { getWorld } from '../data/worlds.js';
 
@@ -105,6 +108,33 @@ export class GameScene extends Phaser.Scene {
 
     // === [P2] 이펙트 매니저 (처치 이펙트 + 점수 팝업) ===
     this.effectManager = new EffectManager(this);
+
+    // === [P3] 아이템 매니저 (별, 하트, 파워업 아이템 관리) ===
+    this.itemManager = new ItemManager(this);
+
+    // === [P3] 물음표 블록 매니저 ===
+    this.questionBlockManager = new QuestionBlockManager(this);
+
+    // === [P3] 파워업 HUD (화면 우측 상단) ===
+    this.powerUpHUD = new PowerUpHUD(this);
+
+    // === [P3] 공룡 vs 아이템 충돌 (닿으면 수집) ===
+    this.physics.add.overlap(
+      this.dino,
+      this.itemManager.group,
+      this._onCollectItem,
+      null,
+      this
+    );
+
+    // === [P3] 공룡 vs 물음표 블록 충돌 (아래에서 머리로 침) ===
+    this.physics.add.overlap(
+      this.dino,
+      this.questionBlockManager.group,
+      this._onHitBlock,
+      null,
+      this
+    );
 
     // === [P2] 적 스폰 제어 변수 ===
     this.lastEnemyTime = 0;              // 마지막 적 스폰 시각
@@ -249,6 +279,29 @@ export class GameScene extends Phaser.Scene {
     this.enemyManager.update(delta);
     this.enemyManager.cleanup();
 
+    // === [P3] 아이템/블록 정리 (화면 밖 비활성화) ===
+    this.itemManager.cleanup();
+    this.questionBlockManager.cleanup();
+
+    // === [P3] 자석 파워업: 범위 내 아이템을 공룡 쪽으로 끌어당김 ===
+    if (this.dino.powerUp === 'magnet') {
+      this.itemManager.group.getChildren().forEach(item => {
+        if (item.active) {
+          const dist = Phaser.Math.Distance.Between(
+            this.dino.x, this.dino.y, item.x, item.y
+          );
+          if (dist < GAME.ITEMS.MAGNET_RANGE) {
+            // 공룡 방향으로 끌어당기기
+            const angle = Phaser.Math.Angle.Between(
+              item.x, item.y, this.dino.x, this.dino.y
+            );
+            item.x += Math.cos(angle) * GAME.ITEMS.MAGNET_SPEED;
+            item.y += Math.sin(angle) * GAME.ITEMS.MAGNET_SPEED;
+          }
+        }
+      });
+    }
+
     // === [P2] 적 스폰 타이머 ===
     if (time - this.lastEnemyTime > this.nextEnemyDelay) {
       this._trySpawnEnemy(time);
@@ -287,10 +340,30 @@ export class GameScene extends Phaser.Scene {
     });
   }
 
-  /** 장애물 하나 생성 */
+  /** 장애물 하나 생성 + [P3] 아이템/블록 스폰 */
   _spawnObstacle() {
     const { width } = this.scale;
     this.obstacleManager.spawn(width + 50, this.groundY, this.currentSpeed);
+
+    // === [P3] 장애물과 함께 아이템/블록 스폰 ===
+    // 장애물 뒤쪽(더 오른쪽)에 아이템을 배치하여 보상으로 느끼게 함
+    const itemX = width + 200; // 장애물보다 150px 뒤에
+
+    // 40% 확률로 별 3~5개를 아치형으로 배치
+    if (Math.random() < GAME.ITEMS.SPAWN_CHANCE) {
+      this.itemManager.spawnStarLine(itemX, this.groundY, this.currentSpeed);
+    }
+
+    // 5% 확률로 하트 아이템 (높은 곳에 단독 배치)
+    if (Math.random() < GAME.ITEMS.HEART_CHANCE) {
+      const heartY = this.groundY - 120 - Math.random() * 60; // 바닥 위 120~180px
+      this.itemManager.spawnItem('heart', itemX + 50, heartY, this.currentSpeed);
+    }
+
+    // 15% 확률로 물음표 블록 배치
+    if (Math.random() < GAME.QUESTION_BLOCK.SPAWN_CHANCE) {
+      this.questionBlockManager.spawnBlock(itemX + 100, this.groundY, this.currentSpeed);
+    }
   }
 
   /**
@@ -494,6 +567,84 @@ export class GameScene extends Phaser.Scene {
     }
   }
 
+  // =========================================================
+  // [P3] 아이템 수집 + 물음표 블록 타격
+  // =========================================================
+
+  /**
+   * [P3] 아이템 수집 (공룡이 아이템에 닿았을 때)
+   * 아이템 종류에 따라 다른 효과 적용
+   */
+  _onCollectItem(dino, item) {
+    if (!item.active) return;
+
+    const type = item.itemType;
+
+    if (type === 'star') {
+      // 별: 점수 +1
+      this.score += GAME.ITEMS.STAR_POINTS;
+      this.stageHUD.updateScore(this.score);
+      soundGenerator.playItemCollect();
+
+      // 스테이지 클리어 체크
+      if (this.score >= this.targetScore) {
+        item.collect();
+        this._onStageClear();
+        return;
+      }
+    } else if (type === 'heart') {
+      // 하트: HP +1 회복
+      this.heartHUD.heal();
+      soundGenerator.playPowerUp();
+    } else if (type === 'invincible' || type === 'magnet' || type === 'shield') {
+      // 파워업 아이템: 공룡에 파워업 적용
+      dino.applyPowerUp(type);
+      soundGenerator.playPowerUp();
+      this.powerUpHUD.show(type);
+    }
+
+    // 수집 이펙트 (확대 후 사라짐)
+    item.collect();
+  }
+
+  /**
+   * [P3] 물음표 블록 타격 (공룡이 아래에서 머리로 침)
+   * 조건: 공룡이 상승 중(velocity.y < 0) + 공룡 top이 블록 bottom 근처
+   */
+  _onHitBlock(dino, block) {
+    if (!block.active || block.isUsed) return;
+
+    // 아래에서 머리로 치는 판정:
+    // 공룡이 위로 올라가는 중 (상승 중) + 공룡 머리가 블록 바닥 근처
+    const isFromBelow = dino.body.velocity.y < 0 &&
+                        dino.body.top <= block.body.bottom + 10;
+
+    if (!isFromBelow) return;
+
+    // 블록 타격! → 랜덤 파워업 아이템 팝업
+    const powerUpType = block.hit();
+    if (!powerUpType) return;
+
+    // 블록 타격 효과음
+    soundGenerator.playBlockHit();
+
+    // 블록 위에서 파워업 아이템 팝업 (위로 솟아오르는 느낌)
+    const itemX = block.x;
+    const itemY = block.y - 40; // 블록 위에서 팝업
+    const spawnedItem = this.itemManager.spawnItem(powerUpType, itemX, itemY, this.currentSpeed);
+
+    if (spawnedItem) {
+      // 아이템이 위로 톡 튀어오르는 애니메이션
+      this.tweens.add({
+        targets: spawnedItem,
+        y: itemY - 30,
+        duration: 300,
+        yoyo: true,
+        ease: 'Sine.easeOut',
+      });
+    }
+  }
+
   /** 칭찬 메시지 */
   _showPraise() {
     soundGenerator.playPraise();
@@ -547,6 +698,11 @@ export class GameScene extends Phaser.Scene {
     if (this.heartHUD) {
       this.heartHUD.destroy();
     }
+    // [P3] 파워업 HUD 정리
+    if (this.powerUpHUD) {
+      this.powerUpHUD.destroy();
+    }
     // [P2] 적 매니저는 group이 씬과 함께 정리됨
+    // [P3] 아이템/블록 매니저도 group이 씬과 함께 정리됨
   }
 }

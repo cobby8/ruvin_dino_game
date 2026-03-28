@@ -42,6 +42,22 @@ export const GAME = {
     HITBOX_HEIGHT_RATIO: 0.4,    // 슬라이드 중 히트박스 높이 비율 (몸을 40%로 낮춤)
   },
 
+  // === [P3] 수집 아이템 설정 ===
+  ITEMS: {
+    STAR_POINTS: 1,           // 별 하나 먹으면 +1점
+    SPAWN_CHANCE: 0.4,        // 장애물 스폰 시 아이템도 같이 나올 확률 (40%)
+    HEART_CHANCE: 0.05,       // 하트 아이템 출현 확률 (5%)
+    POWERUP_DURATION: 5000,   // 파워업 지속 시간 (5초)
+    MAGNET_RANGE: 150,        // 자석 흡수 범위 (px)
+    MAGNET_SPEED: 5,          // 자석 흡수 속도 (px/프레임)
+  },
+
+  // === [P3] 물음표 블록 설정 ===
+  QUESTION_BLOCK: {
+    SPAWN_CHANCE: 0.15,       // 블록 스폰 확률 (15%)
+    HEIGHT_RATIO: 0.5,        // 화면 높이의 50% 위치에 배치
+  },
+
   // === 칭찬 시스템 ===
   PRAISE_INTERVAL: 10,       // 10점마다 칭찬 메시지 표시
   PRAISE_MESSAGES: [

@@ -76,6 +76,11 @@ export class Dino extends Phaser.Physics.Arcade.Sprite {
     this.invincibleTimer = null;     // 무적 해제 타이머
     this.blinkTimer = null;          // 깜빡이 효과 타이머
     this.invincibleDuration = GAME.HEART.INVINCIBLE_DURATION; // 기본 2초, 난이도로 덮어씀
+
+    // === [P3] 파워업 시스템 속성 ===
+    this.powerUp = null;             // 현재 파워업 종류 ('invincible', 'magnet', 'shield', null)
+    this.powerUpTimer = null;        // 파워업 지속 타이머
+    this.hasShield = false;          // 방어막 보유 여부
   }
 
   /**
@@ -176,6 +181,64 @@ export class Dino extends Phaser.Physics.Arcade.Sprite {
   }
 
   // =========================================================
+  // [P3] 파워업 시스템
+  // =========================================================
+
+  /**
+   * 파워업 적용 (아이템 수집 또는 물음표 블록에서 획득)
+   * 이전 파워업이 있으면 먼저 제거 후 새로 적용.
+   * @param {string} type - 'invincible', 'magnet', 'shield'
+   */
+  applyPowerUp(type) {
+    // 이전 파워업 제거 (중복 적용 방지)
+    this.clearPowerUp();
+
+    if (type === 'invincible') {
+      // 무적별: 5초간 무적 + 금색 빛
+      this.powerUp = 'invincible';
+      this.isInvincible = true;
+      this.setTint(0xFFD700); // 금색 틴트
+
+      this.powerUpTimer = this.scene.time.delayedCall(GAME.ITEMS.POWERUP_DURATION, () => {
+        this.clearPowerUp();
+      });
+    } else if (type === 'magnet') {
+      // 자석: 5초간 아이템 자동 흡수 (GameScene update에서 처리)
+      this.powerUp = 'magnet';
+      this.setTint(0x9B59B6); // 보라색 틴트
+
+      this.powerUpTimer = this.scene.time.delayedCall(GAME.ITEMS.POWERUP_DURATION, () => {
+        this.clearPowerUp();
+      });
+    } else if (type === 'shield') {
+      // 방어막: 다음 1번 피격 무시
+      this.powerUp = 'shield';
+      this.hasShield = true;
+      this.setTint(0x4EAEFF); // 파란색 틴트
+      // 방어막은 시간 제한 없음 (1회 피격 시 소멸)
+    }
+  }
+
+  /**
+   * 파워업 해제 (시간 종료 또는 새 파워업 적용 시)
+   */
+  clearPowerUp() {
+    // 무적별이었으면 무적 해제 (피격 무적과 구분: blinkTimer가 없으면 파워업 무적)
+    if (this.powerUp === 'invincible' && !this.blinkTimer) {
+      this.isInvincible = false;
+    }
+
+    this.powerUp = null;
+    this.hasShield = false;
+    this.clearTint(); // 틴트 제거
+
+    if (this.powerUpTimer) {
+      this.powerUpTimer.destroy();
+      this.powerUpTimer = null;
+    }
+  }
+
+  // =========================================================
   // [P1] 슬라이드(구르기) 시스템
   // =========================================================
 
@@ -249,8 +312,17 @@ export class Dino extends Phaser.Physics.Arcade.Sprite {
    * @returns {boolean} true=실제로 피격됨, false=무적이라 무시됨
    */
   hit() {
-    // 무적 상태면 피격 무시 (이미 한 대 맞은 직후)
+    // 무적 상태면 피격 무시 (이미 한 대 맞은 직후 또는 무적별 파워업)
     if (this.isInvincible) return false;
+
+    // [P3] 방어막이 있으면 방어막 소멸 + 피격 무시
+    if (this.hasShield) {
+      this.hasShield = false;
+      this.clearPowerUp();
+      // 방어막 깨지는 느낌: 파란색 플래시
+      this.scene.cameras.main.flash(150, 78, 174, 255);
+      return false; // 피격 무시됨
+    }
 
     // 슬라이드 강제 해제 (맞으면 일어남)
     if (this.isSliding) {
@@ -287,12 +359,15 @@ export class Dino extends Phaser.Physics.Arcade.Sprite {
    * 넘어짐 (게임오버 시 호출)
    */
   fall() {
-    // 슬라이드/무적 상태 모두 정리
+    // 슬라이드/무적/파워업 상태 모두 정리
     if (this.isSliding) this.endSlide();
     if (this.blinkTimer) { this.blinkTimer.destroy(); this.blinkTimer = null; }
     if (this.invincibleTimer) { this.invincibleTimer.destroy(); this.invincibleTimer = null; }
     this.isInvincible = false;
     this.setAlpha(1);
+
+    // [P3] 파워업 정리
+    this.clearPowerUp();
 
     this.play(`${this.dinoKey}_fall`);
   }
