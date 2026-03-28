@@ -519,14 +519,13 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
 
     if (useImage) {
       this.setTexture('img_enemies', ENEMY_FRAME_MAP[enemyKey]);
-      // 이미지 크기 1.5배 확대 (기존 3배에서 절반으로 축소)
-      const targetH = this.enemyData.height;
-      this.setScale((targetH / 720) * 1.5);
+      // 적 크기를 장애물과 비슷하게 (0.12 기준 = 약 86px 높이)
+      this.setScale(0.12);
     } else {
       const textureKey = `enemy_${enemyKey}`;
       this.setTexture(textureKey, 0);
-      // Graphics 텍스처도 1.5배 확대 (기존 3에서 절반으로 축소)
-      this.setScale(1.5, 1.5);
+      // Graphics 적도 장애물과 비슷한 크기 (원본 30~45px이라 2.5배해야 75~112px)
+      this.setScale(2.5, 2.5);
     }
 
     this.setPosition(x, y);
@@ -542,16 +541,16 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
     this.baseY = y;
     this.flyTime = Math.random() * Math.PI * 2; // 랜덤 시작 위상
 
-    // 충돌 박스 (관대하게, 6살 배려)
+    // 관대한 히트박스 (6살 배려: 중심부만 판정, 가장자리는 안전)
     // 이미지 사용 시 원본 크기 기준으로 설정 (스케일이 자동 적용됨)
     if (useImage) {
-      const bodyW = 160 * 0.6;
-      const bodyH = 720 * 0.6;
+      const bodyW = 160 * 0.4;
+      const bodyH = 720 * 0.4;
       this.body.setSize(bodyW, bodyH);
       this.body.setOffset((160 - bodyW) / 2, (720 - bodyH) / 2);
     } else {
-      const bodyW = this.enemyData.width * 0.6;
-      const bodyH = this.enemyData.height * 0.6;
+      const bodyW = this.enemyData.width * 0.4;
+      const bodyH = this.enemyData.height * 0.4;
       this.body.setSize(bodyW, bodyH);
       this.body.setOffset(
         (this.enemyData.width - bodyW) / 2,

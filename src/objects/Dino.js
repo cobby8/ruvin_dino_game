@@ -61,14 +61,13 @@ export class Dino extends Phaser.Physics.Arcade.Sprite {
     // (월드 하단 경계와 ground가 동시에 blocked.down을 true로 만들어 간섭 발생)
     this.body.setBounce(0);
 
-    // 실제 보이는 그래픽에 맞춘 히트박스 (PNG 투명 영역 제외)
-    // 공룡 그림이 프레임 중앙~하단에 약 55%x65% 차지
+    // 관대한 히트박스 (6살 배려: 몸 중심부만 판정)
     if (this.useImage) {
-      this.body.setSize(516 * 0.55, 512 * 0.65);
-      this.body.setOffset(516 * 0.225, 512 * 0.35);
+      this.body.setSize(516 * 0.4, 512 * 0.5);
+      this.body.setOffset(516 * 0.3, 512 * 0.45);
     } else {
-      this.body.setSize(GAME.DINO_SIZE * 0.55, GAME.DINO_SIZE * 0.65);
-      this.body.setOffset(GAME.DINO_SIZE * 0.225, GAME.DINO_SIZE * 0.35);
+      this.body.setSize(GAME.DINO_SIZE * 0.4, GAME.DINO_SIZE * 0.5);
+      this.body.setOffset(GAME.DINO_SIZE * 0.3, GAME.DINO_SIZE * 0.45);
     }
 
     // 달리기 애니메이션 시작
@@ -283,15 +282,15 @@ export class Dino extends Phaser.Physics.Arcade.Sprite {
 
     this.isSliding = true;
 
-    // 슬라이드 히트박스 (납작하게 엎드린 그래픽에 맞춤)
+    // 슬라이드 히트박스 (관대한 납작 판정 - 6살 배려)
     if (this.useImage) {
-      const slideHeight = 512 * 0.3;
-      this.body.setSize(516 * 0.6, slideHeight);
-      this.body.setOffset(516 * 0.2, 512 - slideHeight);
+      const slideHeight = 512 * 0.25;
+      this.body.setSize(516 * 0.45, slideHeight);
+      this.body.setOffset(516 * 0.275, 512 - slideHeight);
     } else {
-      const slideHeight = GAME.DINO_SIZE * 0.3;
-      this.body.setSize(GAME.DINO_SIZE * 0.6, slideHeight);
-      this.body.setOffset(GAME.DINO_SIZE * 0.2, GAME.DINO_SIZE - slideHeight);
+      const slideHeight = GAME.DINO_SIZE * 0.25;
+      this.body.setSize(GAME.DINO_SIZE * 0.45, slideHeight);
+      this.body.setOffset(GAME.DINO_SIZE * 0.275, GAME.DINO_SIZE - slideHeight);
     }
 
     // 슬라이드 애니메이션 재생 (납작한 포즈 - scaleY 변경 없이 애니메이션으로 표현)
@@ -313,13 +312,13 @@ export class Dino extends Phaser.Physics.Arcade.Sprite {
     if (!this.isSliding) return;
     this.isSliding = false;
 
-    // 히트박스 원래대로 복원 (실제 보이는 그래픽에 맞춤)
+    // 히트박스 원래대로 복원 (관대한 중심부 판정)
     if (this.useImage) {
-      this.body.setSize(516 * 0.55, 512 * 0.65);
-      this.body.setOffset(516 * 0.225, 512 * 0.35);
+      this.body.setSize(516 * 0.4, 512 * 0.5);
+      this.body.setOffset(516 * 0.3, 512 * 0.45);
     } else {
-      this.body.setSize(GAME.DINO_SIZE * 0.55, GAME.DINO_SIZE * 0.65);
-      this.body.setOffset(GAME.DINO_SIZE * 0.225, GAME.DINO_SIZE * 0.35);
+      this.body.setSize(GAME.DINO_SIZE * 0.4, GAME.DINO_SIZE * 0.5);
+      this.body.setOffset(GAME.DINO_SIZE * 0.3, GAME.DINO_SIZE * 0.45);
     }
 
     // 타이머 정리

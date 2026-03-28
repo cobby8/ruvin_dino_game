@@ -668,11 +668,11 @@ export class ObstacleManager {
     obstacle.body.setImmovable(true);
     obstacle.scored = false;
 
-    // 실제 보이는 그래픽에 맞춘 히트박스 (PNG 투명 영역 제외)
-    const bodyW = obstacle.width * 0.65;
-    const bodyH = obstacle.height * 0.75;
+    // 관대한 히트박스 (6살 배려: 그래픽 안쪽 중심부만 판정)
+    const bodyW = obstacle.width * 0.45;
+    const bodyH = obstacle.height * 0.55;
     obstacle.body.setSize(bodyW, bodyH);
-    obstacle.body.setOffset((obstacle.width - bodyW) / 2, (obstacle.height - bodyH) * 0.6);
+    obstacle.body.setOffset((obstacle.width - bodyW) / 2, (obstacle.height - bodyH) * 0.7);
 
     return obstacle;
   }
