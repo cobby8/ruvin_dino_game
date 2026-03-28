@@ -2,15 +2,17 @@
  * Dino.js - 공룡 캐릭터 클래스
  * 플레이어가 조종하는 공룡. 달리기, 점프(3종), 넘어짐 동작을 관리.
  *
- * 점프 시스템 (3종류 - 버튼 분리 방식):
- * - 낮은 점프: 왼쪽 터치 / Z키 (작은 장애물용)
- * - 높은 점프: 오른쪽 터치 / X키 / SPACE (큰 장애물용, LOW의 160%)
- * - 2단 점프: 공중에서 아무 곳 터치 (긴급 회피용)
+ * 점프 시스템 (극단 단순화):
+ * - 화면 아무 곳 터치 / SPACE / Z / X = 점프 (바닥에서)
+ * - 공중에서 한 번 더 터치 = 2단 점프
+ * - 높은/낮은 구분 없음! 항상 LOW_VELOCITY 사용
  *
- * 작동 방식: "즉시 판정" (홀드 부스트 폐지)
- * 1. 왼쪽 터치/Z키 → 즉시 낮은 점프 (LOW_VELOCITY)
- * 2. 오른쪽 터치/X키/SPACE → 즉시 높은 점프 (HIGH_VELOCITY)
- * 3. 공중에서 아무 곳 터치 → 2단 점프 발동
+ * 프테라노 특수능력: 비행 (점프 정점에서 터치 유지 시 3초간 공중 정지)
+ *
+ * 작동 방식:
+ * 1. 아무 곳 터치 → 즉시 낮은 점프 (LOW_VELOCITY)
+ * 2. 공중에서 아무 곳 터치 → 2단 점프 발동
+ * 3. 프테라노: 정점에서 터치 유지 → 3초 비행
  *
  * [P1 추가] 슬라이드(구르기) + 피격 무적:
  * - 아래 키 → 납작하게 엎드림 (히트박스 높이 40%)
@@ -85,6 +87,12 @@ export class Dino extends Phaser.Physics.Arcade.Sprite {
     this.doubleJumpLimit = Infinity; // 스테이지 내 2단 점프 최대 횟수
     this.doubleJumpCount = 0;        // 현재까지 사용한 2단 점프 횟수
 
+    // === 프테라노 비행 시스템 속성 ===
+    this.isFlying = false;           // 비행 중인지 (프테라노 전용)
+    this.flyTimer = null;            // 비행 지속 타이머
+    this.flyDuration = 3000;         // 비행 지속 시간 (3초)
+    this.isHoldingJump = false;      // GameScene에서 매 프레임 설정 (터치 누르고 있는지)
+
     // === [P1] 슬라이드 시스템 속성 ===
     this.isSliding = false;          // 슬라이드(구르기) 중인지
     this.slideTimer = null;          // 슬라이드 자동 해제 타이머
@@ -124,27 +132,25 @@ export class Dino extends Phaser.Physics.Arcade.Sprite {
   }
 
   /**
-   * 점프 시작 (버튼 누르는 순간 = pointerdown / keydown)
-   * - 바닥에 있으면: isHigh에 따라 낮은/높은 점프 즉시 발동
-   * - 공중에 있으면: isHigh 무관하게 2단 점프 시도
-   * @param {boolean} isHigh - true=높은 점프(오른쪽/X키), false=낮은 점프(왼쪽/Z키)
+   * 점프 시작 (터치 / SPACE / Z / X 모두 동일)
+   * - 바닥에 있으면: 항상 낮은 점프 (높은/낮은 구분 없음!)
+   * - 공중에 있으면: 2단 점프 시도
+   * - 비행 중이면: 무시 (프테라노가 날고 있을 때 점프 불가)
+   * @param {boolean} isHigh - 미사용 (하위 호환용으로 파라미터만 유지)
    */
   startJump(isHigh = false) {
     // 슬라이드 중에는 점프 불가 (엎드린 상태에서 뛸 수 없음)
     if (this.isSliding) return;
+    // 비행 중에는 점프 불가 (프테라노가 날고 있을 때)
+    if (this.isFlying) return;
 
     if (this.body.blocked.down) {
-      // 바닥에 있으면 → isHigh에 따라 낮은/높은 점프 즉시 실행
+      // 바닥 → 항상 낮은 점프 (isHigh 무시! 단순화!)
+      // highJump 능력(브라키오)이 있으면 1.2배 보너스
       const jumpMulti = this.ability === 'highJump' ? 1.2 : 1.0;
-      const velocity = isHigh ? GAME.JUMP.HIGH_VELOCITY : GAME.JUMP.LOW_VELOCITY;
-      this.body.setVelocityY(velocity * jumpMulti);
+      this.body.setVelocityY(GAME.JUMP.LOW_VELOCITY * jumpMulti);
       this.play(`${this.dinoKey}_jump`);
       soundGenerator.playJump();
-
-      // 높은 점프 시 바람 이펙트 (시각적 피드백)
-      if (isHigh && this.scene.effectManager) {
-        this.scene.effectManager.showHighJumpEffect(this.x, this.y);
-      }
 
       this.isDoubleJumpUsed = false; // 새 점프이므로 2단 점프 리셋
     } else if (!this.isDoubleJumpUsed) {
@@ -194,6 +200,9 @@ export class Dino extends Phaser.Physics.Arcade.Sprite {
     this._isJumping = false;         // 착지! 공중 상태 해제
     this.isJumpHeld = false;
     this.isDoubleJumpUsed = false;
+
+    // 비행 중이었으면 강제 종료 (프테라노)
+    if (this.isFlying) this.endFly();
 
     // 점프 애니메이션 → 달리기 애니메이션으로 전환
     // (슬라이드 중이면 슬라이드 애니메이션 유지)
@@ -386,7 +395,8 @@ export class Dino extends Phaser.Physics.Arcade.Sprite {
    * 넘어짐 (게임오버 시 호출)
    */
   fall() {
-    // 슬라이드/무적/파워업 상태 모두 정리
+    // 슬라이드/무적/파워업/비행 상태 모두 정리
+    if (this.isFlying) this.endFly();
     if (this.isSliding) this.endSlide();
     if (this.blinkTimer) { this.blinkTimer.destroy(); this.blinkTimer = null; }
     if (this.invincibleTimer) { this.invincibleTimer.destroy(); this.invincibleTimer = null; }
@@ -400,26 +410,66 @@ export class Dino extends Phaser.Physics.Arcade.Sprite {
   }
 
   /**
-   * 매 프레임 호출: 착지 감지
-   * GameScene에서 직접 onLand()를 호출하므로, 여기서는 별도 처리 안 함
-   * (하위 호환을 위해 메서드는 유지)
+   * 매 프레임 호출: 프테라노 비행 체크
+   * isHoldingJump은 GameScene에서 매 프레임 설정 (터치 누르고 있는지)
    */
   update() {
-    // 착지 감지는 GameScene에서 body.blocked.down 체크 후 onLand() 호출로 처리
-
-    // 프테라노 특수능력(활강): 공중에서 하강 중일 때 중력을 50%로 줄여
-    // 날개가 있어서 천천히 내려옴 (파라슈트처럼!)
-    if (this.ability === 'glide' && !this.body.blocked.down) {
-      if (this.body.velocity.y > 0) {
-        // 하강 중이면 중력을 절반으로 줄임 (기본 800 → 400)
-        this.body.setGravityY(GAME.GRAVITY * 0.5);
-      } else {
-        // 상승 중에는 기본 중력 유지 (점프 높이에는 영향 없음)
-        this.body.setGravityY(GAME.GRAVITY);
+    // === 프테라노 비행 능력: 점프 정점에서 터치 유지 시 3초간 공중 정지 ===
+    // (기존 glide=하강 중 중력 50%를 완전 교체)
+    if (this.ability === 'glide' && !this.body.blocked.down && !this.isFlying) {
+      // 정점 근처: velocity.y가 -50 ~ 50 사이 (거의 멈춤 = 점프 꼭대기)
+      // 이 순간 터치를 누르고 있으면 비행 모드 발동!
+      if (Math.abs(this.body.velocity.y) < 50 && this.isHoldingJump) {
+        this.startFly();
       }
-    } else if (this.ability === 'glide' && this.body.blocked.down) {
-      // 착지하면 기본 중력으로 복원
-      this.body.setGravityY(GAME.GRAVITY);
+    }
+
+    // 비행 중인데 손을 떼면 → 비행 즉시 종료 (착륙 시작)
+    if (this.isFlying && !this.isHoldingJump) {
+      this.endFly();
+    }
+
+    // 착지하면 비행 강제 종료 (안전장치)
+    if (this.isFlying && this.body.blocked.down) {
+      this.endFly();
+    }
+  }
+
+  // =========================================================
+  // 프테라노 비행 시스템
+  // =========================================================
+
+  /**
+   * 비행 시작: 중력 0 + 수직속도 0 → 공중에 멈춤!
+   * 프테라노의 날개로 3초간 떠있는 능력
+   */
+  startFly() {
+    if (this.ability !== 'glide') return;   // 프테라노만 가능
+    if (this.isFlying) return;              // 이미 비행 중이면 무시
+    if (this.body.blocked.down) return;     // 바닥에서는 비행 불가
+
+    this.isFlying = true;
+    this.body.setVelocityY(0);              // 수직 속도 0 (떠있기)
+    this.body.setGravityY(0);               // 중력 0 (안 떨어짐)
+
+    // 3초 후 자동 종료 (무한 비행 방지)
+    this.flyTimer = this.scene.time.delayedCall(this.flyDuration, () => {
+      this.endFly();
+    });
+  }
+
+  /**
+   * 비행 종료: 중력 복원 → 하강 시작
+   */
+  endFly() {
+    if (!this.isFlying) return;
+    this.isFlying = false;
+    this.body.setGravityY(GAME.GRAVITY);    // 중력 복원 → 떨어지기 시작
+
+    // 타이머 정리
+    if (this.flyTimer) {
+      this.flyTimer.destroy();
+      this.flyTimer = null;
     }
   }
 }
