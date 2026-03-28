@@ -23,8 +23,37 @@
 | 2026-03-28 | 종합 개선 계획 수립 (재미+밸런스+그래픽, 20항목 로드맵) | 설계 완료 |
 | 2026-03-28 | 개선 페이즈1 구현 (콤보+파티클3종+화면전환+튜토리얼, 12파일) | 빌드 통과 |
 | 2026-03-28 | 개선 페이즈2 구현 (공룡능력4종+BGM다양화+밸런스+배경파티클, 6파일) | 빌드 통과 |
+| 2026-03-28 | AI 이미지 적용 1차 (리네임18개+preload+배경적용, 2파일수정) | 빌드 통과 |
 
 ## 구현 기록 (developer)
+
+### AI 생성 이미지 적용 - 1차 (파일 리네임 + preload + 배경) (2026-03-28)
+
+구현한 기능: AI 생성 이미지 파일 리네이밍 + BootScene preload 추가 + 배경 이미지 적용
+
+| 파일 경로 | 변경 내용 | 신규/수정 |
+|----------|----------|----------|
+| public/assets/dinos/*.jpg | 4개 파일 리네임 (brachio/trex/tricera/ptera) | 리네임 |
+| public/assets/backgrounds/*.jpg | 6개 파일 리네임 (world1~6) | 리네임 |
+| public/assets/obstacles/*.jpg | 6개 파일 리네임 (world1~6) | 리네임 |
+| public/assets/enemies/enemies.jpg | 1개 파일 리네임 | 리네임 |
+| public/assets/items/items.jpg | 1개 파일 리네임 | 리네임 |
+| src/scenes/BootScene.js | preload() 추가: 공룡/배경/장애물/적/아이템 이미지 로드 | 수정 |
+| src/objects/Background.js | AI 배경 이미지 지원: _setupBgImage + setWorld/resize 수정 | 수정 |
+
+tester 참고:
+- 게임 시작 시 배경이 AI 이미지로 표시되는지 확인 (6개 월드 모두)
+- 월드 변경 시 배경 이미지가 정상 교체되는지
+- 정상 동작: 빌드 통과, 기존 Graphics 배경은 AI 이미지 뒤에 숨겨짐
+- 주의: 공룡/장애물/적/아이템은 아직 이미지 미적용 (preload만 됨)
+
+reviewer 참고:
+- 이미지 크기: 공룡 2064x512(fw516), 배경 1376x768, 장애물 1792x592(fw597), 적 1447x720(fw160), 아이템 2928x352(fw366)
+- 장애물/적 frameWidth가 정확히 나누어떨어지지 않음 (AI 생성 한계). Phaser가 남는 픽셀 무시
+- JPG이므로 투명 배경 없음. 공룡/적/아이템은 체크무늬 배경이 보일 수 있어 나중에 PNG 교체 필요
+- Background.js: bgImage가 있으면 sky/clouds/mountains/grass를 setVisible(false)로 숨김
+
+---
 
 ### 개선 페이즈 4 전체 구현 (2026-03-28)
 

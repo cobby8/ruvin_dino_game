@@ -14,7 +14,22 @@
       "Bash(git push:*)",
       "Bash(git fetch:*)",
       "Bash(git pull:*)",
-      "Bash(npx cap:*)"
+      "Bash(npx cap:*)",
+      "Bash(mv \"Generated Image March 28, 2026 - 7_18PM.jpg\" brachio.jpg)",
+      "Bash(mv \"Generated Image March 28, 2026 - 7_19PM.jpg\" trex.jpg)",
+      "Bash(mv \"Generated Image March 28, 2026 - 7_19PM \\(1\\).jpg\" tricera.jpg)",
+      "Bash(mv \"Generated Image March 28, 2026 - 7_20PM.jpg\" ptera.jpg)",
+      "Bash(mv \"Generated Image March 28, 2026 - 7_20PM \\(1\\).jpg\" world1.jpg)",
+      "Bash(mv \"Generated Image March 28, 2026 - 7_20PM \\(2\\).jpg\" world2.jpg)",
+      "Bash(mv \"Generated Image March 28, 2026 - 7_21PM \\(1\\).jpg\" world4.jpg)",
+      "Bash(mv \"Generated Image March 28, 2026 - 7_21PM \\(2\\).jpg\" world5.jpg)",
+      "Bash(mv \"Generated Image March 28, 2026 - 7_21PM.jpg\" world3.jpg)",
+      "Bash(mv \"Generated Image March 28, 2026 - 7_24PM.jpg\" world1.jpg)",
+      "Bash(mv \"Generated Image March 28, 2026 - 7_26PM.jpg\" world4.jpg)",
+      "Bash(mv \"Generated Image March 28, 2026 - 7_26PM \\(1\\).jpg\" world5.jpg)",
+      "Bash(mv \"Generated Image March 28, 2026 - 7_27PM.jpg\" world6.jpg)",
+      "Bash(mv \"Generated Image March 28, 2026 - 7_28PM.jpg\" world3.jpg)",
+      "Bash(cd:*)"
     ]
   }
 }

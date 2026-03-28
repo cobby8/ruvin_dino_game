@@ -23,6 +23,44 @@ export class BootScene extends Phaser.Scene {
     super('BootScene');
   }
 
+  /**
+   * preload: AI 생성 이미지 파일을 미리 로드
+   * Phaser가 preload 완료 후 자동으로 create()를 호출함
+   */
+  preload() {
+    // === 공룡 스프라이트시트 (4프레임 가로 배열: 달리기/점프/슬라이드/넘어짐) ===
+    // 원본 크기 2064x512, 4등분 → frameWidth=516
+    this.load.spritesheet('img_brachio', 'assets/dinos/brachio.jpg', { frameWidth: 516, frameHeight: 512 });
+    this.load.spritesheet('img_trex', 'assets/dinos/trex.jpg', { frameWidth: 516, frameHeight: 512 });
+    this.load.spritesheet('img_tricera', 'assets/dinos/tricera.jpg', { frameWidth: 516, frameHeight: 512 });
+    this.load.spritesheet('img_ptera', 'assets/dinos/ptera.jpg', { frameWidth: 516, frameHeight: 512 });
+
+    // === 배경 이미지 (단일 이미지, 1376x768) ===
+    this.load.image('img_bg_world1', 'assets/backgrounds/world1.jpg');
+    this.load.image('img_bg_world2', 'assets/backgrounds/world2.jpg');
+    this.load.image('img_bg_world3', 'assets/backgrounds/world3.jpg');
+    this.load.image('img_bg_world4', 'assets/backgrounds/world4.jpg');
+    this.load.image('img_bg_world5', 'assets/backgrounds/world5.jpg');
+    this.load.image('img_bg_world6', 'assets/backgrounds/world6.jpg');
+
+    // === 장애물 스프라이트시트 (3프레임 가로 배열, 1792x592) ===
+    // 1792/3 = 597.3 → 597로 설정 (Phaser가 남는 픽셀 무시)
+    this.load.spritesheet('img_obs_world1', 'assets/obstacles/world1.jpg', { frameWidth: 597, frameHeight: 592 });
+    this.load.spritesheet('img_obs_world2', 'assets/obstacles/world2.jpg', { frameWidth: 597, frameHeight: 592 });
+    this.load.spritesheet('img_obs_world3', 'assets/obstacles/world3.jpg', { frameWidth: 597, frameHeight: 592 });
+    this.load.spritesheet('img_obs_world4', 'assets/obstacles/world4.jpg', { frameWidth: 597, frameHeight: 592 });
+    this.load.spritesheet('img_obs_world5', 'assets/obstacles/world5.jpg', { frameWidth: 597, frameHeight: 592 });
+    this.load.spritesheet('img_obs_world6', 'assets/obstacles/world6.jpg', { frameWidth: 597, frameHeight: 592 });
+
+    // === 적 스프라이트시트 (9프레임 가로 배열, 1447x720) ===
+    // 1447/9 = 160.7 → 160으로 설정
+    this.load.spritesheet('img_enemies', 'assets/enemies/enemies.jpg', { frameWidth: 160, frameHeight: 720 });
+
+    // === 아이템 스프라이트시트 (8프레임 가로 배열, 2928x352) ===
+    // 2928/8 = 366
+    this.load.spritesheet('img_items', 'assets/items/items.jpg', { frameWidth: 366, frameHeight: 352 });
+  }
+
   create() {
     const { width, height } = this.scale;
 

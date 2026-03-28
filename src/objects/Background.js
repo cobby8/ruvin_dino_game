@@ -341,6 +341,7 @@ export class Background {
     const { width, height } = scene.scale;
 
     // === depth 순서 규칙 ===
+    // -1: AI 배경 이미지 (가장 뒤, 전체 화면)
     // 0: 하늘 (가장 뒤)
     // 1: 구름
     // 2: 산 (원경)
@@ -348,6 +349,10 @@ export class Background {
     // 5: 장애물 (배경보다 반드시 앞!)
     // 6: 공룡 (장애물보다 앞)
     // 10: HUD/UI 텍스트
+
+    // === AI 배경 이미지 (있으면 전체 화면에 깔기) ===
+    this.bgImage = null; // AI 배경 이미지 참조
+    this._setupBgImage(worldId, width, height);
 
     // 하늘 레이어 (고정 배경, 가장 뒤)
     this.sky = scene.add.tileSprite(0, 0, width, height, `bg_sky_w${worldId}`);
@@ -372,6 +377,31 @@ export class Background {
     this.grass.setOrigin(0, 0);
     this.grass.setDepth(3);
     this.grassSpeed = 1.0;
+
+    // AI 배경 이미지가 있으면 기존 패럴랙스 레이어를 숨김
+    // (AI 이미지가 전체 배경을 대체하므로)
+    if (this.bgImage) {
+      this.sky.setVisible(false);
+      this.clouds.setVisible(false);
+      this.mountains.setVisible(false);
+      // 바닥(grass)은 유지: 게임 바닥 표시에 필요
+      this.grass.setVisible(false);
+    }
+  }
+
+  /**
+   * AI 배경 이미지 설정 헬퍼
+   * 이미지 텍스처가 로드되어 있으면 전체 화면에 표시
+   */
+  _setupBgImage(worldId, width, height) {
+    const imgKey = `img_bg_world${worldId}`;
+    // 텍스처가 존재하고 기본 '__MISSING' 텍스처가 아닌지 확인
+    if (this.scene.textures.exists(imgKey) && imgKey !== '__MISSING') {
+      this.bgImage = this.scene.add.image(width / 2, height / 2, imgKey);
+      this.bgImage.setDisplaySize(width, height); // 화면 크기에 맞춰 늘림
+      this.bgImage.setDepth(-1);                  // 모든 레이어 뒤에
+      this.bgImage.setScrollFactor(0);             // 카메라 따라가지 않음
+    }
   }
 
   /**
@@ -381,7 +411,38 @@ export class Background {
   setWorld(worldId) {
     if (this.currentWorldId === worldId) return;
     this.currentWorldId = worldId;
+    const { width, height } = this.scene.scale;
 
+    // AI 배경 이미지 교체
+    const imgKey = `img_bg_world${worldId}`;
+    if (this.scene.textures.exists(imgKey) && imgKey !== '__MISSING') {
+      // AI 이미지가 있는 월드 → 이미지 배경 사용
+      if (this.bgImage) {
+        // 기존 이미지 텍스처만 교체
+        this.bgImage.setTexture(imgKey);
+        this.bgImage.setDisplaySize(width, height);
+      } else {
+        // 이전 월드에 이미지가 없었으면 새로 생성
+        this._setupBgImage(worldId, width, height);
+      }
+      // 패럴랙스 레이어 숨김
+      this.sky.setVisible(false);
+      this.clouds.setVisible(false);
+      this.mountains.setVisible(false);
+      this.grass.setVisible(false);
+    } else {
+      // AI 이미지가 없는 월드 → 기존 Graphics 배경 사용
+      if (this.bgImage) {
+        this.bgImage.destroy();
+        this.bgImage = null;
+      }
+      this.sky.setVisible(true);
+      this.clouds.setVisible(true);
+      this.mountains.setVisible(true);
+      this.grass.setVisible(true);
+    }
+
+    // 패럴랙스 텍스처도 항상 업데이트 (숨겨져 있어도)
     this.sky.setTexture(`bg_sky_w${worldId}`);
     this.clouds.setTexture(`bg_cloud_w${worldId}`);
     this.mountains.setTexture(`bg_mountain_w${worldId}`);
@@ -413,8 +474,16 @@ export class Background {
    * 화면 크기 변경 시 레이어 크기 재조정
    */
   resize(width, groundY) {
+    const height = this.scene.scale.height;
+
+    // AI 배경 이미지 리사이즈
+    if (this.bgImage) {
+      this.bgImage.setPosition(width / 2, height / 2);
+      this.bgImage.setDisplaySize(width, height);
+    }
+
     this.sky.width = width;
-    this.sky.height = this.scene.scale.height;
+    this.sky.height = height;
     this.clouds.width = width;
     this.mountains.width = width;
     this.mountains.y = groundY - 180;
