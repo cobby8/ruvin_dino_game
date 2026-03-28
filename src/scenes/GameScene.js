@@ -280,77 +280,40 @@ export class GameScene extends Phaser.Scene {
    * 입력 설정: 터치 + 키보드 둘 다 지원
    */
   _setupInput() {
-    // === 터치/마우스: 화면 아무 곳 터치 = 점프 (극단 단순화!) ===
-    // 높은/낮은 구분 없음! 터치하면 점프, 공중이면 2단 점프
-    // 아래로 스와이프 = 슬라이드 (기존 유지)
-    this._pointerStartY = 0;
-    this._pointerStartTime = 0;
-    this._isPointerDown = false;     // 프테라노 비행용: 터치 누르고 있는지 추적
+    // === 터치/마우스 입력 (원래 패턴 그대로) ===
+    this._isPointerDown = false;     // 프테라노 비행용
+    this._pointerStartY = 0;        // 슬라이드 스와이프용
 
-    // === 화면 터치 = 점프 (단순! 버튼 영역 판정 제거) ===
     this.input.on('pointerdown', (pointer) => {
+      this._isPointerDown = true;
       this._pointerStartY = pointer.y;
-      this._pointerStartTime = Date.now();
-      this._isPointerDown = true;    // 프테라노 비행용: 누르고 있는지 추적
-
-      if (this.isGameOver || this.isStageClear) return;
-
-      // 화면 아무 곳 터치 = 점프 (6살도 이해 가능!)
-      this.dino.startJump(false);
+      if (!this.isGameOver && !this.isStageClear) {
+        this.dino.startJump();
+      }
     });
 
     this.input.on('pointerup', (pointer) => {
-      this._isPointerDown = false;   // 프테라노 비행용: 손 뗌
-
+      this._isPointerDown = false;
       if (!this.isGameOver && !this.isStageClear) {
-        // 아래로 50px 이상 스와이프 = 슬라이드 (기존 유지)
-        const deltaY = pointer.y - this._pointerStartY;
-        const elapsed = Date.now() - this._pointerStartTime;
-        if (deltaY > 50 && elapsed < 500) {
+        // 아래로 50px 이상 스와이프 = 슬라이드
+        if (pointer.y - this._pointerStartY > 50) {
           this.dino.slide();
         }
       }
     });
 
-    // === 키보드: SPACE/Z/X 모두 동일한 점프 (구분 없음!) ===
+    // === 키보드 (SPACE = 점프) ===
     this.spaceIsDown = false;
-    this._zIsDown = false;
-    this._xIsDown = false;
 
-    // Z키: 점프 (낮은/높은 구분 없이 동일)
-    this.input.keyboard.on('keydown-Z', (event) => {
-      if (this._zIsDown) return;
-      this._zIsDown = true;
-      if (!this.isGameOver && !this.isStageClear) {
-        this.dino.startJump(false);
-      }
-    });
-    this.input.keyboard.on('keyup-Z', () => {
-      this._zIsDown = false;
-    });
-
-    // X키: 점프 (Z키와 동일)
-    this.input.keyboard.on('keydown-X', (event) => {
-      if (this._xIsDown) return;
-      this._xIsDown = true;
-      if (!this.isGameOver && !this.isStageClear) {
-        this.dino.startJump(false);
-      }
-    });
-    this.input.keyboard.on('keyup-X', () => {
-      this._xIsDown = false;
-    });
-
-    // SPACE키: 점프 (Z/X키와 동일)
     this.input.keyboard.on('keydown-SPACE', (event) => {
       if (this.spaceIsDown) return;
       this.spaceIsDown = true;
       if (!this.isGameOver && !this.isStageClear) {
-        this.dino.startJump(false);
+        this.dino.startJump();
       }
       event.preventDefault();
     });
-    this.input.keyboard.on('keyup-SPACE', (event) => {
+    this.input.keyboard.on('keyup-SPACE', () => {
       this.spaceIsDown = false;
     });
 

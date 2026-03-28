@@ -139,27 +139,21 @@ export class Dino extends Phaser.Physics.Arcade.Sprite {
    * - 비행 중이면: 무시 (프테라노가 날고 있을 때 점프 불가)
    * @param {boolean} isHigh - 미사용 (하위 호환용으로 파라미터만 유지)
    */
-  startJump(isHigh = false) {
-    // 슬라이드 중에는 점프 불가 (엎드린 상태에서 뛸 수 없음)
+  startJump() {
+    // 슬라이드 중에는 점프 불가
     if (this.isSliding) return;
-    // 비행 중에는 점프 불가 (프테라노가 날고 있을 때)
+    // 비행 중에는 점프 불가 (프테라노 전용)
     if (this.isFlying) return;
 
-    const now = Date.now();
-
-    // 바닥 점프: blocked.down + 쿨다운(200ms) 경과
-    if (this.body.blocked.down && (now - this._lastJumpTime > 200)) {
+    if (this.body.blocked.down) {
+      // 바닥 → 점프!
       const jumpMulti = this.ability === 'highJump' ? 1.2 : 1.0;
       this.body.setVelocityY(GAME.JUMP.LOW_VELOCITY * jumpMulti);
       this.play(`${this.dinoKey}_jump`);
       soundGenerator.playJump();
-
-      this._lastJumpTime = now;
-      this._isJumping = true;
       this.isDoubleJumpUsed = false;
-    } else if (!this.isDoubleJumpUsed) {
-      // 바닥 점프가 아닌 모든 터치 → 2단 점프!
-      // (쿨다운이 바닥 재발동을 막으니, 나머지는 전부 공중 판정)
+    } else {
+      // 공중 → 2단 점프 시도 (doubleJump 내부에서 제한 체크)
       this.doubleJump();
     }
   }
