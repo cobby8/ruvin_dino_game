@@ -340,28 +340,37 @@ export class Background {
     this.currentWorldId = worldId;
     const { width, height } = scene.scale;
 
-    // 하늘 레이어 (고정 배경)
+    // === depth 순서 규칙 ===
+    // 0: 하늘 (가장 뒤)
+    // 1: 구름
+    // 2: 산 (원경)
+    // 3: 풀밭/바닥
+    // 5: 장애물 (배경보다 반드시 앞!)
+    // 6: 공룡 (장애물보다 앞)
+    // 10: HUD/UI 텍스트
+
+    // 하늘 레이어 (고정 배경, 가장 뒤)
     this.sky = scene.add.tileSprite(0, 0, width, height, `bg_sky_w${worldId}`);
     this.sky.setOrigin(0, 0);
-    this.sky.setDepth(-1);
+    this.sky.setDepth(0);
 
-    // 구름 레이어 (가장 느리게 = 가장 멀리, 장애물 뒤에 배치)
+    // 구름 레이어 (하늘 바로 위, 장애물보다 훨씬 뒤)
     this.clouds = scene.add.tileSprite(0, 0, width, 200, `bg_cloud_w${worldId}`);
     this.clouds.setOrigin(0, 0);
-    this.clouds.setDepth(-0.5); // 하늘(-1)과 산(1) 사이, 장애물보다 뒤에 배치하여 가리지 않게
-    this.clouds.setAlpha(0.5);  // 투명도 낮춰서 시야 확보 (0.8 → 0.5)
+    this.clouds.setDepth(1);
+    this.clouds.setAlpha(0.5);  // 투명도 낮춰서 시야 확보
     this.cloudSpeed = 0.2;
 
-    // 산 레이어 (중간 속도)
+    // 산 레이어 (중간 속도, 장애물보다 뒤)
     this.mountains = scene.add.tileSprite(0, groundY - 180, width, 200, `bg_mountain_w${worldId}`);
     this.mountains.setOrigin(0, 0);
-    this.mountains.setDepth(1);
+    this.mountains.setDepth(2);
     this.mountainSpeed = 0.4;
 
-    // 바닥 레이어 (게임 속도와 동일)
+    // 바닥 레이어 (게임 속도와 동일, 장애물보다 뒤)
     this.grass = scene.add.tileSprite(0, groundY, width, 40, `bg_grass_w${worldId}`);
     this.grass.setOrigin(0, 0);
-    this.grass.setDepth(2);
+    this.grass.setDepth(3);
     this.grassSpeed = 1.0;
   }
 

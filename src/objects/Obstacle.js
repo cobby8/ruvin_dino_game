@@ -41,21 +41,25 @@ export function createObstacleTextures(scene) {
 // 월드 1: 풀밭 나라 - 작은선인장(30x45), 큰선인장(45x68), 돌멩이(38x30)
 // ============================================================
 function _createWorld1Obstacles(scene) {
-  // --- 작은 선인장 (30x45) ---
+  // --- 작은 선인장 (30x45) --- 색상 강화: 더 진한 녹색으로 배경과 구분
   const g1 = scene.add.graphics();
-  // 선인장 몸통
-  g1.fillStyle(0x2D8B46);
+  // 외곽선 (검정, 배경과 확실히 구분)
+  g1.lineStyle(2, 0x000000, 0.5);
+  g1.strokeRoundedRect(8, 8, 14, 37, 4);
+  g1.strokeRoundedRect(0, 18, 10, 6, 3);
+  // 선인장 몸통 (더 진한 녹색)
+  g1.fillStyle(0x1A6B2A);
   g1.fillRoundedRect(8, 8, 14, 37, 4);
   // 하이라이트 줄
-  g1.fillStyle(0x5BC37A, 0.6);
+  g1.fillStyle(0x3A9B4A, 0.6);
   g1.fillRoundedRect(12, 9, 5, 35, 2);
   // 왼쪽 팔
-  g1.fillStyle(0x2D8B46);
+  g1.fillStyle(0x1A6B2A);
   g1.fillRoundedRect(0, 18, 10, 6, 3);
-  g1.fillStyle(0x5BC37A, 0.5);
+  g1.fillStyle(0x3A9B4A, 0.5);
   g1.fillRoundedRect(1, 19, 7, 3, 1);
   // 가시들
-  g1.fillStyle(0x1A6B30);
+  g1.fillStyle(0x0D4A18);
   g1.fillTriangle(22, 14, 26, 13, 22, 12);
   g1.fillTriangle(22, 22, 26, 21, 22, 20);
   g1.fillTriangle(22, 30, 25, 29, 22, 28);
@@ -70,28 +74,33 @@ function _createWorld1Obstacles(scene) {
   g1.generateTexture('w1_small_cactus', 30, 45);
   g1.destroy();
 
-  // --- 큰 선인장 (45x68) ---
+  // --- 큰 선인장 (45x68) --- 색상 강화: 더 진한 녹색
   const g2 = scene.add.graphics();
-  // 큰 몸통
-  g2.fillStyle(0x2D8B46);
+  // 외곽선 (검정, 배경과 확실히 구분)
+  g2.lineStyle(2, 0x000000, 0.5);
+  g2.strokeRoundedRect(12, 8, 20, 60, 5);
+  g2.strokeRoundedRect(0, 22, 14, 7, 3);
+  g2.strokeRoundedRect(30, 33, 15, 7, 3);
+  // 큰 몸통 (더 진한 녹색)
+  g2.fillStyle(0x1A6B2A);
   g2.fillRoundedRect(12, 8, 20, 60, 5);
   // 하이라이트
-  g2.fillStyle(0x5BC37A, 0.6);
+  g2.fillStyle(0x3A9B4A, 0.6);
   g2.fillRoundedRect(18, 9, 6, 58, 3);
   // 왼쪽 팔
-  g2.fillStyle(0x2D8B46);
+  g2.fillStyle(0x1A6B2A);
   g2.fillRoundedRect(0, 22, 14, 7, 3);
   g2.fillRoundedRect(0, 15, 7, 18, 3);
-  g2.fillStyle(0x5BC37A, 0.5);
+  g2.fillStyle(0x3A9B4A, 0.5);
   g2.fillRoundedRect(1, 18, 5, 12, 1);
   // 오른쪽 팔
-  g2.fillStyle(0x2D8B46);
+  g2.fillStyle(0x1A6B2A);
   g2.fillRoundedRect(30, 33, 15, 7, 3);
   g2.fillRoundedRect(38, 27, 7, 18, 3);
-  g2.fillStyle(0x5BC37A, 0.5);
+  g2.fillStyle(0x3A9B4A, 0.5);
   g2.fillRoundedRect(39, 30, 5, 12, 1);
   // 가시
-  g2.fillStyle(0x1A6B30);
+  g2.fillStyle(0x0D4A18);
   g2.fillTriangle(32, 12, 36, 11, 32, 10);
   g2.fillTriangle(32, 22, 36, 21, 32, 20);
   g2.fillTriangle(32, 42, 36, 41, 32, 40);
@@ -108,23 +117,26 @@ function _createWorld1Obstacles(scene) {
   g2.generateTexture('w1_big_cactus', 45, 68);
   g2.destroy();
 
-  // --- 돌멩이 (38x30) ---
+  // --- 돌멩이 (38x30) --- 색상 강화: 더 진한 회색
   const g3 = scene.add.graphics();
-  // 돌 하단 (어두운)
-  g3.fillStyle(0x6E6E6E);
+  // 외곽선 (검정, 배경과 확실히 구분)
+  g3.lineStyle(2, 0x000000, 0.5);
+  g3.strokeRoundedRect(3, 6, 32, 21, 7);
+  // 돌 하단 (더 진한 회색)
+  g3.fillStyle(0x555555);
   g3.fillRoundedRect(3, 9, 32, 18, 7);
-  // 돌 상단 (밝은)
-  g3.fillStyle(0x9E9E9E);
+  // 돌 상단 (중간 회색)
+  g3.fillStyle(0x777777);
   g3.fillRoundedRect(3, 6, 32, 15, 7);
   // 하이라이트
-  g3.fillStyle(0xBBBBBB);
+  g3.fillStyle(0x999999);
   g3.fillCircle(12, 10, 5);
-  g3.fillStyle(0xD0D0D0);
+  g3.fillStyle(0xAAAAAA);
   g3.fillCircle(11, 9, 2.5);
   // 금 무늬
-  g3.lineStyle(1, 0x8B7355, 0.6);
+  g3.lineStyle(1, 0x6B5535, 0.6);
   g3.lineBetween(9, 15, 27, 18);
-  g3.lineStyle(0.8, 0x8B7355, 0.4);
+  g3.lineStyle(0.8, 0x6B5535, 0.4);
   g3.lineBetween(15, 10, 30, 13);
   g3.generateTexture('w1_rock', 38, 30);
   g3.destroy();
@@ -134,23 +146,26 @@ function _createWorld1Obstacles(scene) {
 // 월드 2: 사막 나라 - 사막선인장(35x55), 해골(40x40), 모래언덕(50x30)
 // ============================================================
 function _createWorld2Obstacles(scene) {
-  // --- 사막 선인장 (35x55) ---
+  // --- 사막 선인장 (35x55) --- 색상 강화: 더 진한 녹색
   const g1 = scene.add.graphics();
-  // 몸통 (연녹)
-  g1.fillStyle(0x5B9B3A);
+  // 외곽선
+  g1.lineStyle(2, 0x000000, 0.5);
+  g1.strokeRoundedRect(10, 5, 15, 50, 5);
+  // 몸통 (진한 녹색)
+  g1.fillStyle(0x3A7A1A);
   g1.fillRoundedRect(10, 5, 15, 50, 5);
   // 하이라이트
-  g1.fillStyle(0x7EC060, 0.5);
+  g1.fillStyle(0x5BA040, 0.5);
   g1.fillRoundedRect(14, 6, 5, 48, 2);
   // 왼팔 (위쪽)
-  g1.fillStyle(0x5B9B3A);
+  g1.fillStyle(0x3A7A1A);
   g1.fillRoundedRect(0, 15, 12, 5, 2);
   g1.fillRoundedRect(0, 10, 5, 14, 2);
   // 오른팔 (아래쪽)
   g1.fillRoundedRect(23, 28, 12, 5, 2);
   g1.fillRoundedRect(30, 24, 5, 14, 2);
   // 가시 (X 모양)
-  g1.fillStyle(0x3A6B20);
+  g1.fillStyle(0x1A5A00);
   for (let i = 0; i < 5; i++) {
     const y = 12 + i * 9;
     g1.fillTriangle(25, y, 28, y - 1, 25, y - 2);
@@ -159,8 +174,11 @@ function _createWorld2Obstacles(scene) {
   g1.generateTexture('w2_cactus', 35, 55);
   g1.destroy();
 
-  // --- 해골 (40x40) ---
+  // --- 해골 (40x40) --- 외곽선 추가
   const g2 = scene.add.graphics();
+  // 외곽선
+  g2.lineStyle(2, 0x000000, 0.5);
+  g2.strokeRoundedRect(8, 2, 24, 24, 10);
   // 두개골
   g2.fillStyle(0xF0E8D8);
   g2.fillRoundedRect(8, 2, 24, 24, 10);
@@ -189,10 +207,10 @@ function _createWorld2Obstacles(scene) {
   g2.generateTexture('w2_skull', 40, 40);
   g2.destroy();
 
-  // --- 모래언덕 (50x30) ---
+  // --- 모래언덕 (50x30) --- 색상 강화: 더 진한 모래색 + 외곽선
   const g3 = scene.add.graphics();
-  // 메인 언덕 (모래색)
-  g3.fillStyle(0xE8C66A);
+  // 메인 언덕 (진한 모래색)
+  g3.fillStyle(0xC8A64A);
   g3.beginPath();
   g3.moveTo(0, 30);
   g3.lineTo(5, 18); g3.lineTo(15, 8);
@@ -218,10 +236,13 @@ function _createWorld2Obstacles(scene) {
 // 월드 3: 숲 나라 - 나무그루터기(45x40), 버섯(35x45), 덩굴(25x60)
 // ============================================================
 function _createWorld3Obstacles(scene) {
-  // --- 나무 그루터기 (45x40) ---
+  // --- 나무 그루터기 (45x40) --- 색상 강화 + 외곽선
   const g1 = scene.add.graphics();
-  // 몸통 (갈색)
-  g1.fillStyle(0x8B6914);
+  // 외곽선
+  g1.lineStyle(2, 0x000000, 0.5);
+  g1.strokeRoundedRect(8, 10, 28, 30, 4);
+  // 몸통 (더 진한 갈색)
+  g1.fillStyle(0x6B4900);
   g1.fillRoundedRect(8, 10, 28, 30, 4);
   // 나이테 (위쪽 단면)
   g1.fillStyle(0xA0813A);
@@ -244,13 +265,16 @@ function _createWorld3Obstacles(scene) {
   g1.generateTexture('w3_stump', 45, 40);
   g1.destroy();
 
-  // --- 버섯 (35x45) ---
+  // --- 버섯 (35x45) --- 색상 강화: 더 선명한 빨간색 + 외곽선
   const g2 = scene.add.graphics();
+  // 외곽선
+  g2.lineStyle(2, 0x000000, 0.5);
+  g2.strokeRoundedRect(12, 22, 11, 23, 3);
   // 줄기 (흰색)
   g2.fillStyle(0xF5F0E0);
   g2.fillRoundedRect(12, 22, 11, 23, 3);
-  // 갓 (빨간색 반원)
-  g2.fillStyle(0xDD3333);
+  // 갓 (더 선명한 빨간색)
+  g2.fillStyle(0xCC1111);
   g2.beginPath();
   g2.arc(17, 22, 16, Math.PI, 0, false);
   g2.closePath(); g2.fillPath();
@@ -267,13 +291,16 @@ function _createWorld3Obstacles(scene) {
   g2.generateTexture('w3_mushroom', 35, 45);
   g2.destroy();
 
-  // --- 덩굴 (25x60) ---
+  // --- 덩굴 (25x60) --- 색상 강화 + 외곽선
   const g3 = scene.add.graphics();
-  // 메인 줄기 (짙은녹)
-  g3.fillStyle(0x3A7A2A);
+  // 외곽선
+  g3.lineStyle(2, 0x000000, 0.5);
+  g3.strokeRoundedRect(10, 0, 5, 60, 2);
+  // 메인 줄기 (더 진한 녹색)
+  g3.fillStyle(0x1A5A10);
   g3.fillRoundedRect(10, 0, 5, 60, 2);
   // 감긴 줄기 (S자)
-  g3.lineStyle(2, 0x4A9A3A);
+  g3.lineStyle(2, 0x2A7A1A);
   g3.beginPath();
   g3.moveTo(12, 0);
   g3.lineTo(18, 10); g3.lineTo(7, 20);
@@ -295,10 +322,13 @@ function _createWorld3Obstacles(scene) {
 // 월드 4: 화산 나라 - 용암돌(40x40), 불기둥(30x65), 화산재더미(50x35)
 // ============================================================
 function _createWorld4Obstacles(scene) {
-  // --- 용암돌 (40x40) ---
+  // --- 용암돌 (40x40) --- 외곽선 추가
   const g1 = scene.add.graphics();
-  // 돌 몸체 (검은색 계열)
-  g1.fillStyle(0x4A3A30);
+  // 외곽선
+  g1.lineStyle(2, 0x000000, 0.5);
+  g1.strokeRoundedRect(4, 6, 32, 30, 8);
+  // 돌 몸체 (더 진한 검은색)
+  g1.fillStyle(0x3A2A20);
   g1.fillRoundedRect(4, 8, 32, 28, 8);
   // 밝은 면
   g1.fillStyle(0x6A5A50, 0.7);
@@ -316,10 +346,13 @@ function _createWorld4Obstacles(scene) {
   g1.generateTexture('w4_lava_rock', 40, 40);
   g1.destroy();
 
-  // --- 불기둥 (30x65) ---
+  // --- 불기둥 (30x65) --- 외곽선 추가
   const g2 = scene.add.graphics();
-  // 기둥 몸체 (암갈색)
-  g2.fillStyle(0x5A3A20);
+  // 외곽선
+  g2.lineStyle(2, 0x000000, 0.5);
+  g2.strokeRoundedRect(6, 15, 18, 50, 3);
+  // 기둥 몸체 (더 진한 암갈색)
+  g2.fillStyle(0x4A2A10);
   g2.fillRoundedRect(6, 15, 18, 50, 3);
   // 불꽃 (상단) - 주황~빨강 그라디언트
   g2.fillStyle(0xFF4500);
@@ -344,10 +377,10 @@ function _createWorld4Obstacles(scene) {
   g2.generateTexture('w4_fire_pillar', 30, 65);
   g2.destroy();
 
-  // --- 화산재 더미 (50x35) ---
+  // --- 화산재 더미 (50x35) --- 색상 강화
   const g3 = scene.add.graphics();
-  // 더미 (검회색)
-  g3.fillStyle(0x5A5550);
+  // 더미 (더 진한 검회색)
+  g3.fillStyle(0x3A3530);
   g3.beginPath();
   g3.moveTo(0, 35);
   g3.lineTo(5, 20); g3.lineTo(15, 10);
@@ -374,10 +407,13 @@ function _createWorld4Obstacles(scene) {
 // 월드 5: 바다 나라 - 산호(35x50), 해초(25x55), 불가사리(45x30)
 // ============================================================
 function _createWorld5Obstacles(scene) {
-  // --- 산호 (35x50) ---
+  // --- 산호 (35x50) --- 색상 강화 + 외곽선
   const g1 = scene.add.graphics();
-  // 산호 베이스 (분홍)
-  g1.fillStyle(0xFF6B8A);
+  // 외곽선
+  g1.lineStyle(2, 0x000000, 0.5);
+  g1.strokeRoundedRect(8, 25, 20, 25, 5);
+  // 산호 베이스 (더 선명한 분홍)
+  g1.fillStyle(0xEE4060);
   g1.fillRoundedRect(8, 25, 20, 25, 5);
   // 산호 가지들 (위로 뻗음)
   g1.fillStyle(0xFF8FAA);
@@ -397,10 +433,13 @@ function _createWorld5Obstacles(scene) {
   g1.generateTexture('w5_coral', 35, 50);
   g1.destroy();
 
-  // --- 해초 (25x55) ---
+  // --- 해초 (25x55) --- 색상 강화
   const g2 = scene.add.graphics();
-  // 해초 줄기 (물결 모양)
-  g2.fillStyle(0x2D8B46);
+  // 외곽선
+  g2.lineStyle(2, 0x000000, 0.5);
+  g2.strokeRoundedRect(9, 0, 7, 55, 3);
+  // 해초 줄기 (더 진한 녹색)
+  g2.fillStyle(0x1A6B2A);
   g2.fillRoundedRect(9, 0, 7, 55, 3);
   // 물결 잎 (좌우로)
   g2.fillStyle(0x3AA856, 0.8);
@@ -417,10 +456,10 @@ function _createWorld5Obstacles(scene) {
   g2.generateTexture('w5_seaweed', 25, 55);
   g2.destroy();
 
-  // --- 불가사리 (45x30) ---
+  // --- 불가사리 (45x30) --- 색상 강화
   const g3 = scene.add.graphics();
-  // 별 모양 (5개 팔)
-  g3.fillStyle(0xFF8C42);
+  // 별 모양 (5개 팔, 더 진한 주황)
+  g3.fillStyle(0xDD6622);
   const cx = 22, cy = 15;
   g3.beginPath();
   for (let i = 0; i < 5; i++) {
@@ -455,10 +494,10 @@ function _createWorld5Obstacles(scene) {
 // 월드 6: 하늘 나라 - 별(40x40), 달조각(45x45), 무지개조각(50x35)
 // ============================================================
 function _createWorld6Obstacles(scene) {
-  // --- 별 (40x40) ---
+  // --- 별 (40x40) --- 외곽선 추가
   const g1 = scene.add.graphics();
-  // 별 모양 (6각)
-  g1.fillStyle(0xFFD700);
+  // 별 모양 (6각, 더 진한 금색)
+  g1.fillStyle(0xDDB700);
   const cx1 = 20, cy1 = 20;
   g1.beginPath();
   for (let i = 0; i < 6; i++) {
@@ -594,6 +633,10 @@ export class ObstacleManager {
       obstacle = this.group.create(x, groundY - yOffset, textureKey);
       obstacle.setOrigin(0.5, 1);
     }
+
+    // 장애물은 반드시 배경(depth 0~3)보다 앞에 표시 (depth 5)
+    obstacle.setDepth(5);
+    obstacle.setAlpha(1.0); // 투명도 제거 - 완전 불투명
 
     // 물리 설정
     obstacle.body.setVelocityX(-speed);

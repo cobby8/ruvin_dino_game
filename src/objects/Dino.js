@@ -51,8 +51,8 @@ export class Dino extends Phaser.Physics.Arcade.Sprite {
     // 달리기 애니메이션 시작
     this.play(`${dinoKey}_run`);
 
-    // 깊이 설정 (배경보다 앞에 표시)
-    this.setDepth(10);
+    // 깊이 설정 (장애물 depth=5 보다 앞, UI depth=10 보다 뒤)
+    this.setDepth(6);
 
     // === 점프 시스템 속성 초기화 ===
     this.jumpStartTime = 0;          // 점프 버튼 누른 시각 (ms)
