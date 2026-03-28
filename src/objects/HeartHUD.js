@@ -26,8 +26,8 @@ export class HeartHUD {
     this.currentHearts = maxHearts; // 시작 시 꽉 참
     this.x = x;
     this.y = y;
-    this.heartSize = 22;           // 하트 아이콘 크기 1.5배 확대 (14→22)
-    this.spacing = 48;             // 하트 간격도 확대 (32→48)
+    this.heartSize = 28;           // 하트 아이콘 크기 27% 확대 (22→28, 배경과 겹쳐도 잘 보임)
+    this.spacing = 56;             // 하트 간격도 확대 (48→56, 큰 하트에 맞춤)
     this.hearts = [];              // 하트 Graphics 배열
 
     this._createHearts();
@@ -43,7 +43,7 @@ export class HeartHUD {
 
       // 각 하트마다 독립 Graphics 객체 생성 (개별 애니메이션을 위해)
       const g = this.scene.add.graphics();
-      g.setDepth(10); // UI 레벨
+      g.setDepth(100); // UI 레벨 (반투명 배경 패널 depth=99 위에 표시)
       g.setPosition(hx, this.y);
 
       // 빨간 하트 그리기 (초기 상태 = 모두 채워진 하트)

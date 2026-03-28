@@ -109,8 +109,8 @@ export class GameScene extends Phaser.Scene {
 
     // === [P1] 하트 HUD 생성 (화면 왼쪽 상단) ===
     const maxHearts = this.difficulty.maxHearts || 3;
-    // 하트 위치: y=65 (스테이지명 28px+스테이지이름 아래, 겹치지 않게)
-    this.heartHUD = new HeartHUD(this, maxHearts, 20, 68);
+    // 하트 위치: y=72 (반투명 배경 패널 안에 들어가도록 조정)
+    this.heartHUD = new HeartHUD(this, maxHearts, 20, 72);
     this.hitCount = 0; // 이번 스테이지에서 피격 횟수 (통계용)
 
     // === [P2] 적 캐릭터 매니저 (월드별 적 스폰) ===
@@ -125,8 +125,8 @@ export class GameScene extends Phaser.Scene {
     // === [P3] 물음표 블록 매니저 ===
     this.questionBlockManager = new QuestionBlockManager(this);
 
-    // === [P3] 파워업 HUD (화면 우측 상단) ===
-    this.powerUpHUD = new PowerUpHUD(this);
+    // === [P3] 파워업 HUD (공룡 머리 위에 표시, dino 참조 전달) ===
+    this.powerUpHUD = new PowerUpHUD(this, this.dino);
 
     // === [P4] 스프링 점프대 매니저 ===
     this.springManager = new SpringManager(this);

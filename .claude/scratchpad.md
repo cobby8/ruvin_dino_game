@@ -10,7 +10,7 @@
 |------|------|------|
 | 1. 4가지 개선사항 기획설계 | 완료 | planner-architect |
 | 2. 페이즈1: 점프 버튼 분리 | 구현완료 | developer |
-| 3. 페이즈2: HUD 가시성 개선 | 대기 | developer |
+| 3. 페이즈2: HUD 가시성 개선 | 구현완료 | developer |
 | 4. 페이즈3: 일시정지 기능 | 대기 | developer |
 | 5. 페이즈4: 메뉴 고도화 | 대기 | developer |
 
@@ -68,6 +68,29 @@ tester 참고:
 reviewer 참고:
 - executeJump()는 하위 호환을 위해 빈 메서드로 유지 (다른 곳에서 호출해도 에러 안남)
 - shutdown()에 Z/X 키보드 이벤트 해제 추가됨
+
+### 페이즈2: HUD 가시성 개선 (2026-03-28)
+
+구현한 기능: HUD 전체 가시성 개선 (반투명 배경 + 하트 확대 + 별 카운터 독립 + 파워업 공룡 추적)
+
+| 파일 경로 | 변경 내용 | 신규/수정 |
+|----------|----------|----------|
+| src/objects/StageHUD.js | 반투명 검정 배경 패널(alpha=0.3, 80px) 추가, 프로그레스 바 200x16 확대, 별 카운터 독립 텍스트로 분리 | 수정 |
+| src/objects/HeartHUD.js | heartSize 22->28, spacing 48->56, depth 10->100 (배경 패널 위) | 수정 |
+| src/objects/PowerUpHUD.js | 우상단 고정 -> 공룡 머리 위 추적(dino.y-60), depth 10->100, 라벨 12px->14px | 수정 |
+| src/scenes/GameScene.js | HeartHUD y=68->72, PowerUpHUD에 dino 참조 전달 | 수정 |
+
+tester 참고:
+- 테스트 방법: 게임 시작 후 상단에 반투명 검정 배경이 깔려있는지 확인
+- 정상 동작: 어떤 월드 배경에서든 HUD 텍스트가 잘 보여야 함
+- 하트가 기존보다 크게 표시되어야 함 (27% 확대)
+- 별 카운터가 난이도 별과 분리되어 독립적으로 표시되어야 함
+- 파워업 아이템 획득 시 공룡 머리 위에 파워업 HUD가 따라다녀야 함
+- 주의: 파워업 종료 시 HUD가 정상적으로 사라지는지 확인
+
+reviewer 참고:
+- StageHUD 배경 패널 depth=99, HUD 텍스트/하트 depth=100으로 레이어 분리
+- PowerUpHUD._update()에서 50ms마다 공룡 위치를 추적하여 graphics를 매번 다시 그림
 
 ## 기획설계 (planner-architect)
 

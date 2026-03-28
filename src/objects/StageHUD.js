@@ -3,10 +3,11 @@
  * 화면 상단에 현재 월드, 스테이지, 점수/목표, 난이도를 표시
  *
  * 구성:
- * - 상단 왼쪽: 월드 이름 + 스테이지 번호 (예: "🌿 풀밭 나라 1-3")
+ * - 반투명 검정 배경 패널 (어떤 월드 배경에서든 글씨가 잘 보이도록)
+ * - 상단 왼쪽: 월드 이름 + 스테이지 번호 (예: "풀밭 나라 1-3")
  * - 상단 중앙: 현재 점수 / 목표 (예: "3 / 10")
- * - 상단 오른쪽: 난이도 별 표시 (⭐⭐⭐)
- * - 프로그레스 바: 목표까지 진행도
+ * - 상단 오른쪽: 난이도 별 표시 + 별 카운터 (독립 표시)
+ * - 프로그레스 바: 목표까지 진행도 (200x16, 확대)
  */
 
 /**
@@ -25,6 +26,13 @@ export class StageHUD {
     this.scene = scene;
     this.targetScore = targetScore;
     const { width } = scene.scale;
+
+    // === 반투명 배경 패널 (TV 자막 배경처럼, 어떤 월드 배경에서든 글씨가 잘 보임) ===
+    // depth=99: HUD 텍스트(100)보다 1단계 아래, 게임 오브젝트보다 위
+    this.bgPanel = scene.add.graphics();
+    this.bgPanel.setDepth(99);
+    this.bgPanel.fillStyle(0x000000, 0.3);
+    this.bgPanel.fillRect(0, 0, width, 80);
 
     // 깊이를 높게 설정해서 항상 맨 위에 표시 (depth: 100)
     const depth = 100;
@@ -59,9 +67,9 @@ export class StageHUD {
       strokeThickness: 4,
     }).setOrigin(0.5, 0).setDepth(depth);
 
-    // === 1줄 우측: 난이도 별 + 별 카운터 (폰트 24px, 확대) ===
+    // === 1줄 우측: 난이도 별 표시 (난이도만 표시, 별 카운터는 분리) ===
     const stars = '⭐'.repeat(difficulty.stars);
-    this.difficultyText = scene.add.text(width - 15, 8, `${stars}  0/100`, {
+    this.difficultyText = scene.add.text(width - 15, 8, stars, {
       fontFamily: 'Jua, sans-serif',
       fontSize: '24px',
       color: '#FFD700',
@@ -78,16 +86,19 @@ export class StageHUD {
       strokeThickness: 1,
     }).setOrigin(1, 0).setDepth(depth);
 
-    // === 별 수집 카운터는 difficultyText에 통합 (별도 텍스트 유지하되 숨김) ===
-    this.starCountText = scene.add.text(width - 15, 36, '', {
+    // === 별 카운터 독립 표시 (난이도 텍스트에서 분리, 더 크고 눈에 띄게) ===
+    // 별 아이콘 + 큰 숫자로 독립 표시 ("⭐ 0" 형태)
+    this.starCountText = scene.add.text(width - 15, 56, '⭐ 0', {
       fontFamily: 'Jua, sans-serif',
-      fontSize: '1px',
+      fontSize: '20px',
       color: '#FFD700',
-    }).setOrigin(1, 0).setDepth(depth).setVisible(false);
+      stroke: '#333333',
+      strokeThickness: 2,
+    }).setOrigin(1, 0).setDepth(depth);
 
-    // === 2줄 중앙: 프로그레스 바 (확대) ===
-    const barWidth = 160;
-    const barHeight = 12;
+    // === 2줄 중앙: 프로그레스 바 (확대: 160x12 -> 200x16) ===
+    const barWidth = 200;
+    const barHeight = 16;
     const barX = width / 2 - barWidth / 2;
     const barY = 48;
 
@@ -137,7 +148,7 @@ export class StageHUD {
     this.barFill.clear();
     if (progress <= 0) return;
 
-    // 진행도에 따라 색상 변화 (초록 → 노랑 → 빨강... 아니, 초록 유지가 나음)
+    // 진행도에 따라 색상 변화 (초록 → 금색 when 완료)
     const color = progress >= 1 ? 0xFFD700 : 0x66CC77; // 완료 시 금색
     this.barFill.fillStyle(color);
     this.barFill.fillRoundedRect(
@@ -148,13 +159,12 @@ export class StageHUD {
   }
 
   /**
-   * 별 수집 수 업데이트 (우상단 카운터)
+   * 별 수집 수 업데이트 (독립 별 카운터)
    * @param {number} starCount - 현재 별 수집 수
    */
   updateStarCount(starCount) {
-    // 별 카운터를 우측 난이도 텍스트에 통합 표시
-    const starsEmoji = this.difficultyText.text.split('  ')[0]; // 별 이모지 부분 유지
-    this.difficultyText.setText(`${starsEmoji}  ${starCount}/100`);
+    // 별 카운터를 독립 텍스트로 업데이트 (난이도 텍스트와 분리됨)
+    this.starCountText.setText(`⭐ ${starCount}`);
   }
 
   /**
