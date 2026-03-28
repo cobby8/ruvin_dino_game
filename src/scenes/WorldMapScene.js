@@ -444,17 +444,31 @@ export class WorldMapScene extends Phaser.Scene {
     bottomBg.setDepth(50);
 
     const btnY = height - height * 0.06;
-    const btnW = Math.min(width * 0.21, 90);
+    // 5개 버튼으로 확장: 상점 | 업적 | 공룡 바꾸기 | 난이도 | 처음부터
+    const btnW = Math.min(width * 0.17, 72);
     const btnH = Math.min(height * 0.06, 42);
-    const gap = Math.min(width * 0.015, 8);
+    const gap = Math.min(width * 0.01, 6);
 
-    // 4개 버튼 균등 배치: 업적 | 공룡 바꾸기 | 난이도 변경 | 처음부터
-    const totalW = btnW * 4 + gap * 3;
+    const totalW = btnW * 5 + gap * 4;
     const startX = (width - totalW) / 2 + btnW / 2;
+
+    // "상점" 버튼 (주황색 - 가장 왼쪽에 배치)
+    this._createPrettyButton(
+      startX, btnY,
+      '상점', btnW, btnH,
+      0xFF8C00,
+      () => {
+        soundGenerator.playSelect();
+        this.cameras.main.fadeOut(300, 0, 0, 0);
+        this.cameras.main.once('camerafadeoutcomplete', () => {
+          this.scene.start('ShopScene');
+        });
+      }
+    );
 
     // "업적" 버튼 (금색)
     this._createPrettyButton(
-      startX, btnY,
+      startX + btnW + gap, btnY,
       '업적', btnW, btnH,
       0xFFAA00,
       () => {
@@ -463,10 +477,10 @@ export class WorldMapScene extends Phaser.Scene {
       }
     );
 
-    // "공룡 바꾸기" 버튼
+    // "공룡" 버튼 (이름 축소)
     this._createPrettyButton(
-      startX + btnW + gap, btnY,
-      '공룡 바꾸기', btnW, btnH,
+      startX + (btnW + gap) * 2, btnY,
+      '공룡', btnW, btnH,
       0x9B72CF,
       () => {
         soundGenerator.playSelect();
@@ -477,9 +491,9 @@ export class WorldMapScene extends Phaser.Scene {
       }
     );
 
-    // "난이도 변경" 버튼
+    // "난이도" 버튼
     this._createPrettyButton(
-      startX + (btnW + gap) * 2, btnY,
+      startX + (btnW + gap) * 3, btnY,
       '난이도', btnW, btnH,
       0x4EAEFF,
       () => {
@@ -491,10 +505,10 @@ export class WorldMapScene extends Phaser.Scene {
       }
     );
 
-    // "처음부터" 버튼
+    // "리셋" 버튼 (이름 축소)
     this._createPrettyButton(
-      startX + (btnW + gap) * 3, btnY,
-      '처음부터', btnW, btnH,
+      startX + (btnW + gap) * 4, btnY,
+      '리셋', btnW, btnH,
       0xE55B5B,
       () => {
         soundGenerator.playSelect();
@@ -732,7 +746,7 @@ export class WorldMapScene extends Phaser.Scene {
 
     const text = this.add.text(x, y, label, {
       fontFamily: 'Jua, sans-serif',
-      fontSize: '15px',
+      fontSize: '13px',
       color: '#FFFFFF',
       stroke: '#00000033',
       strokeThickness: 1,

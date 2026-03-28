@@ -33,6 +33,7 @@ import { BoostPadManager } from '../objects/BoostPad.js';
 import { getStage, getStageTarget } from '../data/stages.js';
 import { getWorld } from '../data/worlds.js';
 import { loadStats, saveStats, checkNewAchievements } from '../data/achievements.js';
+import { loadAndClearPurchasedItems, addToWallet } from './ShopScene.js';
 
 export class GameScene extends Phaser.Scene {
   constructor() {
@@ -219,6 +220,28 @@ export class GameScene extends Phaser.Scene {
       this.dino.applyPowerUp('shield');
     }
 
+    // === 상점 구매 아이템 적용 (소모품: 사용 후 사라짐) ===
+    this._hasDoubleStar = false; // 별 2배 아이템 사용 여부
+    const purchasedItems = loadAndClearPurchasedItems();
+    purchasedItems.forEach(itemId => {
+      if (itemId === 'extra_heart') {
+        // 추가 하트: maxHearts +1 (하트 HUD에 1개 추가)
+        this.heartHUD.heal();
+      } else if (itemId === 'shield_start') {
+        // 시작 방어막: 방어막 파워업 부여
+        this.dino.applyPowerUp('shield');
+      } else if (itemId === 'magnet_start') {
+        // 시작 자석: 자석 파워업 5초
+        this.dino.applyPowerUp('magnet');
+      } else if (itemId === 'double_star') {
+        // 별 2배: 이번 게임 동안 별 수집량 2배
+        this._hasDoubleStar = true;
+      } else if (itemId === 'slow_start') {
+        // 느린 시작: 시작 속도 30% 감소
+        this.currentSpeed = Math.round(this.currentSpeed * 0.7);
+      }
+    });
+
     // === 업적 시스템: 게임 내 누적 통계 (스테이지 진행 중 임시 카운터) ===
     this._sessionStomps = 0;      // 이번 플레이에서 밟은 적 수
     this._sessionStars = 0;       // 이번 플레이에서 모은 별 수
@@ -336,13 +359,14 @@ export class GameScene extends Phaser.Scene {
       this.lastObstacleTime = time;
 
       // 다음 장애물 간격 (난이도별, clearScore 기준으로 간격 조절)
+      // 최소 간격 안전장치: 1000ms (800→1000, 전설 난이도에서도 반응 가능하도록)
       const gapMin = Math.max(
         this.difficulty.obstacleGapMin - this.clearScore * GAME.OBSTACLE_GAP_DECREASE,
-        800
+        1000
       );
       const gapMax = Math.max(
         this.difficulty.obstacleGapMax - this.clearScore * GAME.OBSTACLE_GAP_DECREASE,
-        1200
+        1400
       );
       this.nextObstacleDelay = Phaser.Math.Between(gapMin, gapMax);
     }
@@ -488,6 +512,11 @@ export class GameScene extends Phaser.Scene {
     // 업적 시스템: 클리어 시 통계 저장 + 업적 체크
     this._saveStatsAndCheckAchievements(true);
 
+    // 상점용: 클리어 시 모은 별을 wallet에 전액 누적 저장
+    if (this.starCount > 0) {
+      addToWallet(this.starCount);
+    }
+
     // BGM 정지
     soundGenerator.stopBGM();
     soundGenerator.playPraise(); // 칭찬 효과음
@@ -582,6 +611,12 @@ export class GameScene extends Phaser.Scene {
 
     // 업적 시스템: 게임오버 시에도 통계 저장 (클리어는 아님)
     this._saveStatsAndCheckAchievements(false);
+
+    // 상점용: 게임오버 시 모은 별의 50%를 wallet에 저장 (위로 보상)
+    if (this.starCount > 0) {
+      const halfStars = Math.ceil(this.starCount * 0.5);
+      addToWallet(halfStars);
+    }
 
     soundGenerator.stopBGM();
     soundGenerator.playGameOver();
@@ -726,8 +761,10 @@ export class GameScene extends Phaser.Scene {
 
     if (type === 'star') {
       // 별: starCount +1 (클리어 점수와 별도, 100개=목숨+1)
-      this.starCount += GAME.ITEMS.STAR_POINTS;
-      this._sessionStars++;  // 업적용: 별 수집 누적
+      // 상점 '별 2배' 아이템 적용: 별 수집량이 2배!
+      const starBonus = this._hasDoubleStar ? 2 : 1;
+      this.starCount += GAME.ITEMS.STAR_POINTS * starBonus;
+      this._sessionStars += starBonus;  // 업적용: 별 수집 누적
       soundGenerator.playItemCollect();
 
       // 아이템 수집 시 공룡이 잠깐 밝아지는 효과 (기쁜 표현)

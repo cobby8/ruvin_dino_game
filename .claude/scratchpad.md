@@ -26,6 +26,36 @@
 
 ## 구현 기록 (developer)
 
+### 개선 페이즈 4 전체 구현 (2026-03-28)
+
+구현한 기능: 코인 샵 (별 화폐로 아이템 5종 구매) + 최종 밸런스 조정
+
+| 파일 경로 | 변경 내용 | 신규/수정 |
+|----------|----------|----------|
+| src/scenes/ShopScene.js | 상점 씬 신규 (5종 소모품, wallet 관리, 구매/적용 로직) | 신규 |
+| src/scenes/GameScene.js | wallet 누적(클리어100%/게임오버50%) + 구매아이템 적용 + 별2배 + 간격안전장치 | 수정 |
+| src/scenes/WorldMapScene.js | 하단 버튼 4→5개 (상점 추가), 버튼크기/폰트 축소 | 수정 |
+| src/main.js | ShopScene 등록 | 수정 |
+| src/config.js | HOLD_THRESHOLD 100→150ms (어린이 조작성 개선) | 수정 |
+
+tester 참고:
+- 상점 진입: 월드맵 하단 "상점" 버튼 → ShopScene 화면
+- 상점 화면: 5종 아이템 카드(추가하트/시작방어막/시작자석/별2배/느린시작), 보유별 표시, 구매/별부족 버튼
+- 구매 흐름: 별 충분 시 "구매" 초록 버튼 → 클릭 → "구매 완료!" 팝업 → 화면 리프레시(별 차감 반영)
+- 아이템 적용: 구매 후 게임 시작하면 자동 적용 (extra_heart=하트+1, shield_start=방어막, magnet_start=자석, double_star=별수집2배, slow_start=속도0.7배)
+- 별 누적: 스테이지 클리어 시 모은 별 전액 wallet에 누적, 게임오버 시 50%만 누적
+- 정상 동작: 빌드 통과, 기존 기능 유지
+- 주의: localStorage 'ruvin_dino_wallet'과 'ruvin_dino_shop_items'에 데이터 저장됨
+- 밸런스: HOLD_THRESHOLD 150ms, 장애물 간격 최소 1000ms(기존800), 최대 1400ms(기존1200)
+
+reviewer 참고:
+- ShopScene의 loadAndClearPurchasedItems()는 읽으면서 삭제하는 소모품 패턴 (GameScene.create에서 호출)
+- addToWallet()은 _onStageClear()와 _gameOver()에서 호출
+- 별 2배(_hasDoubleStar)는 _onCollectItem의 star 분기에서 starBonus로 적용
+- WorldMapScene 하단 버튼 5개: btnW를 17%/72px, 폰트 13px로 축소
+
+---
+
 ### 개선 페이즈 3 전체 구현 (2026-03-28)
 
 구현한 기능: 업적 시스템 12종 + 공룡 눈 깜빡임 + UI 그림자/호버 + 클리어/게임오버 연출 강화
