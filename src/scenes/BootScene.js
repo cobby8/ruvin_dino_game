@@ -11,6 +11,7 @@ import Phaser from 'phaser';
 import { createDinoTextures } from '../objects/DinoGraphics.js';
 import { createAllObstacleTextures } from '../objects/Obstacle.js';
 import { createAllBackgroundTextures } from '../objects/Background.js';
+import { createAllEnemyTextures } from '../objects/Enemy.js';
 import { soundGenerator } from '../utils/SoundGenerator.js';
 
 export class BootScene extends Phaser.Scene {
@@ -61,6 +62,7 @@ export class BootScene extends Phaser.Scene {
         const steps = [
           { label: '공룡 그리는 중...', fn: () => createDinoTextures(this) },
           { label: '장애물 그리는 중...', fn: () => createAllObstacleTextures(this) },
+          { label: '적 캐릭터 그리는 중...', fn: () => createAllEnemyTextures(this) },
           { label: '배경 그리는 중...', fn: () => createAllBackgroundTextures(this) },
         ];
 

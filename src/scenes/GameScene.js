@@ -23,6 +23,8 @@ import { StageHUD } from '../objects/StageHUD.js';
 import { soundGenerator } from '../utils/SoundGenerator.js';
 import { DEFAULT_DIFFICULTY } from '../data/difficulties.js';
 import { HeartHUD } from '../objects/HeartHUD.js';
+import { EnemyManager } from '../objects/Enemy.js';
+import { EffectManager } from '../objects/EffectManager.js';
 import { getStage, getStageTarget } from '../data/stages.js';
 import { getWorld } from '../data/worlds.js';
 
@@ -97,6 +99,26 @@ export class GameScene extends Phaser.Scene {
     const maxHearts = this.difficulty.maxHearts || 3;
     this.heartHUD = new HeartHUD(this, maxHearts, 30, 30);
     this.hitCount = 0; // 이번 스테이지에서 피격 횟수 (통계용)
+
+    // === [P2] 적 캐릭터 매니저 (월드별 적 스폰) ===
+    this.enemyManager = new EnemyManager(this, this.worldData.id);
+
+    // === [P2] 이펙트 매니저 (처치 이펙트 + 점수 팝업) ===
+    this.effectManager = new EffectManager(this);
+
+    // === [P2] 적 스폰 제어 변수 ===
+    this.lastEnemyTime = 0;              // 마지막 적 스폰 시각
+    this.nextEnemyDelay = 3000;           // 다음 적 스폰까지 대기 시간 (ms)
+    this.enemySpawnChance = 0.35;         // 적 스폰 확률 (35%)
+
+    // === [P2] 공룡 vs 적 충돌 판정 ===
+    this.physics.add.overlap(
+      this.dino,
+      this.enemyManager.group,
+      this._onHitEnemy,
+      null,
+      this
+    );
 
     // === StageHUD (스테이지 정보 표시) ===
     // 자유 모드에서는 목표를 999로 표시 (무한 느낌)
@@ -222,6 +244,15 @@ export class GameScene extends Phaser.Scene {
 
     // 화면 밖 장애물 정리
     this.obstacleManager.cleanup();
+
+    // === [P2] 적 매니저 업데이트 (비행 적 사인파 움직임) ===
+    this.enemyManager.update(delta);
+    this.enemyManager.cleanup();
+
+    // === [P2] 적 스폰 타이머 ===
+    if (time - this.lastEnemyTime > this.nextEnemyDelay) {
+      this._trySpawnEnemy(time);
+    }
 
     // === 점수 체크: 장애물이 공룡 뒤를 지나면 +1 ===
     this.obstacleManager.group.getChildren().forEach(obstacle => {
@@ -375,6 +406,94 @@ export class GameScene extends Phaser.Scene {
     });
   }
 
+  // =========================================================
+  // [P2] 적 캐릭터 스폰 + 충돌 판정
+  // =========================================================
+
+  /**
+   * [P2] 적 스폰 시도 (장애물과 교대로 등장)
+   * 월드 1은 적이 없으므로 자동 스킵
+   * @param {number} time - 현재 시각
+   */
+  _trySpawnEnemy(time) {
+    this.lastEnemyTime = time;
+
+    // 확률 체크 (35~50%, 월드가 올라갈수록 증가)
+    const worldBonus = (this.worldData.id - 1) * 0.03; // 월드당 3% 증가
+    const chance = this.enemySpawnChance + worldBonus;
+
+    if (Math.random() < chance) {
+      const { width } = this.scale;
+      this.enemyManager.spawnEnemy(width + 60, this.groundY, this.currentSpeed);
+    }
+
+    // 다음 적 스폰 간격 (2~4초 사이 랜덤)
+    this.nextEnemyDelay = Phaser.Math.Between(2000, 4000);
+  }
+
+  /**
+   * [P2] 공룡이 적에 닿았을 때 판정
+   * 핵심 로직:
+   * - 위에서 떨어지면서 적의 상단에 닿음 = 밟기 성공 (적 처치!)
+   * - 슬라이드 중 + ground 적 = 슬라이드 공격 (적 처치!)
+   * - 그 외 옆에서 닿음 = 피격 (하트 -1)
+   */
+  _onHitEnemy(dino, enemy) {
+    if (this.isGameOver || this.isStageClear) return;
+    if (!enemy.alive) return;
+
+    // === 밟기 판정 ===
+    // 조건: 공룡이 아래로 떨어지고 있고(velocity.y > 0),
+    //       공룡의 발(bottom)이 적의 머리(top) 근처에 있음
+    const isStomping = dino.body.velocity.y > 0 &&
+                       dino.body.bottom <= enemy.body.top + 15;
+
+    // === 슬라이드 공격 판정 ===
+    // 조건: 슬라이드(구르기) 중 + 바닥 적(ground 타입)
+    const isSlideAttack = dino.isSliding && enemy.enemyData.type === 'ground';
+
+    if (isStomping || isSlideAttack) {
+      // 적 처치 성공!
+      enemy.defeat();
+
+      // 처치 이펙트 (별 파티클 + "퍽!" 텍스트)
+      this.effectManager.showDefeatEffect(enemy.x, enemy.y);
+      this.effectManager.showScorePopup(enemy.x, enemy.y, enemy.enemyData.points);
+
+      // 점수 추가
+      this.score += enemy.enemyData.points;
+      this.stageHUD.updateScore(this.score);
+
+      // 처치 효과음
+      soundGenerator.playEnemyDefeat();
+
+      // 밟기 시 살짝 튀어오름 (마리오처럼!)
+      if (isStomping) {
+        dino.body.setVelocityY(-250);
+      }
+
+      // 스테이지 클리어 체크
+      if (this.score >= this.targetScore) {
+        this._onStageClear();
+      }
+    } else {
+      // 옆에서 닿음 = 피격!
+      if (dino.isInvincible) return; // 무적이면 무시
+
+      const damaged = dino.hit();
+      if (!damaged) return;
+
+      this.hitCount++;
+      soundGenerator.playHit();
+      this.cameras.main.flash(200, 255, 50, 50);
+
+      const isDead = this.heartHUD.takeDamage();
+      if (isDead) {
+        this._gameOver();
+      }
+    }
+  }
+
   /** 칭찬 메시지 */
   _showPraise() {
     soundGenerator.playPraise();
@@ -428,5 +547,6 @@ export class GameScene extends Phaser.Scene {
     if (this.heartHUD) {
       this.heartHUD.destroy();
     }
+    // [P2] 적 매니저는 group이 씬과 함께 정리됨
   }
 }

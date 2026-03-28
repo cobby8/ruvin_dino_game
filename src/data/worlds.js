@@ -21,6 +21,7 @@ export const WORLDS = [
     cloudColor: 0xFFFFFF,
     // 이 월드에서 나오는 장애물 키 목록
     obstacles: ['w1_small_cactus', 'w1_big_cactus', 'w1_rock'],
+    enemies: [],  // 풀밭: 적 없음 (입문)
     // 풀밭 장식
     decorations: { flowers: true, flowerColors: [0xFFB8D0, 0xFFE066] },
   },
@@ -35,6 +36,7 @@ export const WORLDS = [
     mountainColors: [0xDEB887, 0xD2B48C],
     cloudColor: 0xFFE8B0,
     obstacles: ['w2_cactus', 'w2_skull', 'w2_sand_dune'],
+    enemies: ['w2_scorpion'],  // 사막: 전갈
     decorations: { flowers: false },
   },
   {
@@ -48,6 +50,7 @@ export const WORLDS = [
     mountainColors: [0x6DB86B, 0x4A8C49],
     cloudColor: 0xC8E8C0,
     obstacles: ['w3_stump', 'w3_mushroom', 'w3_vine'],
+    enemies: ['w3_caterpillar', 'w3_bat'],  // 숲: 애벌레 + 박쥐
     decorations: { flowers: true, flowerColors: [0xFF69B4, 0xFFFFFF] },
   },
   {
@@ -61,6 +64,7 @@ export const WORLDS = [
     mountainColors: [0xA0522D, 0x8B0000],
     cloudColor: 0xBBAAAA,
     obstacles: ['w4_lava_rock', 'w4_fire_pillar', 'w4_ash_pile'],
+    enemies: ['w4_flame_slime', 'w4_small_dragon'],  // 화산: 불꽃슬라임 + 작은용
     decorations: { flowers: false },
   },
   {
@@ -74,6 +78,7 @@ export const WORLDS = [
     mountainColors: [0x6BC5E8, 0x4AA8D0],
     cloudColor: 0xE0F0FF,
     obstacles: ['w5_coral', 'w5_seaweed', 'w5_starfish'],
+    enemies: ['w5_crab', 'w5_pufferfish'],  // 바다: 게 + 복어
     decorations: { flowers: false },
   },
   {
@@ -87,6 +92,7 @@ export const WORLDS = [
     mountainColors: [0xD8C0F0, 0xE8D8FF],
     cloudColor: 0xF0E0FF,
     obstacles: ['w6_star', 'w6_moon', 'w6_rainbow'],
+    enemies: ['w6_cloud_fairy', 'w6_eagle'],  // 하늘: 구름요정 + 독수리
     decorations: { flowers: true, flowerColors: [0xFFD700, 0xFFA0FF] },
   },
 ];

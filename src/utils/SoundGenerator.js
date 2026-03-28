@@ -88,6 +88,16 @@ export class SoundGenerator {
     }, 100);
   }
 
+  /** [P2] 적 처치 소리: 짧은 타격음 "퍽!" + 높은 "띵!" */
+  playEnemyDefeat() {
+    // 타격음 (짧고 둔탁한 소리)
+    this._playTone(400, 200, 0.08, 'square', 0.25);
+    // 높은 띵 (처치 성공 느낌)
+    setTimeout(() => {
+      this._playTone(800, 1000, 0.12, 'sine', 0.2);
+    }, 80);
+  }
+
   /** [P1] 슬라이드 소리: 빠른 하강 스윕 "쉭~" */
   playSlide() {
     this._playTone(500, 200, 0.12, 'sine', 0.15);

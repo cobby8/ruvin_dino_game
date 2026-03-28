@@ -27,43 +27,40 @@
 | 2026-03-28 | 장애물 가시성 긴급 수정: depth 정리 + 외곽선 + 색상 강화 (3파일) | 빌드 통과 |
 | 2026-03-28 | 액션 시스템 대규모 설계: 하트+슬라이드+적밟기+아이템+스프링 (4페이즈, 신규9+수정9) | 설계 완료 |
 | 2026-03-28 | P1 구현: 하트시스템+슬라이드+피격무적+HeartHUD (1신규+7수정) | 빌드 통과 |
+| 2026-03-28 | P2 구현: 적 캐릭터 9종+밟기/슬라이드 공격+이펙트 (3신규+4수정) | 빌드 통과 |
 
 ## 구현 기록 (developer)
 
-### P1: 하트(HP) 시스템 + 슬라이드(구르기) 액션
+### P2: 적 캐릭터 9종 + 밟기/슬라이드 공격
 
 | 파일 | 변경 내용 | 신규/수정 |
 |------|----------|----------|
-| src/config.js | HEART(무적시간/깜빡간격) + SLIDE(지속시간/히트박스비율) 상수 추가 | 수정 |
-| src/data/difficulties.js | 5단계에 maxHearts(5/4/3/2/1) + invincibleDuration(3000~1000ms) 추가 | 수정 |
-| src/objects/HeartHUD.js | 하트 아이콘 UI (Graphics로 하트 모양 그리기, 감소/회복 애니메이션) | 신규 |
-| src/objects/Dino.js | slide()/endSlide() 슬라이드 시스템 + hit() 피격무적 시스템 추가 | 수정 |
-| src/objects/DinoGraphics.js | 5번째 프레임(슬라이드) 추가, 384→480px, slide 애니메이션 등록, drawSlideFace() | 수정 |
-| src/scenes/GameScene.js | 아래키/스와이프 입력, HeartHUD 생성, _onHitObstacle 하트차감으로 변경, _gameOver 분리 | 수정 |
-| src/utils/SoundGenerator.js | playHit() 피격음 + playSlide() 슬라이드음 추가 | 수정 |
-| src/scenes/GameOverScene.js | hitCount 수신 + "N번 맞았어!" 표시 추가 | 수정 |
+| src/data/enemies.js | 9종 적 데이터 정의 (ENEMIES + WORLD_ENEMIES 월드별 매핑) | 신규 |
+| src/objects/Enemy.js | EnemyGraphics(9종 텍스처) + Enemy 클래스 + EnemyManager(풀링/스폰) | 신규 |
+| src/objects/EffectManager.js | 처치 이펙트(별 파티클 + "퍽!" 텍스트) + 점수 팝업("+3") | 신규 |
+| src/data/worlds.js | 6개 월드에 enemies 배열 추가 | 수정 |
+| src/scenes/BootScene.js | createAllEnemyTextures() 호출 추가 (로딩 4단계) | 수정 |
+| src/scenes/GameScene.js | EnemyManager/EffectManager 생성, _trySpawnEnemy, _onHitEnemy 밟기/슬라이드 판정 | 수정 |
+| src/utils/SoundGenerator.js | playEnemyDefeat() 처치 효과음 추가 | 수정 |
 
 tester 참고:
-- 하트 표시: 화면 왼쪽 상단에 빨간 하트가 난이도별 개수만큼 표시되는지 확인
-  - 아기공룡=5개, 꼬마=4개, 씩씩=3개, 용감=2개, 전설=1개
-- 피격 동작: 장애물에 닿으면 즉시 게임오버가 아니라 하트 -1 + 2초 깜빡임(무적)
-  - 무적 중 다시 장애물에 닿아도 추가 피격 안 됨
-  - 화면이 빨갛게 번쩍 + "아야!" 소리
-  - 하트가 오른쪽부터 줄어들며 흔들림 애니메이션
-- 하트 0에서 피격 시 기존처럼 게임오버
-- 슬라이드: 아래 화살표 키 또는 화면 아래로 스와이프(50px+)하면 공룡이 납작해짐
-  - 0.8초 후 자동 복귀
-  - 슬라이드 중 점프 불가
-  - 바닥에서만 가능 (공중에서 아래키 = 아무 반응 없음)
-  - "쉭~" 효과음
-- 게임오버 화면에 "N번 맞았어!" 표시
-- 주의: 슬라이드 중 장애물에 닿으면 피격 처리됨 (현재는 피할 수 없음, 날아다니는 장애물 추가 시 피하기 가능)
-- 주의: 스페이스바 점프는 기존과 완전 동일해야 함 (기존 기능 깨짐 확인)
+- 월드 1(풀밭): 적이 나오면 안 됨 (입문 구간)
+- 월드 2(사막): 전갈(바닥)만 등장, 밟기/슬라이드로 처치 가능
+- 월드 3~6: ground + flying 적 모두 등장
+- 밟기 판정: 공룡이 위에서 떨어지면서 적 위에 닿으면 처치 + 바운스(-250)
+- 슬라이드 공격: 슬라이드 중 바닥 적(ground)에 닿으면 처치
+- 옆에서 닿으면: 하트 -1 + 무적 (P1 피격 시스템과 동일)
+- 처치 시: 별 파티클 + "퍽!" 텍스트 + "+N" 점수 팝업 + "퍽!" 효과음
+- 적 처치 점수: ground 적 +3, flying 적 +5 (장애물 넘기기 +1보다 높음)
+- 비행 적(박쥐/작은용/복어/독수리): 사인파로 위아래 흔들리며 비행
+- 적 스폰 확률: 35% 기본 + 월드당 3% 추가 (월드6은 50%)
+- 주의: 기존 장애물 시스템과 완전 독립. 장애물 넘기 점수는 기존과 동일
 
 reviewer 참고:
-- Dino.js: slide()는 바닥 체크 후 히트박스 높이를 40%로 줄이고 scaleY 0.5 적용
-- GameScene.js: _onHitObstacle이 즉시 게임오버 대신 dino.hit() + heartHUD.takeDamage() 체인
-- DinoGraphics.js: RenderTexture 크기 384→480px (5프레임), 기존 4프레임은 그대로 유지
+- Enemy.js: Phaser.Physics.Arcade.Sprite 상속, setup()으로 풀링 재활용
+- _onHitEnemy: body.bottom <= enemy.body.top + 15 으로 밟기 판정 (여유 15px)
+- EnemyManager: ObstacleManager와 동일 패턴 (풀링 + cleanup)
+- 텍스처: 2프레임 스프라이트시트, generateFrameNumbers로 애니메이션
 
 ## 기획설계 (planner-architect)
 
@@ -352,45 +349,50 @@ reviewer 참고:
 
 ## 테스트 결과 (tester)
 
-### P1 하트 시스템 + 슬라이드 빌드/코드 검증 (2026-03-28)
+### P2 적 캐릭터 + 밟기/슬라이드 공격 빌드/코드 검증 (2026-03-28)
 
 | # | 테스트 항목 | 결과 | 비고 |
 |---|-----------|------|------|
-| 1 | npm run build 성공 | PASS | 25 modules, 759ms, chunk 1268KB (phaser 포함 정상) |
-| 2 | HeartHUD.js 존재 | PASS | src/objects/HeartHUD.js 확인 |
-| 2a | HeartHUD constructor 생성 | PASS | constructor(scene, maxHearts, x, y) - Phaser Scene 비상속 클래스, create() 대신 생성자에서 초기화 |
-| 2b | HeartHUD.takeDamage() | PASS | 113행, 하트 감소 + 흔들림 애니메이션 |
-| 2c | HeartHUD.heal() | PASS | 161행, 하트 회복 + 팡! 애니메이션 |
-| 3 | config.js HEART 상수 | PASS | HEART: { INVINCIBLE_DURATION, BLINK_INTERVAL } |
-| 3a | config.js SLIDE 상수 | PASS | SLIDE: { 지속시간, 히트박스비율 } |
-| 4 | difficulties.js maxHearts 5단계 | PASS | 아기=5, 꼬마=4, 씩씩=3, 용감=2, 전설=1 |
-| 4a | difficulties.js invincibleDuration | PASS | 3000~1000ms 난이도별 차등 |
-| 5 | Dino.js slide() | PASS | 187행, 바닥 체크 + 히트박스 축소 + scaleY |
-| 5a | Dino.js endSlide() | PASS | 219행, 히트박스/스케일 복원 |
-| 5b | Dino.js hit() | PASS | 251행, 무적 체크 + 슬라이드 해제 + 무적 돌입 |
-| 5c | Dino.js 무적 로직 | PASS | isInvincible + invincibleTimer + invincibleDuration |
-| 5d | Dino.js 깜빡이 로직 | PASS | blinkTimer, BLINK_INTERVAL마다 alpha 토글 |
-| 6 | DinoGraphics.js 5번째 프레임(슬라이드) | PASS | frame===4, 480x96 RenderTexture (5프레임x96px) |
-| 6a | DinoGraphics.js slide 애니메이션 등록 | PASS | anims.create key=dino-key_slide, frame 4 |
-| 6b | DinoGraphics.js drawSlideFace() | PASS | 102행 정의, 4개 공룡 스킨에서 호출 확인 |
-| 7 | GameScene.js keydown-DOWN 입력 | PASS | 176행, 아래 화살표키 슬라이드 |
-| 7a | GameScene.js 스와이프 입력 | PASS | 129행~, 아래로 50px+ 스와이프 = 슬라이드 |
-| 7b | GameScene.js HeartHUD import+생성 | PASS | import 25행, new HeartHUD(this, maxHearts, 30, 30) 98행 |
-| 7c | GameScene.js 피격->하트차감 로직 | PASS | _onHitObstacle 318행 -> heartHUD.takeDamage() 343행 |
-| 7d | GameScene.js _gameOver 분리 | PASS | 354행, 하트 0일 때만 게임오버 |
-| 7e | GameScene.js shutdown 정리 | PASS | keydown-DOWN off + heartHUD.destroy() |
-| 8 | SoundGenerator.js playHit() | PASS | 83행, 피격 효과음 |
-| 8a | SoundGenerator.js playSlide() | PASS | 92행, 슬라이드 효과음 |
-| 9 | import/export 관계 정상 | PASS | HeartHUD export->GameScene import, config GAME 공유, 빌드 통과로 전체 의존성 검증 |
+| 1 | npm run build 성공 | PASS | 28 modules, 681ms, chunk 1280KB |
+| 2 | enemies.js: 9종 적 데이터 | PASS | ENEMIES 객체 9개 키, width/height/color/speed/points 완비 |
+| 2a | enemies.js: ground/flying 타입 구분 | PASS | ground 5종(전갈,애벌레,불꽃슬라임,게,구름요정), flying 4종(박쥐,작은용,복어,독수리) |
+| 2b | enemies.js: WORLD_ENEMIES 매핑 | PASS | W1=[], W2=[전갈], W3~6=[ground+flying] |
+| 2c | enemies.js: flying 전용 필드 | PASS | flyHeight(0.4~0.5), amplitude(20~35) 모든 flying 적에 존재 |
+| 3 | Enemy.js: createAllEnemyTextures | PASS | 9종 순회, 2프레임 스프라이트시트, generateTexture+anims.create |
+| 3a | Enemy.js: 9종 그리기 함수 | PASS | _drawScorpion~_drawEagle 9개 함수, alt 파라미터로 2프레임 분기 |
+| 3b | Enemy.js: _drawEye 공통 함수 | PASS | 흰자+외곽+동공+하이라이트, 모든 적에서 호출 |
+| 4 | Enemy.js: Enemy 클래스 | PASS | Phaser.Physics.Arcade.Sprite 상속, allowGravity=false, immovable=true |
+| 4a | Enemy.js: setup() 풀링 재활용 | PASS | 텍스처/위치/속도/히트박스/애니메이션 재설정, 충돌박스 60% 관대 |
+| 4b | Enemy.js: updateMovement() | PASS | flying만 사인파 적용, flyTime 누적 + amplitude 사용 |
+| 4c | Enemy.js: defeat() | PASS | alive=false, body.enable=false, scaleY->0 트윈 후 비활성화 |
+| 5 | Enemy.js: EnemyManager | PASS | physics.add.group, setWorld(), spawnEnemy(), update(), cleanup() |
+| 5a | EnemyManager: setWorld() | PASS | WORLD_ENEMIES[worldId] 참조, 월드1은 빈 배열 |
+| 5b | EnemyManager: spawnEnemy() | PASS | ground=groundY-h/2, flying=height*flyHeight, 풀링 getFirstDead |
+| 5c | EnemyManager: cleanup() | PASS | x < -60 이면 비활성화+body.enable=false |
+| 6 | EffectManager.js: showDefeatEffect | PASS | 별 5~8개 파티클 + "퍽!" 텍스트 트윈, depth 20~21 |
+| 6a | EffectManager.js: showScorePopup | PASS | "+N" 텍스트, 위로 떠오르며 800ms 후 destroy |
+| 7 | worlds.js: enemies 배열 추가 | PASS | 6개 월드 모두 enemies 필드 존재, enemies.js와 키 일치 |
+| 8 | BootScene.js: 적 텍스처 생성 | PASS | import + 로딩 단계 3번째("적 캐릭터 그리는 중...") |
+| 9 | GameScene.js: EnemyManager 생성 | PASS | 104행, new EnemyManager(this, worldData.id) |
+| 9a | GameScene.js: EffectManager 생성 | PASS | 107행, new EffectManager(this) |
+| 9b | GameScene.js: overlap 충돌 등록 | PASS | dino vs enemyManager.group -> _onHitEnemy |
+| 9c | GameScene.js: 밟기 판정 | PASS | velocity.y>0 && body.bottom<=enemy.body.top+15 |
+| 9d | GameScene.js: 슬라이드 공격 판정 | PASS | dino.isSliding && enemy.enemyData.type==='ground' |
+| 9e | GameScene.js: 처치 체인 | PASS | defeat()+showDefeatEffect()+showScorePopup()+점수추가+playEnemyDefeat() |
+| 9f | GameScene.js: 밟기 바운스 | PASS | isStomping이면 setVelocityY(-250) |
+| 9g | GameScene.js: 피격 처리 | PASS | 밟기/슬라이드 아닌 경우 -> dino.hit() -> heartHUD.takeDamage() |
+| 9h | GameScene.js: _trySpawnEnemy | PASS | 35%+월드당3% 확률, nextEnemyDelay 간격 |
+| 9i | GameScene.js: update에서 enemy 갱신 | PASS | enemyManager.update(delta)+cleanup() 호출 |
+| 10 | SoundGenerator.js: playEnemyDefeat | PASS | 타격음 400Hz + 80ms 후 띵 800Hz |
+| 11 | import/export 정합성 | PASS | 빌드 28모듈 성공, 모든 import/export 쌍 확인 |
 
 ### 종합
 
-총 **26개** 항목 중 **26개 통과 / 0개 실패**
+총 **32개** 항목 중 **32개 통과 / 0개 실패**
 
-빌드 성공. P1(하트 시스템 + 슬라이드) 8파일 모두 코드상 정상 반영 확인.
-- HeartHUD: Phaser Scene 비상속 독립 클래스, constructor에서 초기화 (create 메서드 없음, 정상)
-- Dino: slide/endSlide/hit + 무적/깜빡이 타이머 체계 정상
-- DinoGraphics: 5프레임 480px, slide 애니메이션 + drawSlideFace 4종 스킨 대응
-- GameScene: 키보드(DOWN) + 터치(스와이프) 이중 입력, 하트 차감 체인 정상
-- SoundGenerator: playHit/playSlide 메서드 존재
-- import/export: 빌드 성공으로 전체 모듈 연결 검증 완료
+빌드 성공. P2(적 캐릭터 9종 + 밟기/슬라이드 공격) 7파일 모두 코드상 정상.
+- enemies.js: 9종 데이터 완비, ground 5종 + flying 4종, WORLD_ENEMIES 월드별 매핑 정상
+- Enemy.js: 텍스처 9종 생성 + Enemy 클래스(풀링 재활용) + EnemyManager(스폰/업데이트/클린업)
+- EffectManager.js: 별 파티클 + "퍽!" + "+N" 점수 팝업, 트윈 후 destroy
+- GameScene.js: 밟기(velocity.y>0+top비교)/슬라이드(isSliding+ground)/피격 3분기 정상
+- 기존 P1 시스템(하트/무적/슬라이드)과 자연스럽게 연동됨
