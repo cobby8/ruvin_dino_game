@@ -40,6 +40,9 @@ export class WorldMapScene extends Phaser.Scene {
   create() {
     const { width, height } = this.scale;
 
+    // 화면 전환 효과: 페이드인
+    this.cameras.main.fadeIn(500, 0, 0, 0);
+
     // === 진행도 불러오기 ===
     this.progress = this._loadProgress();
 
@@ -345,7 +348,10 @@ export class WorldMapScene extends Phaser.Scene {
             yoyo: true,
             onComplete: () => {
               this.registry.set('currentStage', stageId);
-              this.scene.start('GameScene');
+              this.cameras.main.fadeOut(300, 0, 0, 0);
+              this.cameras.main.once('camerafadeoutcomplete', () => {
+                this.scene.start('GameScene');
+              });
             },
           });
         });
@@ -432,7 +438,10 @@ export class WorldMapScene extends Phaser.Scene {
       0x9B72CF,
       () => {
         soundGenerator.playSelect();
-        this.scene.start('SelectScene');
+        this.cameras.main.fadeOut(300, 0, 0, 0);
+        this.cameras.main.once('camerafadeoutcomplete', () => {
+          this.scene.start('SelectScene');
+        });
       }
     );
 
@@ -443,7 +452,10 @@ export class WorldMapScene extends Phaser.Scene {
       0x4EAEFF,
       () => {
         soundGenerator.playSelect();
-        this.scene.start('DifficultyScene');
+        this.cameras.main.fadeOut(300, 0, 0, 0);
+        this.cameras.main.once('camerafadeoutcomplete', () => {
+          this.scene.start('DifficultyScene');
+        });
       }
     );
 
@@ -519,7 +531,10 @@ export class WorldMapScene extends Phaser.Scene {
 
     yesHit.on('pointerdown', () => {
       localStorage.removeItem('ruvin_dino_progress');
-      this.scene.start('SelectScene');
+      this.cameras.main.fadeOut(300, 0, 0, 0);
+      this.cameras.main.once('camerafadeoutcomplete', () => {
+        this.scene.start('SelectScene');
+      });
     });
 
     // "아니오" 버튼

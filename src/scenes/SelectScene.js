@@ -18,6 +18,9 @@ export class SelectScene extends Phaser.Scene {
     this.selectedDino = null; // 선택된 공룡 인덱스
     this.cards = [];          // 공룡 카드 컨테이너 배열
 
+    // 화면 전환 효과: 페이드인
+    this.cameras.main.fadeIn(500, 0, 0, 0);
+
     // === 배경 그라디언트 (하늘색 -> 연보라) ===
     const bg = this.add.graphics();
     bg.fillGradientStyle(0x87CEEB, 0x87CEEB, 0xD4A5FF, 0xD4A5FF, 1);
@@ -192,8 +195,11 @@ export class SelectScene extends Phaser.Scene {
 
         soundGenerator.playSelect();
 
-        // 난이도 선택 화면으로 전환 (페이즈 1: 공룡선택 → 난이도선택 → 게임)
-        this.scene.start('DifficultyScene');
+        // 페이드아웃 후 난이도 선택 화면으로 전환
+        this.cameras.main.fadeOut(300, 0, 0, 0);
+        this.cameras.main.once('camerafadeoutcomplete', () => {
+          this.scene.start('DifficultyScene');
+        });
       }
     });
   }

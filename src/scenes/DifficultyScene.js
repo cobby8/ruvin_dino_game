@@ -25,6 +25,9 @@ export class DifficultyScene extends Phaser.Scene {
     this.selectedIndex = null; // 선택된 난이도 인덱스
     this.cards = [];           // 카드 컨테이너 배열
 
+    // 화면 전환 효과: 페이드인
+    this.cameras.main.fadeIn(500, 0, 0, 0);
+
     // === 배경 (연보라 파스텔 그라디언트) ===
     const bg = this.add.graphics();
     bg.fillGradientStyle(0xE8D5F5, 0xE8D5F5, 0xD4A5FF, 0xD4A5FF, 1);
@@ -211,16 +214,28 @@ export class DifficultyScene extends Phaser.Scene {
 
         soundGenerator.playSelect();
 
-        // 진행도 확인: 이전 진행 있으면 월드맵, 없으면 스테이지 1로 바로 시작
-        const progress = this._loadProgress();
-        if (progress.clearedStages.length > 0) {
-          // 이어하기: 월드맵에서 스테이지 선택
-          this.scene.start('WorldMapScene');
-        } else {
-          // 첫 플레이: 스테이지 1로 바로 시작
-          this.registry.set('currentStage', 1);
-          this.scene.start('GameScene');
-        }
+        // 페이드아웃 후 다음 씬으로 전환
+        this.cameras.main.fadeOut(300, 0, 0, 0);
+        this.cameras.main.once('camerafadeoutcomplete', () => {
+          const progress = this._loadProgress();
+
+          // 튜토리얼 미완료 시 → TutorialScene 먼저
+          const tutorialDone = localStorage.getItem('ruvin_tutorial_done');
+          if (!tutorialDone) {
+            this.registry.set('currentStage', 1);
+            this.scene.start('TutorialScene');
+            return;
+          }
+
+          if (progress.clearedStages.length > 0) {
+            // 이어하기: 월드맵에서 스테이지 선택
+            this.scene.start('WorldMapScene');
+          } else {
+            // 첫 플레이: 스테이지 1로 바로 시작
+            this.registry.set('currentStage', 1);
+            this.scene.start('GameScene');
+          }
+        });
       }
     });
   }

@@ -25,6 +25,9 @@ export class EndingScene extends Phaser.Scene {
   create() {
     const { width, height } = this.scale;
 
+    // 화면 전환 효과: 페이드인
+    this.cameras.main.fadeIn(500, 0, 0, 0);
+
     // === 화려한 배경 (그라디언트: 금색 → 보라) ===
     const bg = this.add.graphics();
     bg.fillGradientStyle(0xFFD700, 0xFFD700, 0xD4A5FF, 0xD4A5FF, 1);
@@ -116,10 +119,12 @@ export class EndingScene extends Phaser.Scene {
         0xFF8C42,
         () => {
           soundGenerator.playSelect();
-          // 진행도 초기화
           localStorage.removeItem('ruvin_dino_progress');
           this.registry.set('currentStage', 1);
-          this.scene.start('SelectScene');
+          this.cameras.main.fadeOut(300, 0, 0, 0);
+          this.cameras.main.once('camerafadeoutcomplete', () => {
+            this.scene.start('SelectScene');
+          });
         }
       );
 
@@ -130,9 +135,11 @@ export class EndingScene extends Phaser.Scene {
         0x66CC77,
         () => {
           soundGenerator.playSelect();
-          // 자유 모드: 스테이지 0 = 무한 러너
           this.registry.set('currentStage', 0);
-          this.scene.start('GameScene');
+          this.cameras.main.fadeOut(300, 0, 0, 0);
+          this.cameras.main.once('camerafadeoutcomplete', () => {
+            this.scene.start('GameScene');
+          });
         }
       );
     });

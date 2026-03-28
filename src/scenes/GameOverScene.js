@@ -33,6 +33,9 @@ export class GameOverScene extends Phaser.Scene {
   create() {
     const { width, height } = this.scale;
 
+    // 화면 전환 효과: 페이드인
+    this.cameras.main.fadeIn(500, 0, 0, 0);
+
     // 반투명 어두운 오버레이
     const overlay = this.add.graphics();
     overlay.fillStyle(0x000000, 0.6);
@@ -152,8 +155,10 @@ export class GameOverScene extends Phaser.Scene {
       0xFFCC00,
       () => {
         soundGenerator.playSelect();
-        // 같은 스테이지로 재시작 (currentStage는 이미 설정되어 있음)
-        this.scene.start('GameScene');
+        this.cameras.main.fadeOut(300, 0, 0, 0);
+        this.cameras.main.once('camerafadeoutcomplete', () => {
+          this.scene.start('GameScene');
+        });
       }
     );
 
@@ -165,7 +170,10 @@ export class GameOverScene extends Phaser.Scene {
         0x999999,
         () => {
           soundGenerator.playSelect();
-          this.scene.start('WorldMapScene');
+          this.cameras.main.fadeOut(300, 0, 0, 0);
+          this.cameras.main.once('camerafadeoutcomplete', () => {
+            this.scene.start('WorldMapScene');
+          });
         }
       );
     }
@@ -177,7 +185,10 @@ export class GameOverScene extends Phaser.Scene {
       0x9B72CF,
       () => {
         soundGenerator.playSelect();
-        this.scene.start('SelectScene');
+        this.cameras.main.fadeOut(300, 0, 0, 0);
+        this.cameras.main.once('camerafadeoutcomplete', () => {
+          this.scene.start('SelectScene');
+        });
       }
     );
   }

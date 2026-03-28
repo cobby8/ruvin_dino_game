@@ -46,6 +46,9 @@ export class StageClearScene extends Phaser.Scene {
     // === 진행도 저장 (localStorage) ===
     this._saveProgress();
 
+    // 화면 전환 효과: 페이드인
+    this.cameras.main.fadeIn(500, 0, 0, 0);
+
     // === 반투명 밝은 오버레이 (연금색, 기쁜 느낌) ===
     const overlay = this.add.graphics();
     overlay.fillStyle(0xFFF8DC, 0.85); // 연금색 (cornsilk)
@@ -171,7 +174,10 @@ export class StageClearScene extends Phaser.Scene {
         0xFFD700,
         () => {
           soundGenerator.playSelect();
-          this.scene.start('EndingScene');
+          this.cameras.main.fadeOut(300, 0, 0, 0);
+          this.cameras.main.once('camerafadeoutcomplete', () => {
+            this.scene.start('EndingScene');
+          });
         }
       );
     } else {
@@ -183,7 +189,10 @@ export class StageClearScene extends Phaser.Scene {
         () => {
           soundGenerator.playSelect();
           this.registry.set('currentStage', this.nextStageId);
-          this.scene.start('GameScene');
+          this.cameras.main.fadeOut(300, 0, 0, 0);
+          this.cameras.main.once('camerafadeoutcomplete', () => {
+            this.scene.start('GameScene');
+          });
         }
       );
     }
@@ -195,7 +204,10 @@ export class StageClearScene extends Phaser.Scene {
       0x999999,
       () => {
         soundGenerator.playSelect();
-        this.scene.start('WorldMapScene');
+        this.cameras.main.fadeOut(300, 0, 0, 0);
+        this.cameras.main.once('camerafadeoutcomplete', () => {
+          this.scene.start('WorldMapScene');
+        });
       }
     );
   }

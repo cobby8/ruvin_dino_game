@@ -100,9 +100,12 @@ export class BootScene extends Phaser.Scene {
             barFill.fillStyle(0x66CC77);
             barFill.fillRoundedRect(barX, barY, barWidth, barHeight, 8);
 
-            // 0.5초 후 공룡 선택 화면으로 전환
+            // 0.5초 후 페이드아웃 → 공룡 선택 화면으로 전환
             this.time.delayedCall(500, () => {
-              this.scene.start('SelectScene');
+              this.cameras.main.fadeOut(300, 0, 0, 0);
+              this.cameras.main.once('camerafadeoutcomplete', () => {
+                this.scene.start('SelectScene');
+              });
             });
           }
         };

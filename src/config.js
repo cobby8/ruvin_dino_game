@@ -76,6 +76,14 @@ export const GAME = {
     SPAWN_CHANCE: 0.06,       // 기본 스폰 확률 (6%)
   },
 
+  // === 콤보 시스템 (연속 밟기/넘기 시 점수 배율 증가) ===
+  COMBO: {
+    TIMEOUT: 2000,        // 콤보 유지 시간 (2초 내에 다음 성공해야 유지)
+    MAX_MULTIPLIER: 5,    // 최대 5배까지 배율 증가
+    // 콤보 수에 따른 표시 메시지 (인덱스 = comboCount - 1)
+    MESSAGES: ['', '2콤보!', '3콤보!', '4콤보!', '5콤보! MAX!'],
+  },
+
   // === 칭찬 시스템 ===
   PRAISE_INTERVAL: 10,       // 10점마다 칭찬 메시지 표시
   PRAISE_MESSAGES: [

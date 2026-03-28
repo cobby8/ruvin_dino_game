@@ -128,6 +128,11 @@ export class GameScene extends Phaser.Scene {
     // === [P4] 부스트 패드 매니저 ===
     this.boostPadManager = new BoostPadManager(this);
 
+    // === 콤보 시스템 (연속 밟기/넘기 시 배율 증가) ===
+    this.comboCount = 0;           // 현재 콤보 수 (0이면 콤보 아님)
+    this.comboTimer = null;        // 콤보 타임아웃 (2초 내 다음 성공 필요)
+    this.comboMultiplier = 1;      // 현재 점수 배율 (콤보 수와 동일, 최대 5)
+
     // === [P4] 부스트 상태 관리 ===
     this.isBoosting = false;       // 부스트 모드 활성 여부
     this._speedLines = [];         // 속도선 이펙트 배열
@@ -196,6 +201,9 @@ export class GameScene extends Phaser.Scene {
     // === 효과음 + BGM ===
     soundGenerator.init();
     soundGenerator.startBGM();
+
+    // 화면 전환 효과: 검은색에서 밝아짐 (씬 진입 시)
+    this.cameras.main.fadeIn(500, 0, 0, 0);
 
     // 게임 시작 시간
     this.gameStartTime = this.time.now;
@@ -280,7 +288,13 @@ export class GameScene extends Phaser.Scene {
     if (this.dino.body.blocked.down) {
       if (this.wasInAir) {
         this.dino.onLand();
+        // 착지 충격파 이펙트 (공중에서 내려왔을 때만)
+        this.effectManager.showLandingDust(this.dino.x, this.groundY);
         this.wasInAir = false;
+      }
+      // 달리기 먼지 (바닥에 있을 때만, 슬라이드 중이 아닐 때)
+      if (!this.dino.isSliding) {
+        this.effectManager.showRunDust(this.dino.x, this.groundY, time);
       }
     } else {
       this.wasInAir = true;
@@ -358,7 +372,12 @@ export class GameScene extends Phaser.Scene {
       if (this.isStageClear) break;
       if (obstacle.active && !obstacle.scored && obstacle.x < this.dino.x - 20) {
         obstacle.scored = true;
-        this.clearScore++;  // 클리어 점수 +1 (장애물 넘기)
+
+        // 콤보 증가 (장애물 넘기 성공!)
+        this._addCombo();
+
+        // 클리어 점수 +1 x 콤보 배율
+        this.clearScore += this.comboMultiplier;
         soundGenerator.playScore();
 
         // HUD 업데이트 (클리어 점수)
@@ -459,23 +478,25 @@ export class GameScene extends Phaser.Scene {
     const nextStageId = this.stageData.id + 1;
     const isLastStage = nextStageId > 30;
 
-    // 1.5초 후 StageClearScene으로 전환
+    // 1.5초 후 페이드아웃 → StageClearScene으로 전환
     this.time.delayedCall(1500, () => {
       if (!isLastStage) {
-        // 다음 스테이지 설정
         this.registry.set('currentStage', nextStageId);
       }
 
-      // StageClearScene으로 이동 (별 계산 + 진행도 저장은 그쪽에서)
-      this.scene.start('StageClearScene', {
-        clearScore: this.clearScore,    // 장애물/적 넘긴 횟수 (클리어 기준)
-        starCount: this.starCount,      // 별 수집 수
-        stageData: this.stageData,
-        worldData: this.worldData,
-        targetScore: this.targetScore,
-        deathCount: this.deathCount || 0,
-        isLastStage: isLastStage,
-        nextStageId: nextStageId,
+      // 페이드아웃 후 씬 전환
+      this.cameras.main.fadeOut(300, 0, 0, 0);
+      this.cameras.main.once('camerafadeoutcomplete', () => {
+        this.scene.start('StageClearScene', {
+          clearScore: this.clearScore,
+          starCount: this.starCount,
+          stageData: this.stageData,
+          worldData: this.worldData,
+          targetScore: this.targetScore,
+          deathCount: this.deathCount || 0,
+          isLastStage: isLastStage,
+          nextStageId: nextStageId,
+        });
       });
     });
   }
@@ -539,13 +560,17 @@ export class GameScene extends Phaser.Scene {
     this.registry.set('stageClear', false);
 
     this.time.delayedCall(800, () => {
-      this.scene.start('GameOverScene', {
-        clearScore: this.clearScore,   // 장애물/적 넘긴 횟수
-        starCount: this.starCount,     // 별 수집 수
-        stageData: this.stageData,
-        worldData: this.worldData,
-        isFreeMode: this.isFreeMode,
-        hitCount: this.hitCount, // [P1] 피격 횟수도 전달
+      // 페이드아웃 후 씬 전환
+      this.cameras.main.fadeOut(300, 0, 0, 0);
+      this.cameras.main.once('camerafadeoutcomplete', () => {
+        this.scene.start('GameOverScene', {
+          clearScore: this.clearScore,
+          starCount: this.starCount,
+          stageData: this.stageData,
+          worldData: this.worldData,
+          isFreeMode: this.isFreeMode,
+          hitCount: this.hitCount,
+        });
       });
     });
   }
@@ -602,12 +627,16 @@ export class GameScene extends Phaser.Scene {
       // 적 처치 성공!
       enemy.defeat();
 
-      // 처치 이펙트 (별 파티클 + "퍽!" 텍스트)
-      this.effectManager.showDefeatEffect(enemy.x, enemy.y);
-      this.effectManager.showScorePopup(enemy.x, enemy.y, enemy.enemyData.points);
+      // 콤보 증가 (적 처치 성공!)
+      this._addCombo();
 
-      // 적 처치 → clearScore에 추가 (적도 넘긴 것으로 카운트)
-      this.clearScore += enemy.enemyData.points;
+      // 처치 이펙트 (연기 + 별 파티클 + "퍽!" 텍스트)
+      this.effectManager.showDefeatEffect(enemy.x, enemy.y);
+
+      // 적 처치 → clearScore에 콤보 배율 적용
+      const earnedPoints = enemy.enemyData.points * this.comboMultiplier;
+      this.effectManager.showScorePopup(enemy.x, enemy.y, earnedPoints);
+      this.clearScore += earnedPoints;
       this.stageHUD.updateScore(this.clearScore);
 
       // 처치 효과음
@@ -916,6 +945,39 @@ export class GameScene extends Phaser.Scene {
     });
   }
 
+  // =========================================================
+  // 콤보 시스템
+  // =========================================================
+
+  /**
+   * 콤보 증가: 장애물 넘기 또는 적 처치 시 호출
+   * 2초 안에 다음 성공하면 콤보 유지, 아니면 리셋
+   * 콤보 2이상이면 화면에 팝업 + 배율 적용
+   */
+  _addCombo() {
+    this.comboCount++;
+
+    // 배율 계산 (콤보 수 = 배율, 최대 5배)
+    this.comboMultiplier = Math.min(this.comboCount, GAME.COMBO.MAX_MULTIPLIER);
+
+    // 콤보 2 이상이면 팝업 표시
+    if (this.comboCount >= 2) {
+      const { width, height } = this.scale;
+      this.effectManager.showCombo(width / 2, height * 0.3, this.comboCount);
+    }
+
+    // 기존 타이머 제거 후 새 타이머 설정 (2초 안에 다음 성공해야 유지)
+    if (this.comboTimer) {
+      this.comboTimer.destroy();
+    }
+    this.comboTimer = this.time.delayedCall(GAME.COMBO.TIMEOUT, () => {
+      // 타임아웃: 콤보 리셋
+      this.comboCount = 0;
+      this.comboMultiplier = 1;
+      this.comboTimer = null;
+    });
+  }
+
   /** 화면 크기 변경 대응 */
   _onResize(gameSize) {
     const { width, height } = gameSize;
@@ -945,6 +1007,12 @@ export class GameScene extends Phaser.Scene {
       if (this.dino.invincibleTimer) { this.dino.invincibleTimer.destroy(); this.dino.invincibleTimer = null; }
       if (this.dino.blinkTimer) { this.dino.blinkTimer.destroy(); this.dino.blinkTimer = null; }
       if (this.dino.powerUpTimer) { this.dino.powerUpTimer.destroy(); this.dino.powerUpTimer = null; }
+    }
+
+    // 콤보 타이머 정리
+    if (this.comboTimer) {
+      this.comboTimer.destroy();
+      this.comboTimer = null;
     }
 
     // [P1] 하트 HUD 정리

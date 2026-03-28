@@ -11,6 +11,7 @@ import { GameOverScene } from './scenes/GameOverScene.js';
 import { StageClearScene } from './scenes/StageClearScene.js';
 import { WorldMapScene } from './scenes/WorldMapScene.js';
 import { EndingScene } from './scenes/EndingScene.js';
+import { TutorialScene } from './scenes/TutorialScene.js';
 
 // Phaser 게임 설정 (레고 조립 설명서 같은 역할)
 const config = {
@@ -38,7 +39,8 @@ const config = {
   backgroundColor: '#87CEEB',
 
   // 씬 등록 순서: Boot → Select → Difficulty → WorldMap → Game → StageClear → GameOver → Ending
-  scene: [BootScene, SelectScene, DifficultyScene, WorldMapScene, GameScene, StageClearScene, GameOverScene, EndingScene],
+  // 씬 등록 순서: Boot → Select → Difficulty → Tutorial → WorldMap → Game → StageClear → GameOver → Ending
+  scene: [BootScene, SelectScene, DifficultyScene, TutorialScene, WorldMapScene, GameScene, StageClearScene, GameOverScene, EndingScene],
 
   // 렌더링 설정
   render: {

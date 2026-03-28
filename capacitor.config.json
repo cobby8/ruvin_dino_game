@@ -1,0 +1,11 @@
+{
+  "appId": "com.ruvin.dinogame",
+  "appName": "루빈이의 공룡 모험",
+  "webDir": "dist",
+  "server": {
+    "androidScheme": "https"
+  },
+  "android": {
+    "allowMixedContent": true
+  }
+}
