@@ -263,6 +263,14 @@ export class GameScene extends Phaser.Scene {
     this._bgParticleTimer = 0;    // 다음 파티클 생성까지 남은 시간
     this._bgParticles = [];       // 활성 배경 파티클 목록
 
+    // === [P3-Pause] 일시정지 버튼 (우상단, || 모양 그래픽) ===
+    // StageHUD 반투명 배경 위에 배치, depth 100 이상
+    this._createPauseButton();
+
+    // === [P3-Pause] ESC / P 키로 일시정지 ===
+    this.escKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.ESC);
+    this.pKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.P);
+
     // 화면 크기 변경 대응
     this.scale.on('resize', this._onResize, this);
   }
@@ -356,6 +364,12 @@ export class GameScene extends Phaser.Scene {
    */
   update(time, delta) {
     if (this.isGameOver || this.isStageClear) return;
+
+    // [P3-Pause] ESC 또는 P 키로 일시정지 (JustDown = 한 번만 감지)
+    if (Phaser.Input.Keyboard.JustDown(this.escKey) || Phaser.Input.Keyboard.JustDown(this.pKey)) {
+      this._pauseGame();
+      return; // 일시정지 후 나머지 update 실행 불필요
+    }
 
     // 배경 스크롤
     this.background.update(this.currentSpeed, delta);
@@ -1361,6 +1375,84 @@ export class GameScene extends Phaser.Scene {
     if (this.background) {
       this.background.resize(width, this.groundY);
     }
+
+    // [P3-Pause] 일시정지 버튼 위치도 재조정
+    if (this._pauseBtnHitArea) {
+      this._pauseBtnHitArea.setPosition(width - 40, 40);
+    }
+    if (this._pauseBtnGraphics) {
+      this._pauseBtnGraphics.clear();
+      this._drawPauseIcon(this._pauseBtnGraphics, width - 40, 40);
+    }
+  }
+
+  /**
+   * [P3-Pause] 우상단에 일시정지 버튼(|| 모양) 생성
+   * - StageHUD 반투명 배경 위에 배치 (depth: 101)
+   * - 터치 영역 넉넉하게 44x44
+   */
+  _createPauseButton() {
+    const { width } = this.scale;
+    const btnX = width - 40;  // 우상단
+    const btnY = 40;
+
+    // || 아이콘을 Graphics로 그림
+    this._pauseBtnGraphics = this.add.graphics();
+    this._pauseBtnGraphics.setDepth(101);
+    this._drawPauseIcon(this._pauseBtnGraphics, btnX, btnY);
+
+    // 터치/클릭 히트 영역 (투명 사각형, 44x44로 넉넉하게)
+    this._pauseBtnHitArea = this.add.rectangle(btnX, btnY, 44, 44, 0xffffff, 0)
+      .setDepth(101)
+      .setInteractive({ useHandCursor: true });
+
+    // 클릭/터치 시 일시정지
+    this._pauseBtnHitArea.on('pointerdown', () => {
+      this._pauseGame();
+    });
+
+    // 호버 효과: 아이콘 밝아짐
+    this._pauseBtnHitArea.on('pointerover', () => {
+      this._pauseBtnGraphics.clear();
+      this._drawPauseIcon(this._pauseBtnGraphics, btnX, btnY, 1.0);
+    });
+    this._pauseBtnHitArea.on('pointerout', () => {
+      this._pauseBtnGraphics.clear();
+      this._drawPauseIcon(this._pauseBtnGraphics, btnX, btnY, 0.7);
+    });
+  }
+
+  /**
+   * [P3-Pause] || 아이콘 그리기 헬퍼
+   * - 세로선 2개를 둥근 사각형으로 그림
+   */
+  _drawPauseIcon(graphics, x, y, alpha = 0.7) {
+    graphics.fillStyle(0xffffff, alpha);
+    // 왼쪽 세로선 (폭 5, 높이 20)
+    graphics.fillRoundedRect(x - 9, y - 10, 5, 20, 2);
+    // 오른쪽 세로선
+    graphics.fillRoundedRect(x + 4, y - 10, 5, 20, 2);
+  }
+
+  /**
+   * [P3-Pause] 게임 일시정지 처리
+   * - 게임오버나 클리어 중에는 동작 안 함
+   * - GameScene을 pause하고 PauseScene을 위에 launch
+   */
+  _pauseGame() {
+    // 게임오버/클리어 상태에서는 일시정지 불가
+    if (this.isGameOver || this.isStageClear) return;
+
+    // GameScene 일시정지 (update 멈춤 + 물리 정지)
+    this.scene.pause();
+
+    // PauseScene을 위에 오버레이로 실행 (launch = 덮어서 실행)
+    this.scene.launch('PauseScene', {
+      // "다시하기"에 필요한 데이터 (registry에서도 읽지만 안전하게 전달)
+      dinoKey: this.registry.get('selectedDino') || 'brachio',
+      currentStage: this.registry.get('currentStage'),
+      difficulty: this.difficulty,
+    });
   }
 
   shutdown() {
@@ -1373,6 +1465,9 @@ export class GameScene extends Phaser.Scene {
     this.input.keyboard.off('keydown-X');
     this.input.keyboard.off('keyup-X');
     this.input.keyboard.off('keydown-DOWN'); // [P1] 슬라이드 키 정리
+    // [P3-Pause] ESC/P 키 해제
+    if (this.escKey) this.input.keyboard.removeKey(this.escKey);
+    if (this.pKey) this.input.keyboard.removeKey(this.pKey);
 
     // 공룡의 타이머 정리 (씬 종료 후 타이머가 실행되어 에러 발생 방지)
     if (this.dino) {

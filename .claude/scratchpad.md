@@ -11,7 +11,7 @@
 | 1. 4가지 개선사항 기획설계 | 완료 | planner-architect |
 | 2. 페이즈1: 점프 버튼 분리 | 구현완료 | developer |
 | 3. 페이즈2: HUD 가시성 개선 | 구현완료 | developer |
-| 4. 페이즈3: 일시정지 기능 | 대기 | developer |
+| 4. 페이즈3: 일시정지 기능 | 구현완료 | developer |
 | 5. 페이즈4: 메뉴 고도화 | 대기 | developer |
 
 ## 작업 로그
@@ -91,6 +91,28 @@ tester 참고:
 reviewer 참고:
 - StageHUD 배경 패널 depth=99, HUD 텍스트/하트 depth=100으로 레이어 분리
 - PowerUpHUD._update()에서 50ms마다 공룡 위치를 추적하여 graphics를 매번 다시 그림
+
+### 페이즈3: 게임 일시정지(Pause) 기능 (2026-03-28)
+
+구현한 기능: ESC/P키 또는 우상단 버튼으로 게임 일시정지, 계속/다시/나가기 메뉴
+
+| 파일 경로 | 변경 내용 | 신규/수정 |
+|----------|----------|----------|
+| src/scenes/PauseScene.js | 반투명 오버레이 씬 (어두운 배경 + || 아이콘 + 버튼 3개: 계속/다시/나가기) | 신규 |
+| src/scenes/GameScene.js | 우상단 || 일시정지 버튼(Graphics) + ESC/P키 이벤트 + _pauseGame() + shutdown 정리 | 수정 |
+| src/main.js | PauseScene import + scene 배열에 등록 | 수정 |
+
+tester 참고:
+- 테스트 방법: 게임 중 ESC키, P키, 또는 우상단 || 버튼 클릭으로 일시정지 진입
+- 정상 동작: 게임이 완전히 멈추고 (공룡/장애물 정지) 반투명 어두운 배경에 메뉴 3개 표시
+- "계속하기" 클릭 시 게임 재개, "다시하기" 시 현재 스테이지 처음부터, "나가기" 시 월드맵으로
+- 주의: 게임오버/클리어 상태에서는 일시정지가 동작하지 않아야 함
+- PauseScene에서도 ESC/P 키로 "계속하기" 가능
+
+reviewer 참고:
+- PauseScene은 launch()로 GameScene 위에 오버레이 실행 (start가 아님)
+- "다시하기"/"나가기"는 registry 기반이므로 별도 데이터 전달 없이 scene.start로 처리
+- 일시정지 버튼 depth=101 (StageHUD 배경 99, HUD 텍스트 100 위)
 
 ## 기획설계 (planner-architect)
 
