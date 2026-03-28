@@ -147,19 +147,19 @@ export class Dino extends Phaser.Physics.Arcade.Sprite {
 
     const now = Date.now();
 
-    // 바닥 점프: blocked.down이고 쿨다운(200ms) 지남
-    // 쿨다운 = 점프 직후 blocked.down이 아직 true일 때 재발동 방지
+    // 바닥 점프: blocked.down + 쿨다운(200ms) 경과
     if (this.body.blocked.down && (now - this._lastJumpTime > 200)) {
       const jumpMulti = this.ability === 'highJump' ? 1.2 : 1.0;
       this.body.setVelocityY(GAME.JUMP.LOW_VELOCITY * jumpMulti);
       this.play(`${this.dinoKey}_jump`);
       soundGenerator.playJump();
 
-      this._lastJumpTime = now;       // 쿨다운 시작
+      this._lastJumpTime = now;
       this._isJumping = true;
       this.isDoubleJumpUsed = false;
-    } else if (!this.body.blocked.down && !this.isDoubleJumpUsed) {
-      // 확실히 공중(blocked.down=false) + 2단 점프 미사용 → 2단 점프!
+    } else if (!this.isDoubleJumpUsed) {
+      // 바닥 점프가 아닌 모든 터치 → 2단 점프!
+      // (쿨다운이 바닥 재발동을 막으니, 나머지는 전부 공중 판정)
       this.doubleJump();
     }
   }
