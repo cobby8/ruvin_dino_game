@@ -30,16 +30,26 @@ export class Dino extends Phaser.Physics.Arcade.Sprite {
    * @param {string} dinoKey - 공룡 텍스처 키 ('brachio', 'trex', 등)
    */
   constructor(scene, x, y, dinoKey) {
-    super(scene, x, y, dinoKey, 0);
+    // 이미지 텍스처(PNG)가 있으면 사용, 없으면 기존 Graphics 텍스처 사용
+    const imgKey = `img_${dinoKey}`;
+    const useImage = scene.textures.exists(imgKey);
+    const textureKey = useImage ? imgKey : dinoKey;
+    super(scene, x, y, textureKey, 0);
 
     this.dinoKey = dinoKey;
+    this.useImage = useImage; // 이미지 사용 여부 (blink 처리에 필요)
 
     // 씬에 추가 + 물리 시스템에 등록
     scene.add.existing(this);
     scene.physics.add.existing(this);
 
-    // 크기 설정
-    this.setScale(GAME.DINO_SCALE);
+    // 크기 설정: 이미지(516x512)는 기존 Graphics(96x96)에 맞게 축소
+    if (this.useImage) {
+      // 96 / 512 = 0.1875 → 이미지를 96px 높이로 맞춤
+      this.setScale(GAME.DINO_SIZE / 512);
+    } else {
+      this.setScale(GAME.DINO_SCALE);
+    }
 
     // 기준점을 아래쪽 중앙으로 (바닥에 발이 닿도록)
     this.setOrigin(0.5, 1);
@@ -51,10 +61,17 @@ export class Dino extends Phaser.Physics.Arcade.Sprite {
     this.body.setBounce(0);
 
     // 충돌 박스를 몸체에 맞게 축소 (여유있는 히트박스 = 6살 배려)
-    // offsetY = DINO_SIZE - bodyHeight = 96 - 57.6 = 38.4 (= 0.4)
-    // origin(0.5, 1) 기준으로 바디 하단이 스프라이트 하단과 일치하도록 설정
-    this.body.setSize(GAME.DINO_SIZE * 0.5, GAME.DINO_SIZE * 0.6);
-    this.body.setOffset(GAME.DINO_SIZE * 0.25, GAME.DINO_SIZE * 0.4);
+    // 이미지 텍스처는 원본 크기(516x512) 기준으로 body를 설정해야 함
+    // (setScale이 적용되면 body도 자동으로 스케일됨)
+    if (this.useImage) {
+      // 이미지 기준: 원본 512px 높이에서 60%/40% 비율로 히트박스 설정
+      this.body.setSize(516 * 0.5, 512 * 0.6);
+      this.body.setOffset(516 * 0.25, 512 * 0.4);
+    } else {
+      // Graphics 기준: 96px
+      this.body.setSize(GAME.DINO_SIZE * 0.5, GAME.DINO_SIZE * 0.6);
+      this.body.setOffset(GAME.DINO_SIZE * 0.25, GAME.DINO_SIZE * 0.4);
+    }
 
     // 달리기 애니메이션 시작
     this.play(`${dinoKey}_run`);
@@ -270,10 +287,16 @@ export class Dino extends Phaser.Physics.Arcade.Sprite {
     this.isSliding = true;
 
     // 히트박스만 낮게 변경 (scaleY는 건드리지 않음! 바닥뚫기 방지)
-    const slideHeight = GAME.DINO_SIZE * 0.3;  // 슬라이드 히트박스 높이 (30%)
-    this.body.setSize(GAME.DINO_SIZE * 0.7, slideHeight);
-    // offset: 히트박스를 스프라이트 하단에 맞추기 (바닥에 붙어있도록)
-    this.body.setOffset(GAME.DINO_SIZE * 0.15, GAME.DINO_SIZE - slideHeight);
+    if (this.useImage) {
+      // 이미지 기준: 원본 크기로 히트박스 설정 (스케일은 자동 적용됨)
+      const slideHeight = 512 * 0.3;
+      this.body.setSize(516 * 0.7, slideHeight);
+      this.body.setOffset(516 * 0.15, 512 - slideHeight);
+    } else {
+      const slideHeight = GAME.DINO_SIZE * 0.3;
+      this.body.setSize(GAME.DINO_SIZE * 0.7, slideHeight);
+      this.body.setOffset(GAME.DINO_SIZE * 0.15, GAME.DINO_SIZE - slideHeight);
+    }
 
     // 슬라이드 애니메이션 재생 (납작한 포즈 - scaleY 변경 없이 애니메이션으로 표현)
     this.play(`${this.dinoKey}_slide`);
@@ -294,10 +317,14 @@ export class Dino extends Phaser.Physics.Arcade.Sprite {
     if (!this.isSliding) return;
     this.isSliding = false;
 
-    // 히트박스 원래대로 복원 (setScale 복원 불필요 - 스케일을 변경하지 않았으므로)
-    // offsetY = 0.4: origin(0.5,1) 기준 바디 하단 = 스프라이트 하단
-    this.body.setSize(GAME.DINO_SIZE * 0.5, GAME.DINO_SIZE * 0.6);
-    this.body.setOffset(GAME.DINO_SIZE * 0.25, GAME.DINO_SIZE * 0.4);
+    // 히트박스 원래대로 복원
+    if (this.useImage) {
+      this.body.setSize(516 * 0.5, 512 * 0.6);
+      this.body.setOffset(516 * 0.25, 512 * 0.4);
+    } else {
+      this.body.setSize(GAME.DINO_SIZE * 0.5, GAME.DINO_SIZE * 0.6);
+      this.body.setOffset(GAME.DINO_SIZE * 0.25, GAME.DINO_SIZE * 0.4);
+    }
 
     // 타이머 정리
     if (this.slideTimer) {

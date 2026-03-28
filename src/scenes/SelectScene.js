@@ -99,10 +99,17 @@ export class SelectScene extends Phaser.Scene {
       circle.fillCircle(0, -cardH * 0.1, cardW * 0.28);
       container.add(circle);
 
-      // 공룡 스프라이트 (달리기 애니메이션)
-      // 96px 스프라이트를 카드 크기에 맞게 축소 (카드폭 대비 적절한 비율)
-      const sprite = this.add.sprite(0, -cardH * 0.1, dino.key, 0);
-      sprite.setScale(Math.min(cardW / 110, 1.0));
+      // 공룡 스프라이트 (이미지 텍스처가 있으면 PNG 사용)
+      const imgKey = `img_${dino.key}`;
+      const useImage = this.textures.exists(imgKey);
+      const spriteKey = useImage ? imgKey : dino.key;
+      const sprite = this.add.sprite(0, -cardH * 0.1, spriteKey, 0);
+      // 이미지(516x512)는 카드 크기에 맞게 축소, Graphics(96x96)는 기존 비율
+      if (useImage) {
+        sprite.setScale(Math.min(cardW / 580, 0.18));
+      } else {
+        sprite.setScale(Math.min(cardW / 110, 1.0));
+      }
       sprite.play(`${dino.key}_run`);
       container.add(sprite);
 

@@ -29,7 +29,13 @@
       "Bash(mv \"Generated Image March 28, 2026 - 7_26PM \\(1\\).jpg\" world5.jpg)",
       "Bash(mv \"Generated Image March 28, 2026 - 7_27PM.jpg\" world6.jpg)",
       "Bash(mv \"Generated Image March 28, 2026 - 7_28PM.jpg\" world3.jpg)",
-      "Bash(cd:*)"
+      "Bash(cd:*)",
+      "Bash(pip show:*)",
+      "Bash(pip3 show:*)",
+      "Bash(pip install:*)",
+      "Bash(pip3 install:*)",
+      "Bash(python -m pip install Pillow)",
+      "Bash(python:*)"
     ]
   }
 }

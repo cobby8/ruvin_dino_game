@@ -213,12 +213,30 @@ export class Item extends Phaser.Physics.Arcade.Sprite {
    */
   setup(type, x, y, speed) {
     this.itemType = type;
-    this.setTexture(`item_${type}`);
+
+    // 아이템 이미지 프레임 매핑 (img_items 스프라이트시트)
+    // 0=별, 1=하트, 2=무적별, 3=자석, 4=방어막, 5=물음표블록, 6=스프링, 7=부스트
+    const ITEM_FRAME_MAP = { star: 0, heart: 1, invincible: 2, magnet: 3, shield: 4 };
+
+    // 이미지 텍스처(PNG)가 있으면 사용, 없으면 기존 Graphics 텍스처
+    const useImage = this.scene.textures.exists('img_items') && ITEM_FRAME_MAP[type] !== undefined;
+    if (useImage) {
+      this.setTexture('img_items', ITEM_FRAME_MAP[type]);
+    } else {
+      this.setTexture(`item_${type}`);
+    }
+
     this.setPosition(x, y);
     this.setActive(true);
     this.setVisible(true);
     this.setAlpha(1);
-    this.setScale(1);
+
+    // 이미지(366x352)를 기존 아이템 크기(약 30px)에 맞게 축소
+    if (useImage) {
+      this.setScale(30 / 352);
+    } else {
+      this.setScale(1);
+    }
 
     // 왼쪽으로 이동 (장애물과 같은 속도)
     this.body.setVelocityX(-speed);

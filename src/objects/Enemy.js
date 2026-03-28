@@ -506,12 +506,31 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
     this.enemyData = ENEMIES[enemyKey];
     this.alive = true;
 
-    const textureKey = `enemy_${enemyKey}`;
-    this.setTexture(textureKey, 0);
+    // 적 이미지 프레임 매핑 (img_enemies 스프라이트시트의 프레임 번호)
+    const ENEMY_FRAME_MAP = {
+      w2_scorpion: 0, w3_caterpillar: 1, w3_bat: 2,
+      w4_flame_slime: 3, w4_small_dragon: 4,
+      w5_crab: 5, w5_pufferfish: 6,
+      w6_cloud_fairy: 7, w6_eagle: 8,
+    };
+
+    // 이미지 텍스처(PNG)가 있으면 사용, 없으면 기존 Graphics 텍스처
+    const useImage = this.scene.textures.exists('img_enemies') && ENEMY_FRAME_MAP[enemyKey] !== undefined;
+
+    if (useImage) {
+      this.setTexture('img_enemies', ENEMY_FRAME_MAP[enemyKey]);
+      // 이미지 크기(160x720)를 기존 적 크기(약 40x35)에 맞게 축소
+      const targetH = this.enemyData.height;
+      this.setScale(targetH / 720);
+    } else {
+      const textureKey = `enemy_${enemyKey}`;
+      this.setTexture(textureKey, 0);
+      this.setScale(1, 1);
+    }
+
     this.setPosition(x, y);
     this.setActive(true).setVisible(true);
     this.setAlpha(1);
-    this.setScale(1, 1);
     this.body.enable = true;
 
     // 이동 속도: 게임 기본 속도 + 적 자체 속도
@@ -523,16 +542,27 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
     this.flyTime = Math.random() * Math.PI * 2; // 랜덤 시작 위상
 
     // 충돌 박스 (관대하게, 6살 배려)
-    const bodyW = this.enemyData.width * 0.6;
-    const bodyH = this.enemyData.height * 0.6;
-    this.body.setSize(bodyW, bodyH);
-    this.body.setOffset(
-      (this.enemyData.width - bodyW) / 2,
-      (this.enemyData.height - bodyH) / 2
-    );
+    // 이미지 사용 시 원본 크기 기준으로 설정 (스케일이 자동 적용됨)
+    if (useImage) {
+      const bodyW = 160 * 0.6;
+      const bodyH = 720 * 0.6;
+      this.body.setSize(bodyW, bodyH);
+      this.body.setOffset((160 - bodyW) / 2, (720 - bodyH) / 2);
+    } else {
+      const bodyW = this.enemyData.width * 0.6;
+      const bodyH = this.enemyData.height * 0.6;
+      this.body.setSize(bodyW, bodyH);
+      this.body.setOffset(
+        (this.enemyData.width - bodyW) / 2,
+        (this.enemyData.height - bodyH) / 2
+      );
+    }
 
-    // 애니메이션 시작
-    this.play(`${textureKey}_move`, true);
+    // 애니메이션: 이미지는 단일 프레임이라 애니메이션 없음 (정지 이미지로 표시)
+    if (!useImage) {
+      const textureKey = `enemy_${enemyKey}`;
+      this.play(`${textureKey}_move`, true);
+    }
   }
 
   /**

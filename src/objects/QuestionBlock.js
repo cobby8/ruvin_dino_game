@@ -119,12 +119,21 @@ export class QuestionBlock extends Phaser.Physics.Arcade.Sprite {
    * @param {number} speed - 현재 게임 속도
    */
   setup(x, y, speed) {
-    this.setTexture('qblock_question');
+    // 이미지 텍스처(PNG)가 있으면 프레임 5(물음표블록)를 사용
+    const useImage = this.scene.textures.exists('img_items');
+    if (useImage) {
+      this.setTexture('img_items', 5);
+      this.setScale(40 / 352); // 이미지(352px)를 블록 크기(40px)에 맞게 축소
+    } else {
+      this.setTexture('qblock_question');
+      this.setScale(1);
+    }
+    this._useImage = useImage;
+
     this.setPosition(x, y);
     this.setActive(true);
     this.setVisible(true);
     this.setAlpha(1);
-    this.setScale(1);
     this.isUsed = false;
 
     // 왼쪽으로 이동
@@ -142,8 +151,9 @@ export class QuestionBlock extends Phaser.Physics.Arcade.Sprite {
     if (this.isUsed) return null;
     this.isUsed = true;
 
-    // 블록 텍스처를 빈 블록으로 변경
+    // 블록 텍스처를 빈 블록으로 변경 (이미지 사용 시 Graphics 빈 블록으로 전환)
     this.setTexture('qblock_used');
+    this.setScale(1); // Graphics 텍스처는 원본 크기 그대로
 
     // 위로 톡 튀는 애니메이션
     const originalY = this.y;

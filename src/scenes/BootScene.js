@@ -17,6 +17,7 @@ import { createQuestionBlockTextures } from '../objects/QuestionBlock.js';
 import { createSpringTextures } from '../objects/Spring.js';
 import { createBoostPadTextures } from '../objects/BoostPad.js';
 import { soundGenerator } from '../utils/SoundGenerator.js';
+import { DINOS } from '../config.js';
 
 export class BootScene extends Phaser.Scene {
   constructor() {
@@ -28,14 +29,14 @@ export class BootScene extends Phaser.Scene {
    * Phaser가 preload 완료 후 자동으로 create()를 호출함
    */
   preload() {
-    // === 공룡 스프라이트시트 (4프레임 가로 배열: 달리기/점프/슬라이드/넘어짐) ===
+    // === 공룡 스프라이트시트 (4프레임: 달리기/점프/슬라이드/넘어짐, PNG 투명 배경) ===
     // 원본 크기 2064x512, 4등분 → frameWidth=516
-    this.load.spritesheet('img_brachio', 'assets/dinos/brachio.jpg', { frameWidth: 516, frameHeight: 512 });
-    this.load.spritesheet('img_trex', 'assets/dinos/trex.jpg', { frameWidth: 516, frameHeight: 512 });
-    this.load.spritesheet('img_tricera', 'assets/dinos/tricera.jpg', { frameWidth: 516, frameHeight: 512 });
-    this.load.spritesheet('img_ptera', 'assets/dinos/ptera.jpg', { frameWidth: 516, frameHeight: 512 });
+    this.load.spritesheet('img_brachio', 'assets/dinos/brachio.png', { frameWidth: 516, frameHeight: 512 });
+    this.load.spritesheet('img_trex', 'assets/dinos/trex.png', { frameWidth: 516, frameHeight: 512 });
+    this.load.spritesheet('img_tricera', 'assets/dinos/tricera.png', { frameWidth: 516, frameHeight: 512 });
+    this.load.spritesheet('img_ptera', 'assets/dinos/ptera.png', { frameWidth: 516, frameHeight: 512 });
 
-    // === 배경 이미지 (단일 이미지, 1376x768) ===
+    // === 배경 이미지 (단일 이미지, 1376x768, JPG 유지) ===
     this.load.image('img_bg_world1', 'assets/backgrounds/world1.jpg');
     this.load.image('img_bg_world2', 'assets/backgrounds/world2.jpg');
     this.load.image('img_bg_world3', 'assets/backgrounds/world3.jpg');
@@ -43,22 +44,22 @@ export class BootScene extends Phaser.Scene {
     this.load.image('img_bg_world5', 'assets/backgrounds/world5.jpg');
     this.load.image('img_bg_world6', 'assets/backgrounds/world6.jpg');
 
-    // === 장애물 스프라이트시트 (3프레임 가로 배열, 1792x592) ===
+    // === 장애물 스프라이트시트 (3프레임, PNG 투명 배경, 1792x592) ===
     // 1792/3 = 597.3 → 597로 설정 (Phaser가 남는 픽셀 무시)
-    this.load.spritesheet('img_obs_world1', 'assets/obstacles/world1.jpg', { frameWidth: 597, frameHeight: 592 });
-    this.load.spritesheet('img_obs_world2', 'assets/obstacles/world2.jpg', { frameWidth: 597, frameHeight: 592 });
-    this.load.spritesheet('img_obs_world3', 'assets/obstacles/world3.jpg', { frameWidth: 597, frameHeight: 592 });
-    this.load.spritesheet('img_obs_world4', 'assets/obstacles/world4.jpg', { frameWidth: 597, frameHeight: 592 });
-    this.load.spritesheet('img_obs_world5', 'assets/obstacles/world5.jpg', { frameWidth: 597, frameHeight: 592 });
-    this.load.spritesheet('img_obs_world6', 'assets/obstacles/world6.jpg', { frameWidth: 597, frameHeight: 592 });
+    this.load.spritesheet('img_obs_world1', 'assets/obstacles/world1.png', { frameWidth: 597, frameHeight: 592 });
+    this.load.spritesheet('img_obs_world2', 'assets/obstacles/world2.png', { frameWidth: 597, frameHeight: 592 });
+    this.load.spritesheet('img_obs_world3', 'assets/obstacles/world3.png', { frameWidth: 597, frameHeight: 592 });
+    this.load.spritesheet('img_obs_world4', 'assets/obstacles/world4.png', { frameWidth: 597, frameHeight: 592 });
+    this.load.spritesheet('img_obs_world5', 'assets/obstacles/world5.png', { frameWidth: 597, frameHeight: 592 });
+    this.load.spritesheet('img_obs_world6', 'assets/obstacles/world6.png', { frameWidth: 597, frameHeight: 592 });
 
-    // === 적 스프라이트시트 (9프레임 가로 배열, 1447x720) ===
+    // === 적 스프라이트시트 (9프레임, PNG 투명 배경, 1447x720) ===
     // 1447/9 = 160.7 → 160으로 설정
-    this.load.spritesheet('img_enemies', 'assets/enemies/enemies.jpg', { frameWidth: 160, frameHeight: 720 });
+    this.load.spritesheet('img_enemies', 'assets/enemies/enemies.png', { frameWidth: 160, frameHeight: 720 });
 
-    // === 아이템 스프라이트시트 (8프레임 가로 배열, 2928x352) ===
+    // === 아이템 스프라이트시트 (8프레임, PNG 투명 배경, 2928x352) ===
     // 2928/8 = 366
-    this.load.spritesheet('img_items', 'assets/items/items.jpg', { frameWidth: 366, frameHeight: 352 });
+    this.load.spritesheet('img_items', 'assets/items/items.png', { frameWidth: 366, frameHeight: 352 });
   }
 
   create() {
@@ -109,6 +110,8 @@ export class BootScene extends Phaser.Scene {
           { label: '블록 그리는 중...', fn: () => createQuestionBlockTextures(this) },
           { label: '스프링/부스트 그리는 중...', fn: () => { createSpringTextures(this); createBoostPadTextures(this); } },
           { label: '배경 그리는 중...', fn: () => createAllBackgroundTextures(this) },
+          // PNG 이미지가 로드되었으면 Graphics 애니메이션을 이미지 기반으로 교체
+          { label: '이미지 적용 중...', fn: () => this._applyImageTextures() },
         ];
 
         let stepIndex = 0;
@@ -149,6 +152,69 @@ export class BootScene extends Phaser.Scene {
         };
 
         runNextStep();
+      });
+    });
+  }
+
+  /**
+   * PNG 이미지 텍스처로 기존 Graphics 애니메이션을 교체하는 메서드
+   * preload()에서 로드한 이미지가 있으면, Graphics 기반 애니메이션을 덮어씌움
+   * 이렇게 하면 Dino.js 등 기존 코드에서 같은 애니메이션 키로 자동 적용됨
+   */
+  _applyImageTextures() {
+    // === 공룡 이미지 애니메이션 교체 ===
+    // PNG 4프레임: 0=달리기, 1=점프, 2=슬라이드, 3=넘어짐
+    // 기존 Graphics 6프레임: 0,1=달리기, 2=점프, 3=넘어짐, 4=슬라이드, 5=blink
+    DINOS.forEach(dino => {
+      const imgKey = `img_${dino.key}`;
+      if (!this.textures.exists(imgKey)) return;
+
+      // 기존 애니메이션 제거 후 이미지 기반으로 재등록 (같은 키!)
+      const keys = ['_run', '_jump', '_slide', '_fall', '_blink'];
+      keys.forEach(suffix => {
+        const animKey = `${dino.key}${suffix}`;
+        if (this.anims.exists(animKey)) this.anims.remove(animKey);
+      });
+
+      // 달리기: 이미지 프레임 0 (단일 프레임이지만 기존과 같은 키)
+      this.anims.create({
+        key: `${dino.key}_run`,
+        frames: [{ key: imgKey, frame: 0 }],
+        frameRate: 8,
+        repeat: -1,
+      });
+
+      // 점프: 이미지 프레임 1
+      this.anims.create({
+        key: `${dino.key}_jump`,
+        frames: [{ key: imgKey, frame: 1 }],
+        frameRate: 1,
+        repeat: 0,
+      });
+
+      // 슬라이드: 이미지 프레임 2
+      this.anims.create({
+        key: `${dino.key}_slide`,
+        frames: [{ key: imgKey, frame: 2 }],
+        frameRate: 1,
+        repeat: 0,
+      });
+
+      // 넘어짐: 이미지 프레임 3
+      this.anims.create({
+        key: `${dino.key}_fall`,
+        frames: [{ key: imgKey, frame: 3 }],
+        frameRate: 1,
+        repeat: 0,
+      });
+
+      // 눈 깜빡임: 이미지에는 blink 프레임이 없으므로 달리기와 동일하게
+      // (GameScene의 _updateBlink에서 setFrame(5) 대신 별도 처리 필요)
+      this.anims.create({
+        key: `${dino.key}_blink`,
+        frames: [{ key: imgKey, frame: 0 }],
+        frameRate: 1,
+        repeat: 0,
       });
     });
   }

@@ -598,6 +598,7 @@ export class ObstacleManager {
    * @param {number} worldId - 1~6
    */
   setWorld(worldId) {
+    this._worldId = worldId; // 이미지 텍스처 키 생성에 필요
     const world = WORLDS.find(w => w.id === worldId);
     // 현재 월드의 장애물 키 목록 (예: ['w1_small_cactus', 'w1_big_cactus', 'w1_rock'])
     this.obstacleKeys = world ? world.obstacles : WORLDS[0].obstacles;
@@ -618,20 +619,42 @@ export class ObstacleManager {
     else if (rand < 0.8) keyIndex = 1;
     else keyIndex = 2;
 
-    const textureKey = this.obstacleKeys[keyIndex];
-    const yOffset = OBSTACLE_Y_OFFSETS[textureKey] || 20;
+    // 이미지 텍스처(PNG)가 있으면 사용, 없으면 기존 Graphics 텍스처
+    const imgKey = `img_obs_world${this._worldId}`;
+    const useImage = this.scene.textures.exists(imgKey);
+
+    const graphicsKey = this.obstacleKeys[keyIndex];
+    const yOffset = OBSTACLE_Y_OFFSETS[graphicsKey] || 20;
 
     // 오브젝트 풀에서 비활성 장애물 꺼내기
     let obstacle = this.group.getFirstDead(false);
 
-    if (obstacle) {
-      obstacle.setTexture(textureKey);
-      obstacle.setPosition(x, groundY - yOffset);
-      obstacle.setActive(true).setVisible(true);
-      obstacle.body.enable = true;
+    if (useImage) {
+      // 이미지 기반: 스프라이트시트의 프레임(0,1,2)을 랜덤 선택
+      if (obstacle) {
+        obstacle.setTexture(imgKey, keyIndex);
+        obstacle.setPosition(x, groundY - yOffset);
+        obstacle.setActive(true).setVisible(true);
+        obstacle.body.enable = true;
+      } else {
+        obstacle = this.group.create(x, groundY - yOffset, imgKey, keyIndex);
+        obstacle.setOrigin(0.5, 1);
+      }
+      // 이미지 크기(597x592)를 기존 장애물 크기(약 40x50)에 맞게 축소
+      // 기존 장애물 평균 높이 약 50px, 이미지 높이 592px → scale = 50/592 ≈ 0.085
+      obstacle.setScale(0.1);
     } else {
-      obstacle = this.group.create(x, groundY - yOffset, textureKey);
-      obstacle.setOrigin(0.5, 1);
+      // 기존 Graphics 텍스처 사용
+      if (obstacle) {
+        obstacle.setTexture(graphicsKey);
+        obstacle.setPosition(x, groundY - yOffset);
+        obstacle.setActive(true).setVisible(true);
+        obstacle.body.enable = true;
+      } else {
+        obstacle = this.group.create(x, groundY - yOffset, graphicsKey);
+        obstacle.setOrigin(0.5, 1);
+      }
+      obstacle.setScale(1);
     }
 
     // 장애물은 반드시 배경(depth 0~3)보다 앞에 표시 (depth 5)

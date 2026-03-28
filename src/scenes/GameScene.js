@@ -1290,14 +1290,23 @@ export class GameScene extends Phaser.Scene {
         this._isBlinking = true;
         const dinoKey = this.dino.dinoKey;
 
-        // blink 프레임(5번) 표시
-        this.dino.setFrame(5);
+        // blink 프레임 표시: 이미지 텍스처에는 blink 프레임이 없으므로
+        // 이미지 사용 시 살짝 투명하게 만들어 깜빡이는 효과 표현
+        if (this.dino.useImage) {
+          this.dino.setAlpha(0.7); // 잠깐 살짝 투명하게
+        } else {
+          this.dino.setFrame(5); // Graphics 텍스처의 blink 프레임
+        }
 
         // 150ms 후 달리기로 복귀
         this.time.delayedCall(150, () => {
           if (this.dino && this.dino.active && this.dino.body &&
               this.dino.body.blocked.down && !this.dino.isSliding &&
               !this.isGameOver && !this.isStageClear) {
+            // 이미지 blink 시 투명도 복원
+            if (this.dino.useImage) {
+              this.dino.setAlpha(1);
+            }
             this.dino.play(`${dinoKey}_run`);
           }
           this._isBlinking = false;
