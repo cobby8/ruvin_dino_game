@@ -288,23 +288,11 @@ export class GameScene extends Phaser.Scene {
     this._pointerStartY = 0;
     this._pointerStartTime = 0;
 
-    // 화면 터치 = 점프 (버튼 + 화면 터치 둘 다 지원)
-    // 공중에서는 어디를 터치해도 2단 점프 발동
+    // 화면 터치 좌표 기록 (슬라이드 스와이프 판정용)
+    // 점프는 우하단 버튼(JumpButtonHUD)에서만 처리 (중복 호출 방지)
     this.input.on('pointerdown', (pointer) => {
       this._pointerStartY = pointer.y;
       this._pointerStartTime = Date.now();
-
-      if (!this.isGameOver && !this.isStageClear) {
-        // 공중이면 → 2단 점프 (어디를 터치하든)
-        if (!this.dino.body.blocked.down) {
-          this.dino.startJump(false);
-        }
-        // 바닥이면 → 화면 좌/우로 점프 종류 결정 (버튼과 별개로 화면 터치도 지원)
-        else {
-          const isHigh = pointer.x > this.cameras.main.width / 2;
-          this.dino.startJump(isHigh);
-        }
-      }
     });
 
     this.input.on('pointerup', (pointer) => {
