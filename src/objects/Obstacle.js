@@ -668,11 +668,11 @@ export class ObstacleManager {
     obstacle.body.setImmovable(true);
     obstacle.scored = false;
 
-    // 충돌 박스를 살짝 작게 (히트박스 관대하게 = 6살 배려)
-    const bodyW = obstacle.width * 0.6;
-    const bodyH = obstacle.height * 0.7;
+    // 실제 그래픽 기반 판정 (그래픽이 닿으면 데미지)
+    const bodyW = obstacle.width * 0.9;
+    const bodyH = obstacle.height * 0.9;
     obstacle.body.setSize(bodyW, bodyH);
-    obstacle.body.setOffset((obstacle.width - bodyW) / 2, (obstacle.height - bodyH) * 0.3);
+    obstacle.body.setOffset((obstacle.width - bodyW) / 2, (obstacle.height - bodyH) * 0.5);
 
     return obstacle;
   }
