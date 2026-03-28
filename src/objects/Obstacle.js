@@ -641,8 +641,8 @@ export class ObstacleManager {
         obstacle = this.group.create(x, groundY - yOffset, imgKey, keyIndex);
         obstacle.setOrigin(0.5, 1);
       }
-      // 이미지 크기 1.5배 확대 x 난이도별 크기 배율 (아기공룡은 작게, 전설은 크게)
-      obstacle.setScale(0.15 * sizeScale);
+      // 이미지 크기 1.2배 확대 x 난이도별 크기 배율 (높이 80%로 축소: 0.15→0.12)
+      obstacle.setScale(0.12 * sizeScale);
     } else {
       // 기존 Graphics 텍스처 사용
       if (obstacle) {
@@ -654,8 +654,8 @@ export class ObstacleManager {
         obstacle = this.group.create(x, groundY - yOffset, graphicsKey);
         obstacle.setOrigin(0.5, 1);
       }
-      // Graphics 텍스처도 1.5배 확대 x 난이도별 크기 배율
-      obstacle.setScale(1.5 * sizeScale);
+      // Graphics 텍스처도 1.2배 확대 x 난이도별 크기 배율 (높이 80%로 축소: 1.5→1.2)
+      obstacle.setScale(1.2 * sizeScale);
     }
 
     // 장애물은 반드시 배경(depth 0~3)보다 앞에 표시 (depth 5)
