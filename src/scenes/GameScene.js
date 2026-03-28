@@ -34,6 +34,7 @@ import { getStage, getStageTarget } from '../data/stages.js';
 import { getWorld } from '../data/worlds.js';
 import { loadStats, saveStats, checkNewAchievements } from '../data/achievements.js';
 import { loadAndClearPurchasedItems, addToWallet } from './ShopScene.js';
+import { JumpGuideHUD } from '../objects/JumpGuideHUD.js';
 
 export class GameScene extends Phaser.Scene {
   constructor() {
@@ -203,6 +204,9 @@ export class GameScene extends Phaser.Scene {
     // === 입력 설정 ===
     this._setupInput();
 
+    // === 점프 가이드 HUD (5초간 좌우 영역 안내 표시) ===
+    this.jumpGuide = new JumpGuideHUD(this);
+
     // === 효과음 + BGM (월드별 다른 멜로디!) ===
     soundGenerator.init();
     soundGenerator.startBGM(this.worldData.id);
@@ -267,8 +271,9 @@ export class GameScene extends Phaser.Scene {
    * 입력 설정: 터치 + 키보드 둘 다 지원
    */
   _setupInput() {
-    // === 터치/마우스: 스와이프 감지 ===
-    // 터치 시작 위치를 기록하여 위/아래 스와이프 구분
+    // === 터치/마우스: 좌우 영역 분할 점프 ===
+    // 왼쪽 절반 터치 = 낮은 점프, 오른쪽 절반 터치 = 높은 점프
+    // 아래로 스와이프 = 슬라이드 (기존 유지)
     this._pointerStartY = 0;
     this._pointerStartTime = 0;
 
@@ -276,44 +281,68 @@ export class GameScene extends Phaser.Scene {
       this._pointerStartY = pointer.y;
       this._pointerStartTime = Date.now();
       if (!this.isGameOver && !this.isStageClear) {
-        this.dino.startJump();
+        // 화면 중앙 기준으로 좌우 판정: 오른쪽이면 높은 점프
+        const isHigh = pointer.x > this.cameras.main.width / 2;
+        this.dino.startJump(isHigh);
       }
     });
 
     this.input.on('pointerup', (pointer) => {
       if (!this.isGameOver && !this.isStageClear) {
-        // [P1] 아래로 50px 이상 스와이프 = 슬라이드
+        // 아래로 50px 이상 스와이프 = 슬라이드 (기존 유지)
         const deltaY = pointer.y - this._pointerStartY;
         const elapsed = Date.now() - this._pointerStartTime;
         if (deltaY > 50 && elapsed < 500) {
-          // 아래로 빠르게 스와이프 → 슬라이드!
           this.dino.slide();
-        } else {
-          this.dino.executeJump();
         }
+        // executeJump 호출 제거: 버튼 분리로 홀드 판정 불필요
       }
     });
 
-    // === 키보드 (스페이스바 = 점프) ===
+    // === 키보드: Z=낮은점프, X/SPACE=높은점프 ===
     this.spaceIsDown = false;
+    this._zIsDown = false;
+    this._xIsDown = false;
 
+    // Z키: 낮은 점프 (왼쪽 터치와 동일)
+    this.input.keyboard.on('keydown-Z', (event) => {
+      if (this._zIsDown) return;
+      this._zIsDown = true;
+      if (!this.isGameOver && !this.isStageClear) {
+        this.dino.startJump(false); // 낮은 점프
+      }
+    });
+    this.input.keyboard.on('keyup-Z', () => {
+      this._zIsDown = false;
+    });
+
+    // X키: 높은 점프 (오른쪽 터치와 동일)
+    this.input.keyboard.on('keydown-X', (event) => {
+      if (this._xIsDown) return;
+      this._xIsDown = true;
+      if (!this.isGameOver && !this.isStageClear) {
+        this.dino.startJump(true); // 높은 점프
+      }
+    });
+    this.input.keyboard.on('keyup-X', () => {
+      this._xIsDown = false;
+    });
+
+    // SPACE키: 높은 점프 (기존 호환, X키와 동일)
     this.input.keyboard.on('keydown-SPACE', (event) => {
       if (this.spaceIsDown) return;
       this.spaceIsDown = true;
       if (!this.isGameOver && !this.isStageClear) {
-        this.dino.startJump();
+        this.dino.startJump(true); // 높은 점프
       }
       event.preventDefault();
     });
-
     this.input.keyboard.on('keyup-SPACE', (event) => {
       this.spaceIsDown = false;
-      if (!this.isGameOver && !this.isStageClear) {
-        this.dino.executeJump();
-      }
+      // executeJump 호출 제거: 버튼 분리로 홀드 판정 불필요
     });
 
-    // === [P1] 키보드 (아래 화살표 = 슬라이드) ===
+    // === 키보드 (아래 화살표 = 슬라이드) ===
     this.input.keyboard.on('keydown-DOWN', (event) => {
       if (!this.isGameOver && !this.isStageClear) {
         this.dino.slide();
@@ -1339,6 +1368,10 @@ export class GameScene extends Phaser.Scene {
     this.scale.off('resize', this._onResize, this);
     this.input.keyboard.off('keydown-SPACE');
     this.input.keyboard.off('keyup-SPACE');
+    this.input.keyboard.off('keydown-Z');
+    this.input.keyboard.off('keyup-Z');
+    this.input.keyboard.off('keydown-X');
+    this.input.keyboard.off('keyup-X');
     this.input.keyboard.off('keydown-DOWN'); // [P1] 슬라이드 키 정리
 
     // 공룡의 타이머 정리 (씬 종료 후 타이머가 실행되어 에러 발생 방지)

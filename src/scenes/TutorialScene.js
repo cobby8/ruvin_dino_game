@@ -30,14 +30,14 @@ export class TutorialScene extends Phaser.Scene {
     // 슬라이드 데이터 (3장)
     this.slides = [
       {
-        title: '점프!',
-        desc: '터치하거나 스페이스바를\n누르면 점프해요!',
+        title: '낮은 점프!',
+        desc: '왼쪽을 터치하거나\nZ키를 누르면\n살짝 점프해요!',
         icon: 'jump',       // 그리기 타입
         color: '#66CC77',
       },
       {
-        title: '높이 뛰기!',
-        desc: '길게 누르면 높이 뛰어요!\n공중에서 한번 더 누르면\n2단 점프!',
+        title: '높은 점프!',
+        desc: '오른쪽을 터치하거나\nX키/스페이스를 누르면\n높이 뛰어요!\n공중에서 한번 더 = 2단 점프!',
         icon: 'highJump',
         color: '#4EAEFF',
       },

@@ -2,15 +2,15 @@
  * Dino.js - 공룡 캐릭터 클래스
  * 플레이어가 조종하는 공룡. 달리기, 점프(3종), 넘어짐 동작을 관리.
  *
- * 점프 시스템 (3종류):
- * - 낮은 점프: 짧게 누르면 살짝 깡충 (작은 장애물용)
- * - 높은 점프: 길게 누르면 크게 점프 (큰 장애물용)
- * - 2단 점프: 공중에서 한 번 더 누르면 추가 상승 (긴급 회피용)
+ * 점프 시스템 (3종류 - 버튼 분리 방식):
+ * - 낮은 점프: 왼쪽 터치 / Z키 (작은 장애물용)
+ * - 높은 점프: 오른쪽 터치 / X키 / SPACE (큰 장애물용, LOW의 160%)
+ * - 2단 점프: 공중에서 아무 곳 터치 (긴급 회피용)
  *
- * 작동 방식: "즉시 점프 + 홀드 부스트"
- * 1. 버튼 누르는 순간(DOWN) → 바닥이면 낮은 점프로 즉시 띄움 + 시간 기록
- * 2. 버튼 떼는 순간(UP) → 100ms 이상 눌렀고 아직 올라가는 중이면 높은 점프로 부스트
- * 3. 공중에서 다시 누르면(DOWN) → 2단 점프 발동
+ * 작동 방식: "즉시 판정" (홀드 부스트 폐지)
+ * 1. 왼쪽 터치/Z키 → 즉시 낮은 점프 (LOW_VELOCITY)
+ * 2. 오른쪽 터치/X키/SPACE → 즉시 높은 점프 (HIGH_VELOCITY)
+ * 3. 공중에서 아무 곳 터치 → 2단 점프 발동
  *
  * [P1 추가] 슬라이드(구르기) + 피격 무적:
  * - 아래 키 → 납작하게 엎드림 (히트박스 높이 40%)
@@ -125,57 +125,46 @@ export class Dino extends Phaser.Physics.Arcade.Sprite {
 
   /**
    * 점프 시작 (버튼 누르는 순간 = pointerdown / keydown)
-   * - 바닥에 있으면: 즉시 낮은 점프로 띄움 + 누른 시간 기록
-   * - 공중에 있으면: 2단 점프 시도
+   * - 바닥에 있으면: isHigh에 따라 낮은/높은 점프 즉시 발동
+   * - 공중에 있으면: isHigh 무관하게 2단 점프 시도
+   * @param {boolean} isHigh - true=높은 점프(오른쪽/X키), false=낮은 점프(왼쪽/Z키)
    */
-  startJump() {
-    // [P1] 슬라이드 중에는 점프 불가 (엎드린 상태에서 뛸 수 없음)
+  startJump(isHigh = false) {
+    // 슬라이드 중에는 점프 불가 (엎드린 상태에서 뛸 수 없음)
     if (this.isSliding) return;
 
     if (this.body.blocked.down) {
-      // 바닥에 있으면 → 즉시 낮은 점프 실행 (1단 점프)
+      // 바닥에 있으면 → isHigh에 따라 낮은/높은 점프 즉시 실행
       // 브라키오 특수능력: 목이 긴 초식공룡이라 점프가 20% 더 높음!
       const jumpMulti = this.ability === 'highJump' ? 1.2 : 1.0;
-      this.body.setVelocityY(GAME.JUMP.LOW_VELOCITY * jumpMulti);
+      // 높은 점프 vs 낮은 점프 속도 선택 (화면 좌=낮은, 우=높은)
+      const velocity = isHigh ? GAME.JUMP.HIGH_VELOCITY : GAME.JUMP.LOW_VELOCITY;
+      this.body.setVelocityY(velocity * jumpMulti);
       this.play(`${this.dinoKey}_jump`);
       soundGenerator.playJump();
 
-      // 누른 시작 시간 기록 (나중에 UP 시점에서 차이 계산)
-      this.jumpStartTime = Date.now();
-      this.isJumpHeld = true;
+      // 높은 점프 시 바람 이펙트 (시각적 피드백)
+      if (isHigh && this.scene.effectManager) {
+        this.scene.effectManager.showHighJumpEffect(this.x, this.y);
+      }
+
+      this.isJumpHeld = false;
       this.isDoubleJumpUsed = false; // 새 점프이므로 2단 점프 리셋
     } else if (!this.isDoubleJumpUsed) {
-      // 공중 + 아직 2단 점프 안 씀 → 2단 점프 시도
-      // (이미 2단 점프를 쓴 경우 아무것도 안 함 = 3단 점프 차단)
+      // 공중 + 아직 2단 점프 안 씀 → 2단 점프 시도 (좌우 구분 없음)
       this.doubleJump();
     }
     // 그 외 (공중 + 이미 2단 점프 씀) → 입력 무시하여 3단 점프 방지
   }
 
   /**
-   * 점프 실행/부스트 (버튼 떼는 순간 = pointerup / keyup)
-   * - 100ms 이상 눌렀고 + 아직 위로 올라가는 중이면 → 높은 점프로 부스트
-   * - 짧게 눌렀으면 → 이미 낮은 점프 상태이므로 아무것도 안 함
+   * 레거시: 버튼 분리로 미사용
+   * 이전에는 버튼 떼는 순간(pointerup) 홀드 시간으로 높은/낮은 점프를 구분했으나,
+   * 이제는 startJump(isHigh)에서 즉시 판정하므로 이 메서드는 빈 껍데기로 유지.
+   * (하위 호환을 위해 메서드 자체는 삭제하지 않음)
    */
   executeJump() {
-    if (!this.isJumpHeld) return; // 누른 적이 없으면 무시
-    this.isJumpHeld = false;
-
-    const holdDuration = Date.now() - this.jumpStartTime; // 누른 시간 계산
-
-    // 100ms 이상 눌렀고, 아직 위로 올라가는 중이면 (velocity가 음수 = 상승 중)
-    if (holdDuration >= GAME.JUMP.HOLD_THRESHOLD && this.body.velocity.y < 0) {
-      // 높은 점프로 부스트! (속도를 더 강하게 바꿈)
-      // 브라키오 특수능력: 높은 점프도 20% 더 높음
-      const jumpMulti = this.ability === 'highJump' ? 1.2 : 1.0;
-      this.body.setVelocityY(GAME.JUMP.HIGH_VELOCITY * jumpMulti);
-
-      // 높은 점프 시각적 피드백 (바람 이펙트)
-      if (this.scene.effectManager) {
-        this.scene.effectManager.showHighJumpEffect(this.x, this.y);
-      }
-    }
-    // 100ms 미만이면 → 이미 LOW_VELOCITY로 점프 중이므로 자연스럽게 낮은 점프가 됨
+    // 의도적으로 비움 - 버튼 분리 방식으로 전환되어 홀드 부스트 로직 제거됨
   }
 
   /**
