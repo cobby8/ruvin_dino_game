@@ -519,13 +519,13 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
 
     if (useImage) {
       this.setTexture('img_enemies', ENEMY_FRAME_MAP[enemyKey]);
-      // 적 크기를 장애물과 비슷하게 (0.12 기준 = 약 86px 높이)
-      this.setScale(0.12);
+      // 적 크기 추가 2.5배 확대 (밟기 대상으로 확실히 보이게: 0.3 x 2.5 = 0.75)
+      this.setScale(0.75);
     } else {
       const textureKey = `enemy_${enemyKey}`;
       this.setTexture(textureKey, 0);
-      // Graphics 적도 장애물과 비슷한 크기 (원본 30~45px이라 2.5배해야 75~112px)
-      this.setScale(2.5, 2.5);
+      // Graphics 적도 추가 2.5배 확대 (6.25 x 2.5 = 15.6)
+      this.setScale(15.6, 15.6);
     }
 
     this.setPosition(x, y);

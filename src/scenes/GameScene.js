@@ -34,7 +34,7 @@ import { getStage, getStageTarget } from '../data/stages.js';
 import { getWorld } from '../data/worlds.js';
 import { loadStats, saveStats, checkNewAchievements } from '../data/achievements.js';
 import { loadAndClearPurchasedItems, addToWallet } from './ShopScene.js';
-import { JumpGuideHUD } from '../objects/JumpGuideHUD.js';
+import { JumpButtonHUD } from '../objects/JumpGuideHUD.js';
 
 export class GameScene extends Phaser.Scene {
   constructor() {
@@ -204,8 +204,11 @@ export class GameScene extends Phaser.Scene {
     // === 입력 설정 ===
     this._setupInput();
 
-    // === 점프 가이드 HUD (5초간 좌우 영역 안내 표시) ===
-    this.jumpGuide = new JumpGuideHUD(this);
+    // === 점프 버튼 HUD (우하단 고정, 게임 내내 표시) ===
+    this.jumpButtons = new JumpButtonHUD(this,
+      () => this.dino.startJump(false),  // 낮은 점프 콜백
+      () => this.dino.startJump(true),   // 높은 점프 콜백
+    );
 
     // === 효과음 + BGM (월드별 다른 멜로디!) ===
     soundGenerator.init();
@@ -285,13 +288,22 @@ export class GameScene extends Phaser.Scene {
     this._pointerStartY = 0;
     this._pointerStartTime = 0;
 
+    // 화면 터치 = 점프 (버튼 + 화면 터치 둘 다 지원)
+    // 공중에서는 어디를 터치해도 2단 점프 발동
     this.input.on('pointerdown', (pointer) => {
       this._pointerStartY = pointer.y;
       this._pointerStartTime = Date.now();
+
       if (!this.isGameOver && !this.isStageClear) {
-        // 화면 중앙 기준으로 좌우 판정: 오른쪽이면 높은 점프
-        const isHigh = pointer.x > this.cameras.main.width / 2;
-        this.dino.startJump(isHigh);
+        // 공중이면 → 2단 점프 (어디를 터치하든)
+        if (!this.dino.body.blocked.down) {
+          this.dino.startJump(false);
+        }
+        // 바닥이면 → 화면 좌/우로 점프 종류 결정 (버튼과 별개로 화면 터치도 지원)
+        else {
+          const isHigh = pointer.x > this.cameras.main.width / 2;
+          this.dino.startJump(isHigh);
+        }
       }
     });
 
@@ -1490,6 +1502,10 @@ export class GameScene extends Phaser.Scene {
     // [P3] 파워업 HUD 정리
     if (this.powerUpHUD) {
       this.powerUpHUD.destroy();
+    }
+    // 점프 버튼 HUD 정리
+    if (this.jumpButtons) {
+      this.jumpButtons.destroy();
     }
     // [P2] 적 매니저는 group이 씬과 함께 정리됨
     // [P3] 아이템/블록 매니저도 group이 씬과 함께 정리됨
