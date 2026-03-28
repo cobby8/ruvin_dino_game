@@ -125,6 +125,29 @@ export class SoundGenerator {
     }, 80);
   }
 
+  /** [P4] 스프링 소리: "뿅!" 빠른 상승 스프링음 (200Hz→800Hz) */
+  playSpring() {
+    // 빠르게 상승하는 음 (스프링 튀는 느낌)
+    this._playTone(200, 800, 0.15, 'sine', 0.25);
+    // 약간 뒤에 높은 "띵!" (최고점 느낌)
+    setTimeout(() => {
+      this._playTone(1000, 1200, 0.1, 'sine', 0.15);
+    }, 100);
+  }
+
+  /** [P4] 부스트 소리: "쉬이익!" 바람 소리 (화이트노이즈 + 상승음) */
+  playBoost() {
+    if (!this.ctx) return;
+    const now = this.ctx.currentTime;
+
+    // 상승하는 톤 (가속 느낌)
+    this._playTone(300, 600, 0.3, 'sawtooth', 0.15);
+    // 높은 울림 (속도감 표현)
+    setTimeout(() => {
+      this._playTone(800, 1000, 0.2, 'sine', 0.12);
+    }, 150);
+  }
+
   /** [P1] 슬라이드 소리: 빠른 하강 스윕 "쉭~" */
   playSlide() {
     this._playTone(500, 200, 0.12, 'sine', 0.15);

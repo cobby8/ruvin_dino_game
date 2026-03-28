@@ -14,6 +14,8 @@ import { createAllBackgroundTextures } from '../objects/Background.js';
 import { createAllEnemyTextures } from '../objects/Enemy.js';
 import { createAllItemTextures } from '../objects/Item.js';
 import { createQuestionBlockTextures } from '../objects/QuestionBlock.js';
+import { createSpringTextures } from '../objects/Spring.js';
+import { createBoostPadTextures } from '../objects/BoostPad.js';
 import { soundGenerator } from '../utils/SoundGenerator.js';
 
 export class BootScene extends Phaser.Scene {
@@ -67,6 +69,7 @@ export class BootScene extends Phaser.Scene {
           { label: '적 캐릭터 그리는 중...', fn: () => createAllEnemyTextures(this) },
           { label: '아이템 그리는 중...', fn: () => createAllItemTextures(this) },
           { label: '블록 그리는 중...', fn: () => createQuestionBlockTextures(this) },
+          { label: '스프링/부스트 그리는 중...', fn: () => { createSpringTextures(this); createBoostPadTextures(this); } },
           { label: '배경 그리는 중...', fn: () => createAllBackgroundTextures(this) },
         ];
 

@@ -58,6 +58,19 @@ export const GAME = {
     HEIGHT_RATIO: 0.5,        // 화면 높이의 50% 위치에 배치
   },
 
+  // === [P4] 스프링 점프대 설정 ===
+  SPRING: {
+    VELOCITY: -900,           // 스프링 점프 속도 (매우 높이 뜀!)
+    SPAWN_CHANCE: 0.08,       // 기본 스폰 확률 (8%)
+  },
+
+  // === [P4] 부스트 구간 설정 ===
+  BOOST: {
+    SPEED_MULTIPLIER: 2.0,    // 부스트 중 속도 2배
+    DURATION: 2000,           // 2초간 지속
+    SPAWN_CHANCE: 0.06,       // 기본 스폰 확률 (6%)
+  },
+
   // === 칭찬 시스템 ===
   PRAISE_INTERVAL: 10,       // 10점마다 칭찬 메시지 표시
   PRAISE_MESSAGES: [

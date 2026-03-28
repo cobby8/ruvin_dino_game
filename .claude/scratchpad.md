@@ -31,37 +31,39 @@
 
 ## 구현 기록 (developer)
 
-### P3: 수집 아이템 5종 + 물음표 블록 + 파워업 시스템
+### P4: 스프링 점프대 + 부스트 구간 + 밸런스 조정
 
 | 파일 | 변경 내용 | 신규/수정 |
 |------|----------|----------|
-| src/objects/Item.js | 아이템 5종 텍스처(별/하트/무적별/자석/방어막) + Item 클래스 + ItemManager(풀링/스폰) | 신규 |
-| src/objects/QuestionBlock.js | 물음표 블록 텍스처(활성/사용됨) + QuestionBlock 클래스 + QuestionBlockManager | 신규 |
-| src/objects/PowerUpHUD.js | 화면 우측 상단 파워업 아이콘 + 남은 시간 바 + 깜빡 경고 | 신규 |
-| src/config.js | ITEMS(별점수/스폰확률/파워업지속/자석범위) + QUESTION_BLOCK(스폰확률/높이) 추가 | 수정 |
-| src/objects/Dino.js | applyPowerUp/clearPowerUp + 방어막 hit()처리 + fall()파워업정리 | 수정 |
-| src/scenes/GameScene.js | ItemManager/QuestionBlockManager/PowerUpHUD 생성 + 아이템수집/블록타격 충돌 + 자석효과 + 스폰 연동 | 수정 |
-| src/scenes/BootScene.js | createAllItemTextures + createQuestionBlockTextures 로딩 단계 추가 | 수정 |
-| src/utils/SoundGenerator.js | playPowerUp/playItemCollect/playBlockHit 3개 효과음 추가 | 수정 |
+| src/objects/Spring.js | 스프링 텍스처(빨간코일+파란받침대) + Spring 클래스(밟기+압축애니) + SpringManager(풀링5개) | 신규 |
+| src/objects/BoostPad.js | 부스트패드 텍스처(노란+주황 화살표 ▶▶) + BoostPad 클래스 + BoostPadManager(풀링5개) | 신규 |
+| src/config.js | SPRING(VELOCITY:-900, SPAWN_CHANCE:8%) + BOOST(SPEED_MULTIPLIER:2x, DURATION:2초, SPAWN_CHANCE:6%) | 수정 |
+| src/data/stages.js | 30개 스테이지에 enemyChance/itemChance/springChance/boostChance 4개 밸런스 속성 추가 | 수정 |
+| src/scenes/GameScene.js | SpringManager/BoostPadManager 생성 + 충돌(스프링밟기/부스트패드) + 부스트모드(속도2배+무적+속도선) + cleanup/shutdown | 수정 |
+| src/scenes/BootScene.js | createSpringTextures + createBoostPadTextures import + 로딩 단계 추가 | 수정 |
+| src/utils/SoundGenerator.js | playSpring(200→800Hz 상승음) + playBoost(sawtooth 가속음) 2개 효과음 추가 | 수정 |
 
 tester 참고:
-- 테스트 방법: 게임 플레이 시 장애물 뒤에 아이템과 블록이 나타남
-- 별(노란 오각별): 공중에 3~5개 아치형 배치, 닿으면 +1점, "띵!" 소리
-- 하트(분홍): 높은 곳에 단독 배치(5% 확률), 닿으면 HP +1 회복
-- 물음표 블록: 공중에 배치(15% 확률), 아래에서 점프해서 머리로 치면 파워업 팝업
-- 블록에서 나오는 파워업: 무적별(40%), 자석(30%), 방어막(30%)
-- 무적별(큰 금별): 5초간 무적 + 금색 공룡 + 시간바 표시
-- 자석(U자석): 5초간 범위 150px 내 아이템 자동 흡수 + 보라색 공룡
-- 방어막(파란 방패): 다음 1번 피격 무시 + 파란색 공룡, 시간 제한 없음
-- 파워업 HUD: 우측 상단에 아이콘+남은시간바, 2초 남으면 깜빡
-- 방어막 작동 시: 파란 화면 플래시 + 방어막 소멸
-- 자석 효과: update마다 범위 내 아이템이 공룡 쪽으로 이동
+- 스프링 점프대: 바닥에 빨간 코일+파란 받침대 모양, 월드2부터 등장 (3~10% 확률)
+  - 공중에서 떨어지며 밟으면 초고점프(-900)! + 스프링 위에 별 5개 아치형 배치
+  - "뿅!" 상승 효과음 + 카메라 살짝 흔들림
+  - 올라가는 중(상승)에 닿으면 발동 안 됨 (하강 중에만)
+- 부스트 패드: 바닥에 납작한 노란 화살표 패드, 월드2 후반부터 등장 (2~8% 확률)
+  - 바닥에서 밟으면 2초간: 속도 2배 + 무적 + 주황색 공룡 + 속도선 이펙트
+  - "쉬이익!" 가속 효과음 + 화면 노란 플래시
+  - 부스트 끝나면 속도/색상 자동 복귀 (기존 파워업 색상 유지)
+  - 중복 부스트 불가 (이미 부스트 중이면 패드만 소모)
+- 밸런스: 월드1은 적/스프링/부스트 전부 없음, 월드2부터 점진적 등장
+  - 적: 0% → 15% → 35% → 42% → 47% → 50%
+  - 아이템: 50% → 40% → 33% → 30% → 28% → 25%
+  - 스프링: 0% → 3% → 5% → 7% → 8% → 10%
+  - 부스트: 0% → 0% → 3% → 5% → 6% → 8%
 
 reviewer 참고:
-- Item.js: Obstacle/Enemy와 동일 풀링 패턴 (30개 풀, setup/deactivate/cleanup)
-- QuestionBlock: hit()이 파워업 종류 string을 반환 → GameScene에서 아이템 스폰
-- Dino.clearPowerUp: blinkTimer 유무로 피격무적과 파워업무적을 구분
-- 자석 효과: GameScene update()에서 직접 좌표 이동 (물리 velocity가 아닌 직접 이동)
+- Spring/BoostPad: Obstacle/Enemy/Item과 동일 풀링 패턴 (각 5개 풀)
+- 부스트 무적 해제: _endBoost에서 피격무적(blinkTimer)/파워업무적(powerUp=invincible)과 구분
+- 속도선: Rectangle 6개를 Tween repeat:-1로 반복, _hideSpeedLines에서 killTweensOf+destroy
+- 스테이지 밸런스: springChance/boostChance를 stageData에서 먼저 찾고, 없으면 config 기본값 사용
 
 ## 기획설계 (planner-architect)
 
@@ -350,56 +352,52 @@ reviewer 참고:
 
 ## 테스트 결과 (tester)
 
-### P3 아이템 5종 + 물음표 블록 + 파워업 빌드/코드 검증 (2026-03-28)
+### P4 스프링+부스트+밸런스 빌드/코드 검증 (2026-03-28)
 
 | # | 테스트 항목 | 결과 | 비고 |
 |---|-----------|------|------|
-| 1 | npm run build 성공 | PASS | 31 modules, 662ms, chunk 1292KB |
-| 2 | Item.js: 5종 텍스처 생성 | PASS | star(30x30 오각별), heart(25x25), invincible(35x35+무지개테두리), magnet(30x30 U자석), shield(30x30 방패) |
-| 2a | Item.js: createAllItemTextures | PASS | 5개 내부함수 순차호출, generateTexture 후 graphics.destroy() |
-| 2b | Item.js: Item 클래스 | PASS | Phaser.Physics.Arcade.Sprite 상속, allowGravity=false, depth=4 |
-| 2c | Item.js: setup() 풀링 재활용 | PASS | type별 텍스처 변경, velocityX, 히트박스 80%, floatTween(위아래 8px) |
-| 2d | Item.js: collect() 수집 이펙트 | PASS | scale 1.5+alpha 0 트윈 200ms, onComplete에서 비활성화+velocity 리셋 |
-| 2e | Item.js: deactivate() | PASS | floatTween destroy+비활성화+velocity 리셋 |
-| 2f | Item.js: ItemManager 풀링 | PASS | physics.add.group maxSize=30, 미리 30개 생성, spawnItem/spawnStarLine/cleanup |
-| 2g | ItemManager: spawnStarLine | PASS | 3~5개 별, spacing=35px, sin 아치형 높이 60px, groundY-80~140 |
-| 2h | ItemManager: cleanup | PASS | x < -50 비활성화 |
-| 3 | QuestionBlock.js: 텍스처 생성 | PASS | qblock_question(노란 40x40+"?" 모양), qblock_used(회색), qblock_active(미사용 여분) |
-| 3a | QuestionBlock.js: QuestionBlock 클래스 | PASS | allowGravity=false, immovable=true, depth=4, isUsed 플래그 |
-| 3b | QuestionBlock.js: setup() | PASS | 텍스처 qblock_question, isUsed=false, hitbox 36x36 |
-| 3c | QuestionBlock.js: hit() 메서드 | PASS | isUsed 중복방지, 텍스처->qblock_used, 위로15px yoyo 트윈, 확률분배(40%/30%/30%) |
-| 3d | QuestionBlock.js: QuestionBlockManager | PASS | maxSize=5, spawnBlock(groundY*HEIGHT_RATIO), cleanup x<-50 |
-| 4 | PowerUpHUD.js: 생성자 | PASS | bg/icon/label/barBg/barFill 5개 UI요소, depth=10, 50ms 타이머 갱신 |
-| 4a | PowerUpHUD.js: show() | PASS | type별 아이콘+라벨+배경+테두리 색상, shield는 바 숨김 |
-| 4b | PowerUpHUD.js: hide() | PASS | 5개 UI요소 모두 setVisible(false), currentType=null |
-| 4c | PowerUpHUD.js: _update() | PASS | remaining 계산, barFill 너비 갱신, 2초남으면 아이콘 깜빡(sin 기반) |
-| 4d | PowerUpHUD.js: destroy() | PASS | 타이머+5개 UI요소 모두 destroy |
-| 5 | config.js: ITEMS 상수 | PASS | STAR_POINTS=1, SPAWN_CHANCE=0.4, HEART_CHANCE=0.05, POWERUP_DURATION=5000, MAGNET_RANGE=150, MAGNET_SPEED=5 |
-| 5a | config.js: QUESTION_BLOCK 상수 | PASS | SPAWN_CHANCE=0.15, HEIGHT_RATIO=0.5 |
-| 6 | Dino.js: applyPowerUp() | PASS | clearPowerUp 선호출(중복방지), invincible(금색+5s타이머), magnet(보라+5s타이머), shield(파란+무기한) |
-| 6a | Dino.js: clearPowerUp() | PASS | invincible이면 blinkTimer 없을때만 isInvincible=false, powerUp/hasShield null, 틴트제거, 타이머 destroy |
-| 6b | Dino.js: hit()내 방어막 처리 | PASS | hasShield true이면 clearPowerUp+파란플래시+return false(피격무시) |
-| 6c | Dino.js: fall()내 파워업 정리 | PASS | clearPowerUp() 호출 확인 |
-| 7 | GameScene.js: 매니저 생성 | PASS | ItemManager+QuestionBlockManager+PowerUpHUD 3개 생성 |
-| 7a | GameScene.js: 충돌 등록 | PASS | dino vs itemManager.group->_onCollectItem, dino vs questionBlockManager.group->_onHitBlock |
-| 7b | GameScene.js: _onCollectItem | PASS | star(+1점+클리어체크), heart(heal+sound), 파워업3종(applyPowerUp+HUD show) + item.collect() |
-| 7c | GameScene.js: _onHitBlock | PASS | isFromBelow 판정(velocity.y<0+top<=bottom+10), block.hit()호출, 파워업아이템 팝업(위로30px yoyo) |
-| 7d | GameScene.js: 자석 효과 | PASS | update에서 dino.powerUp==='magnet'일 때 MAGNET_RANGE내 아이템을 MAGNET_SPEED로 직접좌표이동 |
-| 7e | GameScene.js: 스폰 연동 | PASS | 장애물 스폰시 40%별줄/5%하트/15%블록 동시 스폰, itemX=width+200 |
-| 7f | GameScene.js: cleanup 호출 | PASS | update에서 itemManager.cleanup()+questionBlockManager.cleanup() 호출 |
-| 8 | BootScene.js: 텍스처 로딩 | PASS | import 2개(createAllItemTextures, createQuestionBlockTextures) + 로딩단계 추가 |
-| 9 | SoundGenerator.js: 3개 효과음 | PASS | playPowerUp(도미솔 화음), playItemCollect(1000-1200Hz 짧은 띵), playBlockHit(통통+띵) |
-| 10 | import/export 정합성 | PASS | 빌드 31모듈 성공, 신규3파일 export + 수정5파일 import 모두 정상 |
+| 1 | npm run build | PASS | 33 modules, 673ms, chunk 1300KB |
+| 2 | Spring.js: 텍스처 생성 | PASS | 40x35, 파란받침대+빨간코일(지그재그5단)+상단캡, generateTexture('spring') |
+| 2a | Spring.js: Spring 클래스 | PASS | Arcade.Sprite 상속, allowGravity=false, immovable=true, depth=5, hitbox 30x15(윗부분) |
+| 2b | Spring.js: setup() | PASS | 풀링 재활용, y-17 바닥맞춤, velocityX=-speed, isUsed=false |
+| 2c | Spring.js: activate() | PASS | isUsed 중복방지, scaleY 0.4 압축+yoyo Bounce, 1초후 재사용가능 |
+| 2d | Spring.js: deactivate() | PASS | 비활성화+velocity리셋+isUsed리셋 |
+| 2e | SpringManager: 풀링 | PASS | physics.add.group maxSize=5, 미리5개 생성, spawn/cleanup(x<-60) |
+| 3 | BoostPad.js: 텍스처 생성 | PASS | 60x15 납작패드, 주황배경+노랑상반+화살표4개+흰테두리, generateTexture('boostpad') |
+| 3a | BoostPad.js: BoostPad 클래스 | PASS | allowGravity=false, immovable=true, depth=3, hitbox 55x12 |
+| 3b | BoostPad.js: setup() | PASS | y-7 바닥맞춤, velocityX=-speed, isUsed=false |
+| 3c | BoostPad.js: activate() | PASS | isUsed 중복방지, alpha 0.3+scaleX 1.2 트윈 300ms |
+| 3d | BoostPad.js: deactivate() | PASS | 비활성화+velocity리셋+scale리셋 |
+| 3e | BoostPadManager: 풀링 | PASS | maxSize=5, spawn/cleanup(x<-80) |
+| 4 | config.js: SPRING 상수 | PASS | VELOCITY=-900, SPAWN_CHANCE=0.08 |
+| 4a | config.js: BOOST 상수 | PASS | SPEED_MULTIPLIER=2.0, DURATION=2000, SPAWN_CHANCE=0.06 |
+| 5 | stages.js: 30개 밸런스 속성 | PASS | 모든 스테이지에 enemyChance/itemChance/springChance/boostChance 4속성 존재 |
+| 5a | stages.js: 월드1 격리 | PASS | 5개 스테이지 모두 enemyChance=0, springChance=0, boostChance=0 |
+| 5b | stages.js: 점진적 상승 | PASS | 적:0->50%, 아이템:50->25%, 스프링:0->10%, 부스트:0->8% 확인 |
+| 6 | GameScene.js: 매니저 생성 | PASS | SpringManager+BoostPadManager 생성, isBoosting/speedLines/boostTimer 초기화 |
+| 6a | GameScene.js: 충돌 등록 | PASS | dino vs springManager.group->_onHitSpring, dino vs boostPadManager.group->_onHitBoostPad |
+| 6b | GameScene.js: _onHitSpring | PASS | 하강중(velocity.y>0)에만 발동, SPRING.VELOCITY적용, 카메라흔들림, playSpring |
+| 6c | GameScene.js: _onHitBoostPad | PASS | 바닥(blocked.down)에서만, pad.activate()+중복부스트방지, playBoost |
+| 6d | GameScene.js: _startBoost | PASS | isBoosting=true, 무적, 속도x2, 주황틴트, 속도선, 노란플래시, 2초타이머 |
+| 6e | GameScene.js: _endBoost | PASS | isBoosting=false, 무적해제(피격/파워업 무적 구분), 속도/2, 파워업별 색상복귀, 속도선제거 |
+| 6f | GameScene.js: _showSpeedLines | PASS | Rectangle 6개, 랜덤위치, repeat:-1 트윈, depth=15 |
+| 6g | GameScene.js: _hideSpeedLines | PASS | killTweensOf+destroy, 배열 초기화 |
+| 6h | GameScene.js: 스폰 연동 | PASS | stageData.springChance||config 기본값, 스프링 성공시 별아치 배치, boostChance 동일패턴 |
+| 6i | GameScene.js: cleanup 호출 | PASS | update에서 springManager.cleanup()+boostPadManager.cleanup() |
+| 6j | GameScene.js: shutdown 정리 | PASS | isBoosting시 _endBoost, boostTimer.destroy, _hideSpeedLines |
+| 7 | BootScene.js: 텍스처 로딩 | PASS | import 2개(createSpringTextures, createBoostPadTextures), 로딩단계에 합쳐서 호출 |
+| 8 | SoundGenerator.js: playSpring | PASS | 200->800Hz 상승음 0.15s + 1000->1200Hz 띵 0.1s |
+| 8a | SoundGenerator.js: playBoost | PASS | ctx null체크, 300->600Hz sawtooth 0.3s + 800->1000Hz sine 0.2s |
+| 9 | import/export 정합성 | PASS | 빌드 33모듈 성공, 신규2파일 export + 수정5파일 import 모두 정상 |
 
 ### 종합
 
-총 **36개** 항목 중 **36개 통과 / 0개 실패**
+총 **33개** 항목 중 **33개 통과 / 0개 실패**
 
-빌드 성공. P3(아이템 5종 + 물음표 블록 + 파워업) 8파일 모두 코드상 정상.
-- Item.js: 5종 텍스처 + Item(collect/deactivate) + ItemManager(풀링30개, spawnStarLine 아치형)
-- QuestionBlock.js: 2종 텍스처 + QuestionBlock(hit->파워업 반환) + Manager(풀링5개)
-- PowerUpHUD.js: 아이콘+시간바+깜빡경고, shield는 바 없이 고정표시
-- config.js: ITEMS 6개 + QUESTION_BLOCK 2개 상수 정상
-- Dino.js: applyPowerUp/clearPowerUp 3종 분기 + 방어막 hit 처리 + fall 정리
-- GameScene.js: 충돌2건 + 자석효과(직접좌표이동) + 스폰연동(3종확률) + cleanup
-- 기존 P1/P2 시스템과 자연스럽게 연동됨 (하트회복, 무적중복방지 등)
+빌드 성공. P4(스프링+부스트+밸런스) 7파일 모두 코드상 정상.
+- Spring.js: 텍스처(코일+받침대) + Spring(밟기압축+재사용) + SpringManager(풀링5개)
+- BoostPad.js: 텍스처(화살표패드) + BoostPad(밟기+투명화) + BoostPadManager(풀링5개)
+- config.js: SPRING(VELOCITY:-900, 8%) + BOOST(2배속, 2초, 6%)
+- stages.js: 30개 스테이지 4속성 밸런스 (월드1 격리, 점진적 상승)
+- GameScene.js: 충돌2건 + 부스트모드(속도2배+무적+속도선) + 무적해제 분기 + shutdown정리
+- BootScene.js/SoundGenerator.js: 텍스처로딩+효과음 2개 정상 추가

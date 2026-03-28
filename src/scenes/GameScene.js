@@ -28,6 +28,8 @@ import { EffectManager } from '../objects/EffectManager.js';
 import { ItemManager } from '../objects/Item.js';
 import { QuestionBlockManager } from '../objects/QuestionBlock.js';
 import { PowerUpHUD } from '../objects/PowerUpHUD.js';
+import { SpringManager } from '../objects/Spring.js';
+import { BoostPadManager } from '../objects/BoostPad.js';
 import { getStage, getStageTarget } from '../data/stages.js';
 import { getWorld } from '../data/worlds.js';
 
@@ -118,6 +120,17 @@ export class GameScene extends Phaser.Scene {
     // === [P3] 파워업 HUD (화면 우측 상단) ===
     this.powerUpHUD = new PowerUpHUD(this);
 
+    // === [P4] 스프링 점프대 매니저 ===
+    this.springManager = new SpringManager(this);
+
+    // === [P4] 부스트 패드 매니저 ===
+    this.boostPadManager = new BoostPadManager(this);
+
+    // === [P4] 부스트 상태 관리 ===
+    this.isBoosting = false;       // 부스트 모드 활성 여부
+    this._speedLines = [];         // 속도선 이펙트 배열
+    this._boostTimer = null;       // 부스트 해제 타이머
+
     // === [P3] 공룡 vs 아이템 충돌 (닿으면 수집) ===
     this.physics.add.overlap(
       this.dino,
@@ -132,6 +145,24 @@ export class GameScene extends Phaser.Scene {
       this.dino,
       this.questionBlockManager.group,
       this._onHitBlock,
+      null,
+      this
+    );
+
+    // === [P4] 공룡 vs 스프링 충돌 (위에서 밟으면 초고점프!) ===
+    this.physics.add.overlap(
+      this.dino,
+      this.springManager.group,
+      this._onHitSpring,
+      null,
+      this
+    );
+
+    // === [P4] 공룡 vs 부스트 패드 충돌 (바닥에서 밟으면 속도 2배!) ===
+    this.physics.add.overlap(
+      this.dino,
+      this.boostPadManager.group,
+      this._onHitBoostPad,
       null,
       this
     );
@@ -283,6 +314,10 @@ export class GameScene extends Phaser.Scene {
     this.itemManager.cleanup();
     this.questionBlockManager.cleanup();
 
+    // === [P4] 스프링/부스트 정리 ===
+    this.springManager.cleanup();
+    this.boostPadManager.cleanup();
+
     // === [P3] 자석 파워업: 범위 내 아이템을 공룡 쪽으로 끌어당김 ===
     if (this.dino.powerUp === 'magnet') {
       this.itemManager.group.getChildren().forEach(item => {
@@ -363,6 +398,22 @@ export class GameScene extends Phaser.Scene {
     // 15% 확률로 물음표 블록 배치
     if (Math.random() < GAME.QUESTION_BLOCK.SPAWN_CHANCE) {
       this.questionBlockManager.spawnBlock(itemX + 100, this.groundY, this.currentSpeed);
+    }
+
+    // === [P4] 스테이지별 확률로 스프링 배치 ===
+    const springChance = this.stageData.springChance || GAME.SPRING.SPAWN_CHANCE;
+    if (Math.random() < springChance) {
+      const spring = this.springManager.spawn(itemX + 180, this.groundY, this.currentSpeed);
+      // 스프링 위에 별 아이템 아치형 배치 (보상!) - 스프링 생성 성공 시
+      if (spring) {
+        this.itemManager.spawnStarLine(itemX + 180, this.groundY - 100, this.currentSpeed);
+      }
+    }
+
+    // === [P4] 스테이지별 확률로 부스트 패드 배치 ===
+    const boostChance = this.stageData.boostChance || GAME.BOOST.SPAWN_CHANCE;
+    if (Math.random() < boostChance) {
+      this.boostPadManager.spawn(itemX + 250, this.groundY, this.currentSpeed);
     }
   }
 
@@ -645,6 +696,165 @@ export class GameScene extends Phaser.Scene {
     }
   }
 
+  // =========================================================
+  // [P4] 스프링 + 부스트 시스템
+  // =========================================================
+
+  /**
+   * [P4] 스프링을 밟았을 때: 초고점프 발동!
+   * 공룡이 하강 중(아래로 떨어지는 중)에만 발동
+   */
+  _onHitSpring(dino, spring) {
+    if (this.isGameOver || this.isStageClear) return;
+    if (spring.isUsed) return;
+
+    // 하강 중에만 밟기 판정 (위에서 내려올 때만)
+    if (dino.body.velocity.y > 0) {
+      // 스프링 활성화 (압축 애니메이션)
+      spring.activate();
+
+      // 공룡에게 스프링 속도 적용 → 매우 높이 뜀!
+      dino.body.setVelocityY(GAME.SPRING.VELOCITY);
+
+      // 점프 애니메이션 재생
+      dino.play(`${dino.dinoKey}_jump`);
+
+      // "뿅!" 스프링 효과음
+      soundGenerator.playSpring();
+
+      // 카메라 살짝 흔들림 (스프링 느낌)
+      this.cameras.main.shake(100, 0.005);
+    }
+  }
+
+  /**
+   * [P4] 부스트 패드를 밟았을 때: 2초간 속도 2배 + 무적!
+   * 바닥에 있을 때만 발동
+   */
+  _onHitBoostPad(dino, pad) {
+    if (this.isGameOver || this.isStageClear) return;
+    if (pad.isUsed) return;
+    if (!dino.body.blocked.down) return; // 바닥에서만
+
+    // 이미 부스트 중이면 패드만 소모 (중복 부스트 방지)
+    pad.activate();
+
+    if (this.isBoosting) return;
+
+    // 부스트 시작!
+    this._startBoost();
+
+    // "쉬이익!" 부스트 효과음
+    soundGenerator.playBoost();
+  }
+
+  /**
+   * [P4] 부스트 모드 시작
+   * 2초간: 속도 2배 + 무적 + 속도선 이펙트 + 달리기 빠르게
+   */
+  _startBoost() {
+    this.isBoosting = true;
+    this.dino.isInvincible = true;
+
+    // 속도 2배!
+    this.currentSpeed *= GAME.BOOST.SPEED_MULTIPLIER;
+
+    // 공룡 색상 변경 (주황 빛 = 불타는 느낌)
+    this.dino.setTint(0xFF8800);
+
+    // 속도선 이펙트 표시
+    this._showSpeedLines();
+
+    // 화면 약간 줌인 (속도감 강조)
+    this.cameras.main.flash(200, 255, 200, 0, true);
+
+    // 2초 후 부스트 해제
+    this._boostTimer = this.time.delayedCall(GAME.BOOST.DURATION, () => {
+      this._endBoost();
+    });
+  }
+
+  /**
+   * [P4] 부스트 모드 종료
+   * 속도 원래대로 복귀 + 이펙트 제거
+   */
+  _endBoost() {
+    if (!this.isBoosting) return;
+    this.isBoosting = false;
+
+    // 무적 해제 (피격 무적/파워업 무적이 아닌 부스트 무적만 해제)
+    // 다른 무적 소스가 없으면 해제
+    if (this.dino.powerUp !== 'invincible' && !this.dino.blinkTimer) {
+      this.dino.isInvincible = false;
+    }
+
+    // 속도 원래대로
+    this.currentSpeed /= GAME.BOOST.SPEED_MULTIPLIER;
+
+    // 색상 복귀 (다른 파워업이 있으면 그 색으로, 없으면 원래)
+    if (this.dino.powerUp === 'invincible') {
+      this.dino.setTint(0xFFD700);
+    } else if (this.dino.powerUp === 'magnet') {
+      this.dino.setTint(0x9B59B6);
+    } else if (this.dino.powerUp === 'shield') {
+      this.dino.setTint(0x4EAEFF);
+    } else {
+      this.dino.clearTint();
+    }
+
+    // 속도선 제거
+    this._hideSpeedLines();
+  }
+
+  /**
+   * [P4] 속도선 이펙트 표시 (가로 줄무늬가 빠르게 지나감)
+   * 부스트 중임을 시각적으로 알려주는 효과
+   */
+  _showSpeedLines() {
+    const { width, height } = this.scale;
+
+    // 기존 속도선 제거
+    this._hideSpeedLines();
+
+    // 6개의 가로 줄무늬를 랜덤 위치에 배치
+    for (let i = 0; i < 6; i++) {
+      const y = Phaser.Math.Between(30, height - 50);
+      const lineWidth = Phaser.Math.Between(40, 100);
+
+      const line = this.add.rectangle(
+        width + lineWidth / 2, y,
+        lineWidth, 2,
+        0xFFDD00, 0.6
+      ).setDepth(15);
+
+      // 왼쪽으로 빠르게 이동하는 트윈 (반복)
+      this.tweens.add({
+        targets: line,
+        x: -lineWidth,
+        duration: Phaser.Math.Between(200, 400),
+        repeat: -1,
+        onRepeat: () => {
+          // 반복할 때마다 새 위치에서 시작
+          line.x = width + lineWidth / 2;
+          line.y = Phaser.Math.Between(30, height - 50);
+        },
+      });
+
+      this._speedLines.push(line);
+    }
+  }
+
+  /**
+   * [P4] 속도선 이펙트 제거
+   */
+  _hideSpeedLines() {
+    this._speedLines.forEach(line => {
+      this.tweens.killTweensOf(line);
+      line.destroy();
+    });
+    this._speedLines = [];
+  }
+
   /** 칭찬 메시지 */
   _showPraise() {
     soundGenerator.playPraise();
@@ -704,5 +914,13 @@ export class GameScene extends Phaser.Scene {
     }
     // [P2] 적 매니저는 group이 씬과 함께 정리됨
     // [P3] 아이템/블록 매니저도 group이 씬과 함께 정리됨
+    // [P4] 부스트 정리
+    if (this.isBoosting) {
+      this._endBoost();
+    }
+    if (this._boostTimer) {
+      this._boostTimer.destroy();
+    }
+    this._hideSpeedLines();
   }
 }
