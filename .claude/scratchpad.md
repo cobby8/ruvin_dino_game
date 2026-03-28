@@ -12,7 +12,7 @@
 | 2. 페이즈1: 점프 버튼 분리 | 구현완료 | developer |
 | 3. 페이즈2: HUD 가시성 개선 | 구현완료 | developer |
 | 4. 페이즈3: 일시정지 기능 | 구현완료 | developer |
-| 5. 페이즈4: 메뉴 고도화 | 대기 | developer |
+| 5. 페이즈4: 메뉴 고도화 | 구현완료 | developer |
 
 ## 작업 로그
 | 날짜 | 작업 | 결과 |
@@ -23,6 +23,7 @@
 | 2026-03-28 | 점프 밸런스 분석 + 개선 (obstacleScale+독수리높이+2단점프+히트박스) | 빌드 통과 |
 | 2026-03-28 | 4가지 개선사항 전체 기획설계 (점프분리+HUD+정지+메뉴) | 설계 완료 |
 | 2026-03-28 | 페이즈1: 점프 버튼 분리 (좌우터치+Z/X키+가이드HUD+튜토리얼갱신) | 빌드 통과 |
+| 2026-03-28 | 페이즈4: 메뉴 고도화 (Select미리보기+Difficulty성장단계+WorldMap좌우스와이프) | 빌드 통과 |
 
 ## 테스트 결과 (tester)
 
@@ -113,6 +114,29 @@ reviewer 참고:
 - PauseScene은 launch()로 GameScene 위에 오버레이 실행 (start가 아님)
 - "다시하기"/"나가기"는 registry 기반이므로 별도 데이터 전달 없이 scene.start로 처리
 - 일시정지 버튼 depth=101 (StageHUD 배경 99, HUD 텍스트 100 위)
+
+### 페이즈4: 메뉴 고도화 (3개 씬 수정) (2026-03-28)
+
+구현한 기능: SelectScene/DifficultyScene/WorldMapScene 전면 UI 개선
+
+| 파일 경로 | 변경 내용 | 신규/수정 |
+|----------|----------|----------|
+| src/scenes/SelectScene.js | 카드 선택 시 가운데 달리기 미리보기 + 능력 설명 확대 + 한 줄 쉬운 설명 + 금테두리 강조 | 수정 |
+| src/scenes/DifficultyScene.js | 난이도별 카드 크기 차이(성장단계) + 이모지 크기 변화 + 설명 확대 + 금테두리 글로우 | 수정 |
+| src/scenes/WorldMapScene.js | 세로 스크롤 -> 좌우 스와이프 + 포커스 모드(현재 월드 크게) + 화살표 네비게이션 + 월드 인디케이터 | 수정 |
+
+tester 참고:
+- SelectScene: 공룡 카드 클릭 시 하단에 반투명 박스 안에 큰 공룡 달리기 애니메이션 + "이 공룡은 높이 뛸 수 있어요!" 같은 설명 표시 확인
+- DifficultyScene: 5개 카드가 위에서 아래로 점점 커지는 "성장 단계" 느낌인지 확인 (아기공룡=작고, 전설의공룡=크게)
+- WorldMapScene: 좌우 스와이프 또는 화살표 클릭으로 월드 전환, 현재 월드가 크게 표시되고 스테이지 버튼 5개 클릭 가능
+- 주의: 각 씬에서 다음 씬으로 전환이 정상 작동하는지 확인 (Select->Difficulty->WorldMap->Game)
+- 주의: WorldMapScene 하단 5개 버튼(상점/업적/공룡/난이도/리셋) 모두 정상 동작하는지
+
+reviewer 참고:
+- SelectScene: DINO_EASY_DESC 상수로 한 줄 설명 관리, 미리보기는 왼쪽에서 슬라이드인 애니메이션
+- DifficultyScene: CARD_SCALE 배열로 난이도별 카드 크기 계수 관리 (0.85~1.1)
+- WorldMapScene: 세로 스크롤(scrollContainer+setupScroll) 완전 제거 -> 좌우 스와이프(setupSwipe) + 화살표(navigateWorld) 방식으로 교체
+- WorldMapScene: _getFirstUnfinishedWorldIndex()로 초기 포커스 월드 자동 결정
 
 ## 기획설계 (planner-architect)
 

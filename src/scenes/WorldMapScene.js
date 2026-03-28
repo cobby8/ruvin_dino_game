@@ -1,14 +1,11 @@
 /**
- * WorldMapScene.js - 월드맵 화면 (리디자인)
- * 6개 월드 x 5개 스테이지를 모험 지도 느낌으로 보여줌
+ * WorldMapScene.js - 월드맵 화면 (좌우 스와이프 리디자인)
+ * 6개 월드 x 5개 스테이지를 좌우 스와이프로 탐색
  *
- * 디자인 특징:
- * - 양피지 느낌의 모험 지도 배경
- * - 각 월드를 테마 색상 카드로 표시
- * - 스테이지 버튼: 열림(테마색), 클리어(금색+체크), 잠김(회색+자물쇠)
- * - 월드 간 점선 경로 연결
- * - 선택한 공룡이 현재 위치에 표시
- * - 전체 진행도 표시
+ * [개선] 세로 스크롤 -> 좌우 스와이프 + 포커스 모드
+ * - 현재 월드를 크게, 나머지는 작게 표시
+ * - 좌우 화살표 네비게이션 버튼
+ * - 각 월드 카드에 테마 배경색/이모지 미리보기
  */
 
 import Phaser from 'phaser';
@@ -51,23 +48,15 @@ export class WorldMapScene extends Phaser.Scene {
     const clearedCount = this.progress.clearedStages.length;
     const totalStages = 30;
 
-    // === 스크롤용 컨테이너 높이 계산 ===
-    // 카드 6개 세로 나열 + 여백
-    const cardH = Math.max(height * 0.16, 110);
-    const cardGap = 12;
-    const titleAreaH = height * 0.12;
-    const bottomAreaH = height * 0.14;
-    const contentH = titleAreaH + (cardH + cardGap) * 6 + 40;
-    this.scrollY = 0;
-    this.maxScrollY = Math.max(0, contentH - height + bottomAreaH);
+    // === 현재 포커스 월드 인덱스 (0~5) ===
+    // 첫 번째 미클리어 월드를 초기 포커스로 설정
+    this.currentWorldIndex = this._getFirstUnfinishedWorldIndex();
 
     // === 양피지 느낌 배경 ===
     const bg = this.add.graphics();
-    // 상단 ~ 하단 세로 그라디언트 (양피지 색상)
     const bgSteps = 10;
     for (let i = 0; i < bgSteps; i++) {
       const t = i / (bgSteps - 1);
-      // 양피지: 따뜻한 베이지에서 살짝 어두운 베이지로
       const r = Math.round(255 - t * 20);
       const gv = Math.round(245 - t * 25);
       const b = Math.round(220 - t * 30);
@@ -77,7 +66,7 @@ export class WorldMapScene extends Phaser.Scene {
     }
     bg.setDepth(0);
 
-    // 배경 테두리 장식 (양피지 가장자리)
+    // 배경 테두리 장식
     const border = this.add.graphics();
     border.lineStyle(3, 0xC8A882, 0.6);
     border.strokeRoundedRect(6, 6, width - 12, height - 12, 12);
@@ -85,199 +74,264 @@ export class WorldMapScene extends Phaser.Scene {
     border.strokeRoundedRect(12, 12, width - 24, height - 24, 10);
     border.setDepth(100);
 
-    // === 스크롤 가능한 컨테이너 ===
-    this.scrollContainer = this.add.container(0, 0);
-    this.scrollContainer.setDepth(10);
-
     // === 상단 타이틀 (화려하게) ===
-    // 타이틀 배경 리본
     const ribbonG = this.add.graphics();
     ribbonG.fillStyle(0xFF6B6B, 0.9);
     ribbonG.fillRoundedRect(width * 0.1, 8, width * 0.8, 44, 22);
     ribbonG.fillStyle(0xFF8888, 0.6);
     ribbonG.fillRoundedRect(width * 0.12, 10, width * 0.76, 40, 20);
-    this.scrollContainer.add(ribbonG);
+    ribbonG.setDepth(10);
 
-    const title = this.add.text(width / 2, 30, '루빈이의 공룡 모험', {
+    this.add.text(width / 2, 30, '루빈이의 공룡 모험', {
       fontFamily: 'Jua, sans-serif',
       fontSize: '26px',
       color: '#FFFFFF',
       stroke: '#CC3333',
       strokeThickness: 4,
       shadow: { offsetX: 2, offsetY: 2, color: '#00000044', blur: 4, fill: true },
-    }).setOrigin(0.5);
-    this.scrollContainer.add(title);
+    }).setOrigin(0.5).setDepth(11);
 
-    // 진행도 표시 (타이틀 아래)
-    const progressText = this.add.text(width / 2, 62, `${clearedCount} / ${totalStages} 클리어!`, {
+    // 진행도 표시
+    this.add.text(width / 2, 62, `${clearedCount} / ${totalStages} 클리어!`, {
       fontFamily: 'Jua, sans-serif',
       fontSize: '14px',
       color: '#8B6914',
       stroke: '#FFFFFF',
       strokeThickness: 2,
-    }).setOrigin(0.5);
-    this.scrollContainer.add(progressText);
+    }).setOrigin(0.5).setDepth(11);
 
     // 진행도 바
     const progBarW = width * 0.5;
     const progBarX = width / 2 - progBarW / 2;
     const progBarY = 78;
-    const progBg = this.add.graphics();
-    progBg.fillStyle(0xDDCCAA, 1);
-    progBg.fillRoundedRect(progBarX, progBarY, progBarW, 8, 4);
-    this.scrollContainer.add(progBg);
+    const progBg2 = this.add.graphics();
+    progBg2.fillStyle(0xDDCCAA, 1);
+    progBg2.fillRoundedRect(progBarX, progBarY, progBarW, 8, 4);
+    progBg2.setDepth(11);
     const progFill = this.add.graphics();
     const progRatio = clearedCount / totalStages;
     progFill.fillStyle(0xFFD700, 1);
     progFill.fillRoundedRect(progBarX, progBarY, progBarW * progRatio, 8, 4);
-    this.scrollContainer.add(progFill);
+    progFill.setDepth(11);
 
-    // === 월드 카드 + 스테이지 버튼 생성 ===
-    const startY = 96;
-    this._currentStagePos = null; // 선택한 공룡 표시 위치
+    // === 월드 인디케이터 (점 6개 - 현재 위치 표시) ===
+    this._createWorldIndicator(width, 95);
 
-    WORLDS.forEach((world, wi) => {
-      const cardY = startY + wi * (cardH + cardGap);
-      this._createWorldCard(world, wi, width, cardY, cardH);
+    // === 월드 카드 영역 (가운데 큰 카드 + 좌우 미리보기) ===
+    this.worldCardContainer = this.add.container(0, 0).setDepth(20);
+    this._renderFocusedWorld();
 
-      // 월드 간 점선 경로 (마지막 월드 제외)
-      if (wi < WORLDS.length - 1) {
-        const nextWorld = WORLDS[wi + 1];
-        const isNextLocked = !this._isWorldUnlocked(nextWorld.id);
-        this._drawPathBetweenCards(width / 2, cardY + cardH, cardY + cardH + cardGap, isNextLocked);
-      }
-    });
+    // === 좌우 화살표 네비게이션 버튼 ===
+    this._createNavArrows(width, height);
 
-    // === 선택한 공룡을 현재 스테이지 위치에 표시 ===
-    if (this._currentStagePos) {
-      const dinoKey = this.registry.get('selectedDino') || 'brachio';
-      const dinoMarker = this.add.sprite(
-        this._currentStagePos.x,
-        this._currentStagePos.y - 24,
-        dinoKey + '_idle'
-      ).setScale(0.35).setOrigin(0.5, 1);
-      this.scrollContainer.add(dinoMarker);
-
-      // 통통 튀는 애니메이션
-      this.tweens.add({
-        targets: dinoMarker,
-        y: dinoMarker.y - 6,
-        duration: 500,
-        yoyo: true,
-        repeat: -1,
-        ease: 'Sine.easeInOut',
-      });
-    }
-
-    // === 하단 버튼 영역 (고정, 스크롤에 영향 안 받음) ===
+    // === 하단 버튼 영역 (고정) ===
     this._createBottomButtons(width, height);
 
-    // === 스크롤 입력 설정 ===
-    this._setupScroll(height);
+    // === 좌우 스와이프 입력 설정 ===
+    this._setupSwipe(width, height);
 
     // 화면 크기 변경 대응
     this.scale.on('resize', this._onResize, this);
   }
 
-  /**
-   * 월드 카드 하나 생성
-   * 라운드 사각형 카드 안에 월드 이름 + 스테이지 버튼 5개 배치
-   */
-  _createWorldCard(world, worldIndex, screenW, cardY, cardH) {
-    const cardW = screenW * 0.88;
-    const cardX = (screenW - cardW) / 2;
+  /** 첫 번째 미완료 월드 인덱스를 계산 */
+  _getFirstUnfinishedWorldIndex() {
+    for (let wi = 0; wi < WORLDS.length; wi++) {
+      const world = WORLDS[wi];
+      const stageIds = STAGES.filter(s => s.world === world.id).map(s => s.id);
+      // 이 월드의 모든 스테이지가 클리어되지 않았다면 여기가 현재 월드
+      const allCleared = stageIds.every(id => this.progress.clearedStages.includes(id));
+      if (!allCleared) return wi;
+    }
+    return 0; // 모두 클리어했으면 첫 번째로
+  }
+
+  /** 월드 인디케이터 (점 6개) 생성 */
+  _createWorldIndicator(screenW, y) {
+    this.indicatorDots = [];
+    const dotR = 5;
+    const dotGap = 18;
+    const totalW = (dotR * 2 + dotGap) * WORLDS.length - dotGap;
+    const startX = screenW / 2 - totalW / 2 + dotR;
+
+    for (let i = 0; i < WORLDS.length; i++) {
+      const dx = startX + i * (dotR * 2 + dotGap);
+      const dot = this.add.graphics();
+      dot.setDepth(15);
+      this.indicatorDots.push({ g: dot, x: dx, y });
+    }
+    this._updateIndicator();
+  }
+
+  /** 인디케이터 점 색상 업데이트 */
+  _updateIndicator() {
+    this.indicatorDots.forEach((dot, i) => {
+      dot.g.clear();
+      if (i === this.currentWorldIndex) {
+        // 현재 월드: 크고 밝은 점
+        dot.g.fillStyle(0xFF6B6B, 1);
+        dot.g.fillCircle(dot.x, dot.y, 7);
+        dot.g.lineStyle(2, 0xFFFFFF, 1);
+        dot.g.strokeCircle(dot.x, dot.y, 7);
+      } else if (this._isWorldUnlocked(WORLDS[i].id)) {
+        // 해제된 월드: 보통 점
+        const colors = WORLD_CARD_COLORS[WORLDS[i].id];
+        dot.g.fillStyle(colors.border, 0.8);
+        dot.g.fillCircle(dot.x, dot.y, 5);
+      } else {
+        // 잠긴 월드: 회색 점
+        dot.g.fillStyle(0xBBBBBB, 0.5);
+        dot.g.fillCircle(dot.x, dot.y, 4);
+      }
+    });
+  }
+
+  /** 현재 포커스 월드 카드를 크게 렌더링 + 좌우 미니 카드 */
+  _renderFocusedWorld() {
+    const { width, height } = this.scale;
+
+    // 기존 카드 모두 제거
+    this.worldCardContainer.removeAll(true);
+
+    // 카드 크기 설정
+    const bigCardW = width * 0.82;
+    const bigCardH = height * 0.52;
+    const bigCardY = height * 0.38;
+
+    // === 현재 월드 (가운데 큰 카드) ===
+    const currentWorld = WORLDS[this.currentWorldIndex];
+    this._drawWorldCard(currentWorld, width / 2, bigCardY, bigCardW, bigCardH, true);
+
+    // === 왼쪽 미니 카드 (이전 월드) ===
+    if (this.currentWorldIndex > 0) {
+      const prevWorld = WORLDS[this.currentWorldIndex - 1];
+      const miniW = bigCardW * 0.3;
+      const miniH = bigCardH * 0.35;
+      this._drawMiniWorldCard(prevWorld, -miniW * 0.15, bigCardY, miniW, miniH);
+    }
+
+    // === 오른쪽 미니 카드 (다음 월드) ===
+    if (this.currentWorldIndex < WORLDS.length - 1) {
+      const nextWorld = WORLDS[this.currentWorldIndex + 1];
+      const miniW = bigCardW * 0.3;
+      const miniH = bigCardH * 0.35;
+      this._drawMiniWorldCard(nextWorld, width + miniW * 0.15, bigCardY, miniW, miniH);
+    }
+  }
+
+  /** 큰 월드 카드 (포커스 상태) 그리기 */
+  _drawWorldCard(world, cx, cy, cardW, cardH, isFocused) {
     const colors = WORLD_CARD_COLORS[world.id] || { bg: 0xF5F5F5, border: 0xCCCCCC };
-    const isWorldUnlocked = this._isWorldUnlocked(world.id);
+    const isUnlocked = this._isWorldUnlocked(world.id);
+
+    // 카드 그림자
+    const shadow = this.add.graphics();
+    shadow.fillStyle(0x000000, 0.12);
+    shadow.fillRoundedRect(cx - cardW / 2 + 4, cy - cardH / 2 + 4, cardW, cardH, 20);
+    this.worldCardContainer.add(shadow);
 
     // 카드 배경
     const cardBg = this.add.graphics();
-    if (isWorldUnlocked) {
-      // 열린 월드: 테마 색상 카드
+    if (isUnlocked) {
       cardBg.fillStyle(colors.bg, 1);
-      cardBg.fillRoundedRect(cardX, cardY, cardW, cardH, 14);
-      cardBg.lineStyle(2.5, colors.border, 1);
-      cardBg.strokeRoundedRect(cardX, cardY, cardW, cardH, 14);
-      // 카드 그림자 효과
-      const shadow = this.add.graphics();
-      shadow.fillStyle(0x000000, 0.08);
-      shadow.fillRoundedRect(cardX + 3, cardY + 3, cardW, cardH, 14);
-      this.scrollContainer.add(shadow);
+      cardBg.fillRoundedRect(cx - cardW / 2, cy - cardH / 2, cardW, cardH, 20);
+      cardBg.lineStyle(3, colors.border, 1);
+      cardBg.strokeRoundedRect(cx - cardW / 2, cy - cardH / 2, cardW, cardH, 20);
     } else {
-      // 잠긴 월드: 반투명 회색
-      cardBg.fillStyle(0xDDDDDD, 0.5);
-      cardBg.fillRoundedRect(cardX, cardY, cardW, cardH, 14);
-      cardBg.lineStyle(2, 0xBBBBBB, 0.5);
-      cardBg.strokeRoundedRect(cardX, cardY, cardW, cardH, 14);
+      cardBg.fillStyle(0xDDDDDD, 0.6);
+      cardBg.fillRoundedRect(cx - cardW / 2, cy - cardH / 2, cardW, cardH, 20);
+      cardBg.lineStyle(2, 0xBBBBBB, 0.6);
+      cardBg.strokeRoundedRect(cx - cardW / 2, cy - cardH / 2, cardW, cardH, 20);
     }
-    this.scrollContainer.add(cardBg);
+    this.worldCardContainer.add(cardBg);
 
-    // 카드 상단: 월드 이모지 + 이름 (큰 글씨)
-    const headerY = cardY + 18;
-    const nameColor = isWorldUnlocked ? '#333333' : '#999999';
-    const worldLabel = this.add.text(cardX + cardW / 2, headerY, `${world.emoji} ${world.name}`, {
-      fontFamily: 'Jua, sans-serif',
-      fontSize: '18px',
-      color: nameColor,
-      stroke: isWorldUnlocked ? '#FFFFFF' : undefined,
-      strokeThickness: isWorldUnlocked ? 2 : 0,
+    // 테마 배경 그라디언트 띠 (카드 상단에 월드 색상 미리보기)
+    if (isUnlocked) {
+      const stripH = cardH * 0.18;
+      const stripG = this.add.graphics();
+      stripG.fillStyle(colors.border, 0.25);
+      stripG.fillRoundedRect(cx - cardW / 2, cy - cardH / 2, cardW, stripH, { tl: 20, tr: 20, bl: 0, br: 0 });
+      this.worldCardContainer.add(stripG);
+    }
+
+    // 월드 이모지 (큰 크기)
+    const emojiSize = isUnlocked ? 42 : 28;
+    const emojiText = this.add.text(cx, cy - cardH * 0.28, world.emoji, {
+      fontSize: `${emojiSize}px`,
     }).setOrigin(0.5);
-    this.scrollContainer.add(worldLabel);
+    this.worldCardContainer.add(emojiText);
 
-    // 잠긴 월드에 자물쇠 표시
-    if (!isWorldUnlocked) {
-      const lockText = this.add.text(cardX + cardW / 2, cardY + cardH / 2 + 10, '잠겨있어요', {
+    // 월드 이름
+    const nameColor = isUnlocked ? '#333333' : '#999999';
+    const nameSize = isUnlocked ? '24px' : '18px';
+    const worldLabel = this.add.text(cx, cy - cardH * 0.12, world.name, {
+      fontFamily: 'Jua, sans-serif',
+      fontSize: nameSize,
+      color: nameColor,
+      stroke: '#FFFFFF',
+      strokeThickness: isUnlocked ? 3 : 1,
+    }).setOrigin(0.5);
+    this.worldCardContainer.add(worldLabel);
+
+    // 잠긴 월드 표시
+    if (!isUnlocked) {
+      const lockText = this.add.text(cx, cy + 10, '잠겨있어요', {
         fontFamily: 'Jua, sans-serif',
-        fontSize: '13px',
+        fontSize: '16px',
         color: '#AAAAAA',
+        stroke: '#FFFFFF',
+        strokeThickness: 1,
       }).setOrigin(0.5);
-      this.scrollContainer.add(lockText);
-      return; // 잠긴 월드는 스테이지 버튼 안 그림
+      this.worldCardContainer.add(lockText);
+      return;
     }
 
     // === 스테이지 버튼 5개 (가로 배치) ===
     const stageIds = STAGES.filter(s => s.world === world.id).map(s => s.id);
-    const btnR = Math.min(cardW * 0.065, 22); // 버튼 반지름 (크게)
-    const btnSpacing = cardW / 6; // 균등 배치
-    const btnY = cardY + cardH * 0.65;
+    const btnR = Math.min(cardW * 0.065, 24);
+    const btnSpacing = cardW / 6;
+    const btnY = cy + cardH * 0.15;
     const stageColor = WORLD_STAGE_COLORS[world.id] || 0x888888;
+    const cardLeft = cx - cardW / 2;
+
+    // 선택한 공룡 표시 위치 (첫 번째 미클리어 해제 스테이지)
+    let dinoMarkerPos = null;
 
     stageIds.forEach((stageId, si) => {
-      const bx = cardX + btnSpacing * (si + 1);
+      const bx = cardLeft + btnSpacing * (si + 1);
       const stageInWorld = si + 1;
 
       const isCleared = this.progress.clearedStages.includes(stageId);
-      const isUnlocked = this._isStageUnlocked(stageId);
+      const isStageUnlocked = this._isStageUnlocked(stageId);
       const bestStar = this.progress.bestStars[stageId] || 0;
 
       // 버튼 그래픽
       const btnG = this.add.graphics();
 
       if (isCleared) {
-        // 클리어: 금색 원 + 그림자
+        // 클리어: 금색 원
         btnG.fillStyle(0x000000, 0.1);
-        btnG.fillCircle(bx + 2, btnY + 2, btnR); // 그림자
+        btnG.fillCircle(bx + 2, btnY + 2, btnR);
         btnG.fillStyle(0xFFD700, 1);
         btnG.fillCircle(bx, btnY, btnR);
         btnG.lineStyle(2.5, 0xFFA500, 1);
         btnG.strokeCircle(bx, btnY, btnR);
-        // 안쪽 하이라이트
         btnG.fillStyle(0xFFE44D, 0.4);
         btnG.fillCircle(bx - 3, btnY - 3, btnR * 0.5);
-      } else if (isUnlocked) {
-        // 열린 스테이지: 테마 색상 원 + 그림자
+      } else if (isStageUnlocked) {
+        // 열린 스테이지: 테마 색상 원
         btnG.fillStyle(0x000000, 0.1);
         btnG.fillCircle(bx + 2, btnY + 2, btnR);
         btnG.fillStyle(stageColor, 1);
         btnG.fillCircle(bx, btnY, btnR);
         btnG.lineStyle(2, 0xFFFFFF, 0.8);
         btnG.strokeCircle(bx, btnY, btnR);
-        // 안쪽 하이라이트
         btnG.fillStyle(0xFFFFFF, 0.25);
         btnG.fillCircle(bx - 3, btnY - 3, btnR * 0.4);
 
-        // 현재 플레이할 스테이지 위치 기록 (첫 번째 미클리어 해제 스테이지)
-        if (!this._currentStagePos) {
-          this._currentStagePos = { x: bx, y: btnY };
+        // 첫 번째 미클리어 해제 스테이지 위치 기록
+        if (!dinoMarkerPos) {
+          dinoMarkerPos = { x: bx, y: btnY };
         }
       } else {
         // 잠금: 어두운 회색 원
@@ -286,11 +340,10 @@ export class WorldMapScene extends Phaser.Scene {
         btnG.lineStyle(1.5, 0x777777, 0.5);
         btnG.strokeCircle(bx, btnY, btnR);
       }
-      this.scrollContainer.add(btnG);
+      this.worldCardContainer.add(btnG);
 
       // 버튼 안 텍스트/아이콘
       if (isCleared) {
-        // 클리어한 스테이지: 체크마크
         const checkText = this.add.text(bx, btnY - 1, '\u2713', {
           fontFamily: 'Jua, sans-serif',
           fontSize: `${btnR * 1.2}px`,
@@ -298,9 +351,8 @@ export class WorldMapScene extends Phaser.Scene {
           stroke: '#8B6914',
           strokeThickness: 1,
         }).setOrigin(0.5);
-        this.scrollContainer.add(checkText);
-      } else if (isUnlocked) {
-        // 열린 스테이지: 흰색 숫자
+        this.worldCardContainer.add(checkText);
+      } else if (isStageUnlocked) {
         const numText = this.add.text(bx, btnY, `${stageInWorld}`, {
           fontFamily: 'Jua, sans-serif',
           fontSize: `${btnR * 1.0}px`,
@@ -308,65 +360,50 @@ export class WorldMapScene extends Phaser.Scene {
           stroke: '#00000033',
           strokeThickness: 1,
         }).setOrigin(0.5);
-        this.scrollContainer.add(numText);
+        this.worldCardContainer.add(numText);
       } else {
-        // 잠금: 자물쇠 텍스트
-        const lockText = this.add.text(bx, btnY, '\uD83D\uDD12', {
+        const lockIcon = this.add.text(bx, btnY, '\uD83D\uDD12', {
           fontSize: `${btnR * 0.8}px`,
         }).setOrigin(0.5);
-        this.scrollContainer.add(lockText);
+        this.worldCardContainer.add(lockIcon);
       }
 
-      // 별 표시 (클리어한 스테이지, 버튼 아래)
+      // 별 표시 (클리어 스테이지)
       if (isCleared && bestStar > 0) {
         const starStr = '\u2B50'.repeat(bestStar);
-        const starText = this.add.text(bx, btnY + btnR + 6, starStr, {
-          fontSize: '8px',
+        const starText = this.add.text(bx, btnY + btnR + 8, starStr, {
+          fontSize: '9px',
         }).setOrigin(0.5);
-        this.scrollContainer.add(starText);
+        this.worldCardContainer.add(starText);
       }
 
-      // 터치 영역 (잠금 안 된 스테이지만)
-      if (isUnlocked) {
+      // 터치 영역 (해제된 스테이지만)
+      if (isStageUnlocked) {
         const hitArea = this.add.rectangle(bx, btnY, btnR * 2.8, btnR * 2.8, 0x000000, 0);
         hitArea.setInteractive({ useHandCursor: true });
-        this.scrollContainer.add(hitArea);
+        this.worldCardContainer.add(hitArea);
 
-        // 호버 효과: 스테이지 버튼이 살짝 커짐
         hitArea.on('pointerover', () => {
           this.tweens.add({
-            targets: btnG,
-            scaleX: 1.15,
-            scaleY: 1.15,
-            duration: 120,
-            ease: 'Sine.easeOut',
+            targets: btnG, scaleX: 1.15, scaleY: 1.15,
+            duration: 120, ease: 'Sine.easeOut',
           });
         });
         hitArea.on('pointerout', () => {
           this.tweens.add({
-            targets: btnG,
-            scaleX: 1,
-            scaleY: 1,
-            duration: 120,
-            ease: 'Sine.easeOut',
+            targets: btnG, scaleX: 1, scaleY: 1,
+            duration: 120, ease: 'Sine.easeOut',
           });
         });
 
-        // pointerup에서 드래그 여부를 확인한 후 클릭 처리
-        // (드래그 스크롤과 클릭 충돌 방지)
+        // 클릭으로 스테이지 시작 (스와이프와 구분)
         hitArea.on('pointerup', () => {
-          // 드래그 중이었으면 클릭 무시
-          if (this._wasDragging) return;
-
+          if (this._wasSwiping) return;
           soundGenerator.playSelect();
-
-          // 선택 시 확대 + 반짝이 효과
           this.tweens.add({
             targets: btnG,
-            scaleX: 1.2,
-            scaleY: 1.2,
-            duration: 120,
-            yoyo: true,
+            scaleX: 1.2, scaleY: 1.2,
+            duration: 120, yoyo: true,
             onComplete: () => {
               this.registry.set('currentStage', stageId);
               this.cameras.main.fadeOut(300, 0, 0, 0);
@@ -379,63 +416,227 @@ export class WorldMapScene extends Phaser.Scene {
       }
     });
 
-    // 스테이지 버튼 사이 연결선 (작은 점선)
+    // 스테이지 버튼 사이 연결선
     const lineG = this.add.graphics();
     lineG.lineStyle(1.5, colors.border, 0.4);
     for (let si = 0; si < stageIds.length - 1; si++) {
-      const x1 = cardX + btnSpacing * (si + 1) + btnR + 2;
-      const x2 = cardX + btnSpacing * (si + 2) - btnR - 2;
-      // 점선 그리기
+      const x1 = cardLeft + btnSpacing * (si + 1) + btnR + 2;
+      const x2 = cardLeft + btnSpacing * (si + 2) - btnR - 2;
       const dashLen = 4;
       const gapLen = 3;
-      let cx = x1;
-      while (cx < x2) {
-        const endX = Math.min(cx + dashLen, x2);
-        lineG.lineBetween(cx, btnY, endX, btnY);
-        cx = endX + gapLen;
+      let lx = x1;
+      while (lx < x2) {
+        const endX = Math.min(lx + dashLen, x2);
+        lineG.lineBetween(lx, btnY, endX, btnY);
+        lx = endX + gapLen;
       }
     }
-    this.scrollContainer.add(lineG);
+    this.worldCardContainer.add(lineG);
+
+    // === 월드 클리어 현황 텍스트 ===
+    const clearedInWorld = stageIds.filter(id => this.progress.clearedStages.includes(id)).length;
+    const statusText = this.add.text(cx, cy + cardH * 0.35, `${clearedInWorld} / ${stageIds.length} 스테이지 클리어`, {
+      fontFamily: 'Jua, sans-serif',
+      fontSize: '14px',
+      color: '#8B6914',
+      stroke: '#FFFFFF',
+      strokeThickness: 2,
+    }).setOrigin(0.5);
+    this.worldCardContainer.add(statusText);
+
+    // === 선택한 공룡을 현재 스테이지 위치에 표시 ===
+    if (dinoMarkerPos) {
+      const dinoKey = this.registry.get('selectedDino') || 'brachio';
+      const imgKey = `img_${dinoKey}`;
+      const useImage = this.textures.exists(imgKey);
+      const markerKey = useImage ? imgKey : dinoKey;
+
+      const dinoMarker = this.add.sprite(
+        dinoMarkerPos.x, dinoMarkerPos.y - 28,
+        markerKey, 0
+      ).setOrigin(0.5, 1);
+
+      if (useImage) {
+        dinoMarker.setScale(0.08);
+      } else {
+        dinoMarker.setScale(0.35);
+      }
+      this.worldCardContainer.add(dinoMarker);
+
+      // 통통 튀는 애니메이션
+      this.tweens.add({
+        targets: dinoMarker,
+        y: dinoMarker.y - 6,
+        duration: 500,
+        yoyo: true,
+        repeat: -1,
+        ease: 'Sine.easeInOut',
+      });
+    }
   }
 
-  /**
-   * 월드 카드 사이에 점선 경로 그리기 (모험 경로 느낌)
-   */
-  _drawPathBetweenCards(centerX, fromY, toY, isLocked) {
-    const pathG = this.add.graphics();
-    const color = isLocked ? 0xBBBBBB : 0xC8A882;
-    const alpha = isLocked ? 0.3 : 0.6;
-    pathG.lineStyle(2, color, alpha);
+  /** 미니 월드 카드 (좌우 미리보기) */
+  _drawMiniWorldCard(world, cx, cy, cardW, cardH) {
+    const colors = WORLD_CARD_COLORS[world.id] || { bg: 0xF5F5F5, border: 0xCCCCCC };
+    const isUnlocked = this._isWorldUnlocked(world.id);
 
-    // 세로 점선
-    const dashLen = 4;
-    const gapLen = 4;
-    let cy = fromY + 2;
-    while (cy < toY - 2) {
-      const endY = Math.min(cy + dashLen, toY - 2);
-      pathG.lineBetween(centerX, cy, centerX, endY);
-      cy = endY + gapLen;
+    const cardBg = this.add.graphics();
+    if (isUnlocked) {
+      cardBg.fillStyle(colors.bg, 0.6);
+      cardBg.fillRoundedRect(cx - cardW / 2, cy - cardH / 2, cardW, cardH, 12);
+      cardBg.lineStyle(2, colors.border, 0.5);
+      cardBg.strokeRoundedRect(cx - cardW / 2, cy - cardH / 2, cardW, cardH, 12);
+    } else {
+      cardBg.fillStyle(0xDDDDDD, 0.3);
+      cardBg.fillRoundedRect(cx - cardW / 2, cy - cardH / 2, cardW, cardH, 12);
     }
+    this.worldCardContainer.add(cardBg);
 
-    // 화살표 삼각형
-    if (!isLocked) {
-      pathG.fillStyle(color, alpha);
-      const arrowY = toY - 2;
-      pathG.fillTriangle(
-        centerX, arrowY,
-        centerX - 5, arrowY - 8,
-        centerX + 5, arrowY - 8
-      );
+    // 이모지
+    const emojiText = this.add.text(cx, cy - 8, world.emoji, {
+      fontSize: '20px',
+    }).setOrigin(0.5).setAlpha(isUnlocked ? 0.7 : 0.3);
+    this.worldCardContainer.add(emojiText);
+
+    // 이름
+    const nameText = this.add.text(cx, cy + 16, world.name, {
+      fontFamily: 'Jua, sans-serif',
+      fontSize: '11px',
+      color: isUnlocked ? '#666666' : '#AAAAAA',
+      stroke: '#FFFFFF',
+      strokeThickness: 1,
+    }).setOrigin(0.5);
+    this.worldCardContainer.add(nameText);
+  }
+
+  /** 좌우 화살표 네비게이션 버튼 */
+  _createNavArrows(width, height) {
+    const arrowY = height * 0.38;
+    const arrowSize = 36;
+    const arrowPad = 12;
+
+    // 왼쪽 화살표
+    this.leftArrow = this.add.text(arrowPad + arrowSize / 2, arrowY, '\u25C0', {
+      fontSize: `${arrowSize}px`,
+      color: '#FFFFFF',
+      stroke: '#333333',
+      strokeThickness: 3,
+    }).setOrigin(0.5).setDepth(30).setAlpha(0.8);
+    this.leftArrow.setInteractive({ useHandCursor: true });
+
+    this.leftArrow.on('pointerdown', () => {
+      this._navigateWorld(-1);
+    });
+    this.leftArrow.on('pointerover', () => this.leftArrow.setAlpha(1));
+    this.leftArrow.on('pointerout', () => this.leftArrow.setAlpha(0.8));
+
+    // 오른쪽 화살표
+    this.rightArrow = this.add.text(width - arrowPad - arrowSize / 2, arrowY, '\u25B6', {
+      fontSize: `${arrowSize}px`,
+      color: '#FFFFFF',
+      stroke: '#333333',
+      strokeThickness: 3,
+    }).setOrigin(0.5).setDepth(30).setAlpha(0.8);
+    this.rightArrow.setInteractive({ useHandCursor: true });
+
+    this.rightArrow.on('pointerdown', () => {
+      this._navigateWorld(1);
+    });
+    this.rightArrow.on('pointerover', () => this.rightArrow.setAlpha(1));
+    this.rightArrow.on('pointerout', () => this.rightArrow.setAlpha(0.8));
+
+    // 화살표 가시성 업데이트
+    this._updateArrowVisibility();
+  }
+
+  /** 화살표 가시성: 첫 월드면 왼쪽 숨김, 마지막이면 오른쪽 숨김 */
+  _updateArrowVisibility() {
+    if (this.leftArrow) {
+      this.leftArrow.setVisible(this.currentWorldIndex > 0);
     }
+    if (this.rightArrow) {
+      this.rightArrow.setVisible(this.currentWorldIndex < WORLDS.length - 1);
+    }
+  }
 
-    this.scrollContainer.add(pathG);
+  /** 월드 이동 (방향: -1=왼쪽, +1=오른쪽) */
+  _navigateWorld(direction) {
+    const newIndex = this.currentWorldIndex + direction;
+    if (newIndex < 0 || newIndex >= WORLDS.length) return;
+
+    soundGenerator.init();
+    soundGenerator.playSelect();
+
+    this.currentWorldIndex = newIndex;
+
+    // 카드 전환 애니메이션 (슬라이드)
+    const { width } = this.scale;
+    const slideDir = direction > 0 ? -1 : 1; // 반대 방향으로 밀려남
+
+    // 기존 카드를 밀어내는 효과
+    this.tweens.add({
+      targets: this.worldCardContainer,
+      x: slideDir * width * 0.3,
+      alpha: 0,
+      duration: 200,
+      ease: 'Sine.easeIn',
+      onComplete: () => {
+        // 새 카드를 반대쪽에서 등장
+        this.worldCardContainer.x = -slideDir * width * 0.3;
+        this._renderFocusedWorld();
+        this.tweens.add({
+          targets: this.worldCardContainer,
+          x: 0,
+          alpha: 1,
+          duration: 300,
+          ease: 'Back.easeOut',
+        });
+      },
+    });
+
+    // 인디케이터 + 화살표 업데이트
+    this._updateIndicator();
+    this._updateArrowVisibility();
+  }
+
+  /** 좌우 스와이프 입력 설정 */
+  _setupSwipe(screenW, screenH) {
+    this._wasSwiping = false;
+    this._swipeStartX = 0;
+    this._swipeStartY = 0;
+
+    this.input.on('pointerdown', (pointer) => {
+      // 하단 버튼 영역은 스와이프 무시
+      if (pointer.y > screenH * 0.88) return;
+      this._swipeStartX = pointer.x;
+      this._swipeStartY = pointer.y;
+      this._wasSwiping = false;
+    });
+
+    this.input.on('pointermove', (pointer) => {
+      if (!pointer.isDown) return;
+      const dx = Math.abs(pointer.x - this._swipeStartX);
+      const dy = Math.abs(pointer.y - this._swipeStartY);
+      // 수평 이동이 30px 이상이고 수평>수직이면 스와이프로 판정
+      if (dx > 30 && dx > dy) {
+        this._wasSwiping = true;
+      }
+    });
+
+    this.input.on('pointerup', (pointer) => {
+      if (!this._wasSwiping) return;
+      const dx = pointer.x - this._swipeStartX;
+      // 50px 이상 스와이프해야 월드 전환
+      if (Math.abs(dx) > 50) {
+        this._navigateWorld(dx < 0 ? 1 : -1);
+      }
+    });
   }
 
   /**
    * 하단 고정 버튼 영역 (스크롤에 영향 안 받음)
    */
   _createBottomButtons(width, height) {
-    // 하단 영역 배경 (양피지보다 약간 진한 색)
     const bottomBg = this.add.graphics();
     bottomBg.fillStyle(0xE8D8C0, 0.95);
     bottomBg.fillRect(0, height - height * 0.12, width, height * 0.12);
@@ -444,7 +645,6 @@ export class WorldMapScene extends Phaser.Scene {
     bottomBg.setDepth(50);
 
     const btnY = height - height * 0.06;
-    // 5개 버튼으로 확장: 상점 | 업적 | 공룡 바꾸기 | 난이도 | 처음부터
     const btnW = Math.min(width * 0.17, 72);
     const btnH = Math.min(height * 0.06, 42);
     const gap = Math.min(width * 0.01, 6);
@@ -452,11 +652,9 @@ export class WorldMapScene extends Phaser.Scene {
     const totalW = btnW * 5 + gap * 4;
     const startX = (width - totalW) / 2 + btnW / 2;
 
-    // "상점" 버튼 (주황색 - 가장 왼쪽에 배치)
+    // "상점" 버튼
     this._createPrettyButton(
-      startX, btnY,
-      '상점', btnW, btnH,
-      0xFF8C00,
+      startX, btnY, '상점', btnW, btnH, 0xFF8C00,
       () => {
         soundGenerator.playSelect();
         this.cameras.main.fadeOut(300, 0, 0, 0);
@@ -466,22 +664,18 @@ export class WorldMapScene extends Phaser.Scene {
       }
     );
 
-    // "업적" 버튼 (금색)
+    // "업적" 버튼
     this._createPrettyButton(
-      startX + btnW + gap, btnY,
-      '업적', btnW, btnH,
-      0xFFAA00,
+      startX + btnW + gap, btnY, '업적', btnW, btnH, 0xFFAA00,
       () => {
         soundGenerator.playSelect();
         this._showAchievementOverlay(width, height);
       }
     );
 
-    // "공룡" 버튼 (이름 축소)
+    // "공룡" 버튼
     this._createPrettyButton(
-      startX + (btnW + gap) * 2, btnY,
-      '공룡', btnW, btnH,
-      0x9B72CF,
+      startX + (btnW + gap) * 2, btnY, '공룡', btnW, btnH, 0x9B72CF,
       () => {
         soundGenerator.playSelect();
         this.cameras.main.fadeOut(300, 0, 0, 0);
@@ -493,9 +687,7 @@ export class WorldMapScene extends Phaser.Scene {
 
     // "난이도" 버튼
     this._createPrettyButton(
-      startX + (btnW + gap) * 3, btnY,
-      '난이도', btnW, btnH,
-      0x4EAEFF,
+      startX + (btnW + gap) * 3, btnY, '난이도', btnW, btnH, 0x4EAEFF,
       () => {
         soundGenerator.playSelect();
         this.cameras.main.fadeOut(300, 0, 0, 0);
@@ -505,11 +697,9 @@ export class WorldMapScene extends Phaser.Scene {
       }
     );
 
-    // "리셋" 버튼 (이름 축소)
+    // "리셋" 버튼
     this._createPrettyButton(
-      startX + (btnW + gap) * 4, btnY,
-      '리셋', btnW, btnH,
-      0xE55B5B,
+      startX + (btnW + gap) * 4, btnY, '리셋', btnW, btnH, 0xE55B5B,
       () => {
         soundGenerator.playSelect();
         this._showResetConfirm(width, height);
@@ -517,19 +707,14 @@ export class WorldMapScene extends Phaser.Scene {
     );
   }
 
-  /**
-   * "처음부터" 확인 다이얼로그
-   * 실수로 누르는 것을 방지하기 위해 확인 메시지 표시
-   */
+  /** "처음부터" 확인 다이얼로그 */
   _showResetConfirm(width, height) {
-    // 반투명 오버레이
     const overlay = this.add.graphics();
     overlay.fillStyle(0x000000, 0.6);
     overlay.fillRect(0, 0, width, height);
     overlay.setDepth(200);
     overlay.setInteractive(new Phaser.Geom.Rectangle(0, 0, width, height), Phaser.Geom.Rectangle.Contains);
 
-    // 다이얼로그 박스
     const dlgW = Math.min(width * 0.75, 300);
     const dlgH = 160;
     const dlgX = (width - dlgW) / 2;
@@ -542,7 +727,6 @@ export class WorldMapScene extends Phaser.Scene {
     dlgBg.strokeRoundedRect(dlgX, dlgY, dlgW, dlgH, 16);
     dlgBg.setDepth(201);
 
-    // 메시지
     const msg = this.add.text(width / 2, dlgY + 40, '정말 처음부터 할까요?', {
       fontFamily: 'Jua, sans-serif',
       fontSize: '18px',
@@ -555,7 +739,6 @@ export class WorldMapScene extends Phaser.Scene {
       color: '#999999',
     }).setOrigin(0.5).setDepth(202);
 
-    // "네" 버튼
     const yesBtnW = 90;
     const yesBtnH = 36;
     const yesBtnX = width / 2 - 55;
@@ -583,7 +766,6 @@ export class WorldMapScene extends Phaser.Scene {
       });
     });
 
-    // "아니오" 버튼
     const noBtnX = width / 2 + 55;
 
     const noBg = this.add.graphics();
@@ -601,35 +783,22 @@ export class WorldMapScene extends Phaser.Scene {
     noHit.setInteractive({ useHandCursor: true }).setDepth(204);
 
     noHit.on('pointerdown', () => {
-      // 다이얼로그 닫기
-      overlay.destroy();
-      dlgBg.destroy();
-      msg.destroy();
-      subMsg.destroy();
-      yesBg.destroy();
-      yesText.destroy();
-      yesHit.destroy();
-      noBg.destroy();
-      noText.destroy();
-      noHit.destroy();
+      overlay.destroy(); dlgBg.destroy(); msg.destroy(); subMsg.destroy();
+      yesBg.destroy(); yesText.destroy(); yesHit.destroy();
+      noBg.destroy(); noText.destroy(); noHit.destroy();
     });
   }
 
-  /**
-   * 업적 목록 오버레이 팝업
-   * 달성한 업적은 컬러, 미달성은 회색으로 표시
-   */
+  /** 업적 목록 오버레이 팝업 */
   _showAchievementOverlay(width, height) {
     const unlocked = loadUnlockedAchievements();
 
-    // 반투명 오버레이
     const overlay = this.add.graphics();
     overlay.fillStyle(0x000000, 0.7);
     overlay.fillRect(0, 0, width, height);
     overlay.setDepth(200);
     overlay.setInteractive(new Phaser.Geom.Rectangle(0, 0, width, height), Phaser.Geom.Rectangle.Contains);
 
-    // 팝업 박스
     const dlgW = Math.min(width * 0.9, 340);
     const dlgH = Math.min(height * 0.8, 500);
     const dlgX = (width - dlgW) / 2;
@@ -642,7 +811,6 @@ export class WorldMapScene extends Phaser.Scene {
     dlgBg.strokeRoundedRect(dlgX, dlgY, dlgW, dlgH, 16);
     dlgBg.setDepth(201);
 
-    // 제목
     const title = this.add.text(width / 2, dlgY + 25, '업적', {
       fontFamily: 'Jua, sans-serif',
       fontSize: '22px',
@@ -651,14 +819,12 @@ export class WorldMapScene extends Phaser.Scene {
       strokeThickness: 2,
     }).setOrigin(0.5).setDepth(202);
 
-    // 달성 카운트
     const count = this.add.text(width / 2, dlgY + 50, `${unlocked.length} / ${ACHIEVEMENTS.length} 달성`, {
       fontFamily: 'Jua, sans-serif',
       fontSize: '13px',
       color: '#AA8800',
     }).setOrigin(0.5).setDepth(202);
 
-    // 업적 리스트
     const achElements = [];
     const listStartY = dlgY + 70;
     const itemH = 32;
@@ -667,7 +833,6 @@ export class WorldMapScene extends Phaser.Scene {
       const isUnlocked = unlocked.includes(ach.id);
       const itemY = listStartY + i * itemH;
 
-      // 아이콘 + 이름 + 설명
       const iconText = this.add.text(dlgX + 15, itemY, ach.icon, {
         fontSize: '18px',
       }).setOrigin(0, 0.5).setDepth(202);
@@ -684,15 +849,10 @@ export class WorldMapScene extends Phaser.Scene {
         color: isUnlocked ? '#888888' : '#CCCCCC',
       }).setOrigin(0, 0.5).setDepth(202);
 
-      // 미달성은 아이콘 회색 처리
-      if (!isUnlocked) {
-        iconText.setAlpha(0.3);
-      }
-
+      if (!isUnlocked) iconText.setAlpha(0.3);
       achElements.push(iconText, nameText, descText);
     });
 
-    // 닫기 버튼
     const closeBtnW = 100;
     const closeBtnH = 36;
     const closeBtnX = width / 2;
@@ -713,33 +873,22 @@ export class WorldMapScene extends Phaser.Scene {
     closeHit.setInteractive({ useHandCursor: true }).setDepth(204);
 
     closeHit.on('pointerdown', () => {
-      // 모든 요소 정리
-      overlay.destroy();
-      dlgBg.destroy();
-      title.destroy();
-      count.destroy();
-      closeBg.destroy();
-      closeText.destroy();
-      closeHit.destroy();
+      overlay.destroy(); dlgBg.destroy(); title.destroy(); count.destroy();
+      closeBg.destroy(); closeText.destroy(); closeHit.destroy();
       achElements.forEach(el => el.destroy());
     });
   }
 
-  /**
-   * 예쁜 라운드 버튼 (그림자 + 호버 효과)
-   */
+  /** 예쁜 라운드 버튼 */
   _createPrettyButton(x, y, label, btnW, btnH, color, callback) {
-    // 그림자
     const shadow = this.add.graphics();
     shadow.fillStyle(0x000000, 0.15);
     shadow.fillRoundedRect(x - btnW / 2 + 2, y - btnH / 2 + 2, btnW, btnH, btnH / 2);
     shadow.setDepth(51);
 
-    // 버튼 배경
     const bg = this.add.graphics();
     bg.fillStyle(color, 1);
     bg.fillRoundedRect(x - btnW / 2, y - btnH / 2, btnW, btnH, btnH / 2);
-    // 상단 하이라이트
     bg.fillStyle(0xFFFFFF, 0.2);
     bg.fillRoundedRect(x - btnW / 2 + 4, y - btnH / 2 + 2, btnW - 8, btnH * 0.4, btnH / 3);
     bg.setDepth(52);
@@ -758,96 +907,30 @@ export class WorldMapScene extends Phaser.Scene {
     hitArea.on('pointerdown', () => {
       this.tweens.add({
         targets: [bg, shadow, text],
-        scaleX: 0.93,
-        scaleY: 0.93,
-        duration: 80,
-        yoyo: true,
+        scaleX: 0.93, scaleY: 0.93,
+        duration: 80, yoyo: true,
         onComplete: callback,
       });
     });
 
-    // 호버 효과 (데스크탑)
-    hitArea.on('pointerover', () => {
-      bg.setAlpha(0.85);
-    });
-    hitArea.on('pointerout', () => {
-      bg.setAlpha(1);
-    });
+    hitArea.on('pointerover', () => bg.setAlpha(0.85));
+    hitArea.on('pointerout', () => bg.setAlpha(1));
   }
 
-  /**
-   * 스크롤 입력 설정 (드래그로 세로 스크롤)
-   */
-  _setupScroll(screenH) {
-    // 드래그/클릭 구분용 변수 (스크롤이 없어도 초기화)
-    this._wasDragging = false;
-    this._pointerStartX = 0;
-    this._pointerStartY = 0;
-
-    if (this.maxScrollY <= 0) return; // 스크롤 필요 없으면 스크롤 설정 안 함
-
-    this.isDragging = false;
-    this.dragStartY = 0;
-    this.dragStartScrollY = 0;
-
-    this.input.on('pointerdown', (pointer) => {
-      // 드래그 판별을 위해 시작 위치 기록
-      this._pointerStartX = pointer.x;
-      this._pointerStartY = pointer.y;
-      this._wasDragging = false;
-
-      // 하단 버튼 영역은 스크롤 무시
-      if (pointer.y > screenH * 0.88) return;
-      this.isDragging = true;
-      this.dragStartY = pointer.y;
-      this.dragStartScrollY = this.scrollY;
-    });
-
-    this.input.on('pointermove', (pointer) => {
-      if (!this.isDragging) return;
-      const dy = this.dragStartY - pointer.y;
-
-      // 이동 거리가 5px 이상이면 드래그로 판정
-      const totalDist = Math.abs(pointer.x - this._pointerStartX) + Math.abs(pointer.y - this._pointerStartY);
-      if (totalDist >= 5) {
-        this._wasDragging = true;
-      }
-
-      this.scrollY = Phaser.Math.Clamp(
-        this.dragStartScrollY + dy,
-        0,
-        this.maxScrollY
-      );
-      this.scrollContainer.y = -this.scrollY;
-    });
-
-    this.input.on('pointerup', () => {
-      this.isDragging = false;
-    });
-  }
-
-  /**
-   * 월드가 해제되었는지 (월드의 첫 스테이지가 해제되었는지)
-   */
+  /** 월드가 해제되었는지 */
   _isWorldUnlocked(worldId) {
-    // 첫 번째 월드는 항상 열림
     if (worldId === 1) return true;
-    // 이전 월드 마지막 스테이지가 클리어되어야 열림
     const prevWorldLastStage = (worldId - 1) * 5;
     return this.progress.clearedStages.includes(prevWorldLastStage);
   }
 
-  /**
-   * 스테이지 잠금 해제 여부
-   */
+  /** 스테이지 잠금 해제 여부 */
   _isStageUnlocked(stageId) {
     if (stageId === 1) return true;
     return this.progress.clearedStages.includes(stageId - 1);
   }
 
-  /**
-   * localStorage에서 진행도 불러오기
-   */
+  /** localStorage에서 진행도 불러오기 */
   _loadProgress() {
     const key = 'ruvin_dino_progress';
     try {
@@ -859,7 +942,7 @@ export class WorldMapScene extends Phaser.Scene {
         };
       }
     } catch {
-      // 파싱 실패 시 초기값
+      // 파싱 실패
     }
     return { clearedStages: [], bestStars: {} };
   }

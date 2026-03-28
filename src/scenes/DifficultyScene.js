@@ -2,18 +2,27 @@
  * DifficultyScene.js - 난이도 선택 화면
  * 5단계 난이도 중 하나를 골라 게임 시작
  *
- * 화면 구성:
- * - 상단: "얼마나 용감할까?" 제목
- * - 중앙: 5개 카드 세로 나열 (별 + 이름 + 설명)
- * - 하단: "출발!" 버튼
- *
- * 각 카드는 파스텔 색상의 라운드 사각형
- * 터치/클릭으로 선택하면 확대 + 반짝, 나머지는 축소 + 반투명
+ * [개선] 성장 단계 시각적 차별화 (크기 차이 + 색상 강조)
+ * - 난이도가 높을수록 카드가 크고 진하게
+ * - 설명 텍스트 크기 증가 + 스트로크 추가
+ * - 선택 시 금테두리 + 글로우 효과
  */
 
 import Phaser from 'phaser';
 import { DIFFICULTIES } from '../data/difficulties.js';
 import { soundGenerator } from '../utils/SoundGenerator.js';
+
+// 각 난이도별 성장 단계 설명 (6살도 이해 가능)
+const GROWTH_DESC = [
+  '알에서 막 나왔어요!',        // 아기공룡
+  '조금 자랐어요!',             // 꼬마공룡
+  '이제 멋진 공룡이에요!',       // 씩씩한공룡
+  '아주 강해졌어요!',           // 용감한공룡
+  '전설이 되었어요!',           // 전설의공룡
+];
+
+// 난이도별 카드 스케일 계수 (성장 단계 느낌)
+const CARD_SCALE = [0.85, 0.90, 1.0, 1.05, 1.1];
 
 export class DifficultyScene extends Phaser.Scene {
   constructor() {
@@ -54,32 +63,39 @@ export class DifficultyScene extends Phaser.Scene {
 
   /**
    * 5개 난이도 카드를 세로로 나열
-   * 화면 높이에 맞춰 반응형으로 카드 크기/간격 계산
+   * 난이도가 올라갈수록 카드가 살짝 커지는 "성장 단계" 시각효과
    */
   _createCards(width, height) {
-    // 카드 영역: 상단(10%) ~ 하단(85%) 사이에 5개 배치
-    const areaTop = height * 0.13;
-    const areaBottom = height * 0.82;
+    // 카드 영역: 상단(12%) ~ 하단(84%) 사이에 5개 배치
+    const areaTop = height * 0.12;
+    const areaBottom = height * 0.84;
     const areaHeight = areaBottom - areaTop;
 
-    // 카드 크기 계산 (화면에 맞게 반응형)
-    const cardW = Math.min(width * 0.85, 320);  // 최대 320px
-    const cardH = Math.min(areaHeight / 5.5, 65); // 5개 + 간격 고려
-    const gap = (areaHeight - cardH * 5) / 4;   // 카드 사이 간격
+    // 기본 카드 크기 계산
+    const baseCardW = Math.min(width * 0.85, 320);
+    const baseCardH = Math.min(areaHeight / 5.5, 70);
+    const gap = (areaHeight - baseCardH * 5) / 4;
 
     DIFFICULTIES.forEach((diff, i) => {
-      // 각 카드의 중심 Y 좌표
-      const cy = areaTop + cardH / 2 + i * (cardH + gap);
+      // 난이도별 스케일 적용 (높은 난이도일수록 카드가 커짐)
+      const scale = CARD_SCALE[i];
+      const cardW = baseCardW * scale;
+      const cardH = baseCardH * scale;
+
+      // 각 카드의 중심 좌표
+      const cy = areaTop + baseCardH / 2 + i * (baseCardH + gap);
       const cx = width / 2;
 
-      // 카드 컨테이너 (배경 + 텍스트들을 한 묶음으로)
+      // 카드 컨테이너
       const container = this.add.container(cx, cy);
 
-      // --- 카드 그림자 (입체감 추가) ---
+      // --- 카드 색상 파싱 ---
       const colorNum = parseInt(diff.color.replace('#', ''), 16);
       const borderNum = parseInt(diff.borderColor.replace('#', ''), 16);
+
+      // --- 카드 그림자 (입체감) ---
       const cardShadow = this.add.graphics();
-      cardShadow.fillStyle(0x000000, 0.1);
+      cardShadow.fillStyle(0x000000, 0.1 + i * 0.02); // 높은 난이도일수록 그림자 진하게
       cardShadow.fillRoundedRect(-cardW / 2 + 3, -cardH / 2 + 3, cardW, cardH, 16);
       container.add(cardShadow);
 
@@ -91,27 +107,40 @@ export class DifficultyScene extends Phaser.Scene {
       cardBg.strokeRoundedRect(-cardW / 2, -cardH / 2, cardW, cardH, 16);
       container.add(cardBg);
 
-      // --- 왼쪽: 별 표시 (난이도 시각화) ---
-      const starsStr = '⭐'.repeat(diff.stars);
-      const starsText = this.add.text(-cardW / 2 + 15, -8, starsStr, {
-        fontFamily: 'Jua, sans-serif',
-        fontSize: '14px',
-      }).setOrigin(0, 0.5);
-      container.add(starsText);
+      // --- 왼쪽: 이모지를 크게 표시 (성장 단계 아이콘) ---
+      const emojiSize = 20 + i * 4; // 난이도가 높을수록 이모지도 커짐
+      const emojiText = this.add.text(-cardW / 2 + 25, 0, diff.emoji, {
+        fontSize: `${emojiSize}px`,
+      }).setOrigin(0.5);
+      container.add(emojiText);
 
-      // --- 중앙: 이모지 + 이름 ---
-      const nameText = this.add.text(0, -cardH * 0.15, `${diff.emoji} ${diff.name}`, {
+      // --- 중앙: 이름 (크고 굵게, 스트로크 추가) ---
+      const nameFontSize = 18 + i * 2; // 난이도별로 폰트 크기 점진적 증가
+      const nameText = this.add.text(10, -cardH * 0.18, diff.name, {
         fontFamily: 'Jua, sans-serif',
-        fontSize: '20px',
+        fontSize: `${nameFontSize}px`,
         color: '#333333',
+        stroke: '#FFFFFF',
+        strokeThickness: 2,
       }).setOrigin(0.5);
       container.add(nameText);
 
-      // --- 하단: 설명 텍스트 ---
-      const descText = this.add.text(0, cardH * 0.25, diff.description, {
+      // --- 별 표시 (이름 오른쪽에 수평 배치) ---
+      const starsStr = '\u2B50'.repeat(diff.stars);
+      const starsText = this.add.text(cardW / 2 - 20, -cardH * 0.18, starsStr, {
         fontFamily: 'Jua, sans-serif',
-        fontSize: '13px',
+        fontSize: '14px',
+      }).setOrigin(1, 0.5);
+      container.add(starsText);
+
+      // --- 하단: 설명 + 성장 단계 설명 (더 크고 읽기 쉽게) ---
+      const descFontSize = 13 + Math.floor(i * 0.5);
+      const descText = this.add.text(10, cardH * 0.22, `${diff.description}  -  ${GROWTH_DESC[i]}`, {
+        fontFamily: 'Jua, sans-serif',
+        fontSize: `${descFontSize}px`,
         color: '#666666',
+        stroke: '#FFFFFF',
+        strokeThickness: 1,
       }).setOrigin(0.5);
       container.add(descText);
 
@@ -164,8 +193,8 @@ export class DifficultyScene extends Phaser.Scene {
 
   /**
    * 난이도 선택 시 호출
-   * - 선택 카드 확대(1.1) + 테두리 반짝
-   * - 나머지 축소(0.9) + 반투명
+   * - 선택 카드: 금테두리 + 확대 + 밝기 반짝
+   * - 나머지: 축소 + 반투명
    */
   _selectDifficulty(index) {
     soundGenerator.init();
@@ -178,21 +207,25 @@ export class DifficultyScene extends Phaser.Scene {
         // 선택된 카드: 확대 + 완전 불투명
         this.tweens.add({
           targets: card.container,
-          scaleX: 1.1,
-          scaleY: 1.1,
+          scaleX: 1.12,
+          scaleY: 1.12,
           duration: 200,
           ease: 'Back.easeOut',
         });
         card.container.setAlpha(1);
 
-        // 테두리 반짝 효과: 카드 배경을 다시 그려서 두꺼운 밝은 테두리
+        // 금색 두꺼운 테두리 + 글로우 효과
         card.cardBg.clear();
-        card.cardBg.fillStyle(card.colorNum, 0.95);
+        card.cardBg.fillStyle(card.colorNum, 1);
         card.cardBg.fillRoundedRect(-card.cardW / 2, -card.cardH / 2, card.cardW, card.cardH, 16);
-        card.cardBg.lineStyle(4, 0xFFD700, 1); // 금색 두꺼운 테두리
+        // 바깥쪽 글로우 (연한 금색 테두리)
+        card.cardBg.lineStyle(6, 0xFFD700, 0.4);
+        card.cardBg.strokeRoundedRect(-card.cardW / 2 - 2, -card.cardH / 2 - 2, card.cardW + 4, card.cardH + 4, 18);
+        // 안쪽 금색 테두리
+        card.cardBg.lineStyle(4, 0xFFD700, 1);
         card.cardBg.strokeRoundedRect(-card.cardW / 2, -card.cardH / 2, card.cardW, card.cardH, 16);
 
-        // 반짝 트윈 (밝기 변화)
+        // 반짝 트윈
         this.tweens.add({
           targets: card.cardBg,
           alpha: 0.7,
@@ -201,7 +234,7 @@ export class DifficultyScene extends Phaser.Scene {
           repeat: 1,
         });
       } else {
-        // 비선택 카드: 축소 + 반투명
+        // 비선택 카드: 축소 + 반투명 + 원래 테두리
         this.tweens.add({
           targets: card.container,
           scaleX: 0.9,
@@ -209,7 +242,14 @@ export class DifficultyScene extends Phaser.Scene {
           duration: 200,
           ease: 'Sine.easeOut',
         });
-        card.container.setAlpha(0.5);
+        card.container.setAlpha(0.45);
+
+        // 원래 색상 테두리 복원
+        card.cardBg.clear();
+        card.cardBg.fillStyle(card.colorNum, 0.95);
+        card.cardBg.fillRoundedRect(-card.cardW / 2, -card.cardH / 2, card.cardW, card.cardH, 16);
+        card.cardBg.lineStyle(3, card.borderNum, 1);
+        card.cardBg.strokeRoundedRect(-card.cardW / 2, -card.cardH / 2, card.cardW, card.cardH, 16);
       }
     });
 
@@ -219,7 +259,7 @@ export class DifficultyScene extends Phaser.Scene {
 
   /** "출발!" 버튼 생성 */
   _createStartButton(width, height) {
-    const btnY = height * 0.91;
+    const btnY = height * 0.92;
     const btnW = 160;
     const btnH = 50;
 
@@ -256,7 +296,7 @@ export class DifficultyScene extends Phaser.Scene {
         this.cameras.main.once('camerafadeoutcomplete', () => {
           const progress = this._loadProgress();
 
-          // 튜토리얼 미완료 시 → TutorialScene 먼저
+          // 튜토리얼 미완료 시 -> TutorialScene 먼저
           const tutorialDone = localStorage.getItem('ruvin_tutorial_done');
           if (!tutorialDone) {
             this.registry.set('currentStage', 1);
@@ -299,7 +339,6 @@ export class DifficultyScene extends Phaser.Scene {
 
   /**
    * localStorage에서 진행도 불러오기
-   * clearedStages 배열이 있으면 이전에 플레이한 적 있는 것
    */
   _loadProgress() {
     try {
