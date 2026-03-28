@@ -26,37 +26,39 @@
 
 ## 구현 기록 (developer)
 
-### 개선 페이즈 2 전체 구현 (2026-03-28)
+### 개선 페이즈 3 전체 구현 (2026-03-28)
 
-구현한 기능: 공룡별 특수능력 4종 + BGM 월드별 다양화 + 밸런스 조정 + 배경 애니메이션
+구현한 기능: 업적 시스템 12종 + 공룡 눈 깜빡임 + UI 그림자/호버 + 클리어/게임오버 연출 강화
 
 | 파일 경로 | 변경 내용 | 신규/수정 |
 |----------|----------|----------|
-| src/config.js | DINOS에 ability/abilityName/abilityDesc 추가, SPEED_INCREMENT 2→5 | 수정 |
-| src/objects/Dino.js | 브라키오 점프1.2배, 프테라노 활강(하강중력50%), ability 속성 | 수정 |
-| src/scenes/GameScene.js | 트리케라 시작방어막, 티라노 밟기2배점수, BGM월드별, 배경파티클3종 | 수정 |
-| src/scenes/SelectScene.js | 공룡 카드에 특수능력 설명 텍스트 표시 | 수정 |
-| src/utils/SoundGenerator.js | startBGM(worldId) 월드별 음계/템포/파형 분리 | 수정 |
-| src/objects/Background.js | update()에 풀밭 흔들림 sin파 추가 | 수정 |
+| src/data/achievements.js | 업적 12종 정의 + stats CRUD + 체크 함수 | 신규 |
+| src/scenes/GameScene.js | stats 누적(밟기/별/콤보) + 업적 배너 + blink 타이머 + 아이템 tint | 수정 |
+| src/objects/DinoGraphics.js | blink 얼굴 함수 + 6프레임 확장(576x96) + 4공룡 blink 분기 | 수정 |
+| src/scenes/StageClearScene.js | 클리어 텍스트 바운스 + 별 회전 등장 + 반짝이 파티클 + 새기록 효과 | 수정 |
+| src/scenes/GameOverScene.js | 앗! 흔들림 등장 + 공룡 바운스 낙하 + 붉은 배경 전환 | 수정 |
+| src/scenes/SelectScene.js | 카드 그림자 + 둥근 테두리(16px) + hover 스케일 트윈 | 수정 |
+| src/scenes/DifficultyScene.js | 카드 그림자 + hover 스케일 트윈 + 선택 시 금색 테두리 | 수정 |
+| src/scenes/WorldMapScene.js | 업적 버튼+팝업 + 스테이지 버튼 hover 효과 + 4버튼 레이아웃 | 수정 |
 
 tester 참고:
-- 테스트 방법: 4종 공룡 각각 선택 후 게임 플레이
-- 브라키오: 점프 높이가 다른 공룡보다 20% 더 높은지 (눈으로 비교)
-- 티라노: 적 밟기 시 점수 팝업이 다른 공룡보다 2배인지 확인
-- 트리케라: 게임 시작 직후 파란색 틴트(방어막) 있는지, 첫 피격 시 방어막 소멸되는지
-- 프테라노: 점프 후 내려올 때 천천히 내려오는지 (파라슈트 느낌)
-- 공룡 선택 화면: 각 카드 하단에 능력 설명 텍스트 보이는지
-- BGM: 월드 1(풀밭)과 월드 4(화산) BGM 멜로디/템포가 다른지
-- 배경: 화산(월드4) 불씨 떨어짐, 바다(월드5) 물거품 올라옴, 하늘(월드6) 별 반짝임
-- 풀밭 바닥이 살짝 흔들리는지 (sin파 y 움직임)
-- 밸런스: 10점마다 속도 증가가 체감되는지 (이전보다 2.5배 빠르게 증가)
-- 정상 동작: 빌드 통과, 기존 기능(콤보/파티클/전환) 정상 유지
-- 주의할 입력: 티라노 + 콤보MAX(5배) + 밟기 = 5x2=10배 점수 가능
+- 업적: 게임 플레이 후 클리어/게임오버 시 업적 배너가 화면 상단에 나타나는지 (첫 클리어 시 "첫 클리어!" 업적)
+- 업적 팝업: 월드맵 하단 "업적" 버튼 → 12개 업적 목록, 달성=컬러/미달성=회색
+- 눈 깜빡임: 게임 플레이 중 달리기 상태에서 가끔(0.5초마다 5%) 공룡 눈이 감겼다 뜨는지
+- 아이템 tint: 별 먹을 때 공룡이 잠깐 밝아지는지 (파워업 중이면 미적용)
+- 클리어 연출: "클리어!" 텍스트가 위에서 떨어지며 바운스, 별이 회전하며 등장, 배경 반짝이
+- 게임오버 연출: "앗!" 흔들리며 등장, 공룡이 위에서 떨어지며 바운스, 붉은 배경→정상 전환
+- UI: SelectScene/DifficultyScene 카드에 그림자 + 호버 시 살짝 커지는지
+- 월드맵: 스테이지 버튼 hover 시 커지는지, 하단 버튼 4개(업적/공룡/난이도/처음부터) 레이아웃
+- 정상 동작: 빌드 통과, 기존 기능 유지
+- 주의: localStorage 'ruvin_dino_stats'와 'ruvin_dino_achievements'에 데이터 저장됨
 
 reviewer 참고:
-- 프테라노 활강은 Dino.update()에서 매 프레임 중력값 변경 (하강중 50%, 상승중 100%, 착지시 복원)
-- 배경 파티클은 Phaser Circle + Tween 방식 (1~3초 간격, 화면 밖 나가면 destroy)
-- SPEED_INCREMENT 변경과 함께 GameScene에서 기존 x5 곱셈 제거 (중복 방지)
+- blink 프레임은 스프라이트시트 6번째(인덱스5), drawBlinkFace()는 웃는 눈 곡선 + 큰 볼터치
+- GameScene._updateBlink()에서 0.5초마다 5% 확률로 setFrame(5) → 150ms 후 run 복귀
+- 업적 stats는 클리어/게임오버 시 한 번만 저장 (_saveStatsAndCheckAchievements)
+- StageClearScene 반짝이 파티클은 Graphics + fillTriangle(마름모) + Tween으로 구현
+- WorldMapScene 하단 버튼이 4개로 늘어나서 btnW를 21%/90px로 축소
 
 ## 기획설계 (planner-architect)
 

@@ -57,22 +57,25 @@ export class StageClearScene extends Phaser.Scene {
     // === 팡파레 효과음 ===
     soundGenerator.playStageClear();
 
-    // === "클리어!" 큰 텍스트 (트윈으로 등장) ===
-    const clearText = this.add.text(width / 2, height * 0.10, '클리어!', {
+    // === 배경 반짝이 파티클 (축하 분위기) ===
+    this._sparkleParticles = [];
+    this._spawnSparkles(width, height);
+
+    // === "클리어!" 큰 텍스트 (위에서 떨어지며 바운스!) ===
+    const clearText = this.add.text(width / 2, -60, '클리어!', {
       fontFamily: 'Jua, sans-serif',
       fontSize: '48px',
       color: '#FFD700',
       stroke: '#FF8C00',
       strokeThickness: 5,
-    }).setOrigin(0.5).setScale(0).setDepth(10);
+    }).setOrigin(0.5).setDepth(10);
 
-    // 스케일 0에서 1로 바운스하며 등장
+    // 위에서 아래로 떨어지며 바운스하는 효과
     this.tweens.add({
       targets: clearText,
-      scaleX: 1,
-      scaleY: 1,
-      duration: 500,
-      ease: 'Back.easeOut',
+      y: height * 0.10,
+      duration: 700,
+      ease: 'Bounce.easeOut',
     });
 
     // === 월드 + 스테이지 정보 ===
@@ -118,6 +121,41 @@ export class StageClearScene extends Phaser.Scene {
       stroke: '#FFFFFF',
       strokeThickness: 2,
     }).setOrigin(0.5);
+
+    // === "새 기록!" 효과 (최고 점수 갱신 시) ===
+    const highScore = parseInt(localStorage.getItem('ruvin_dino_highscore') || '0', 10);
+    if (this.finalScore > highScore) {
+      localStorage.setItem('ruvin_dino_highscore', String(this.finalScore));
+      const newRecordText = this.add.text(width / 2, height * 0.57, '새 기록!', {
+        fontFamily: 'Jua, sans-serif',
+        fontSize: '24px',
+        color: '#FF0000',
+        stroke: '#FFD700',
+        strokeThickness: 3,
+      }).setOrigin(0.5).setDepth(20).setAlpha(0);
+
+      // 페이드인 + 깜빡이는 효과
+      this.tweens.add({
+        targets: newRecordText,
+        alpha: 1,
+        scaleX: { from: 0.5, to: 1.2 },
+        scaleY: { from: 0.5, to: 1.2 },
+        duration: 500,
+        delay: 2000,
+        ease: 'Back.easeOut',
+        onComplete: () => {
+          this.tweens.add({
+            targets: newRecordText,
+            alpha: { from: 1, to: 0.5 },
+            scaleX: { from: 1.2, to: 1.0 },
+            scaleY: { from: 1.2, to: 1.0 },
+            duration: 400,
+            yoyo: true,
+            repeat: -1,
+          });
+        },
+      });
+    }
 
     // 별 수집 수 (장애물 아래에 작게 표시)
     if (this.finalStarCount > 0) {
@@ -232,43 +270,101 @@ export class StageClearScene extends Phaser.Scene {
   }
 
   /**
-   * 별 연출: 하나씩 순서대로 scale 0→1 + bounce
+   * 별 연출 (강화): 하나씩 회전하며 등장 + 바운스
+   * 0.3초 간격으로 순차적으로 회전하며 나타남
    */
   _showStars(width, height) {
     const starY = height * 0.38;
-    const starSpacing = 50; // 별 사이 간격
+    const starSpacing = 50;
     const totalWidth = (3 - 1) * starSpacing;
     const startX = width / 2 - totalWidth / 2;
 
     for (let i = 0; i < 3; i++) {
       const x = startX + i * starSpacing;
-      // 별 아이콘 (획득 여부에 따라 색상 다름)
       const isEarned = i < this.starCount;
-      const starText = this.add.text(x, starY, '⭐', {
+      const starText = this.add.text(x, starY, '\u{2B50}', {
         fontFamily: 'Jua, sans-serif',
         fontSize: '36px',
-      }).setOrigin(0.5).setScale(0).setAlpha(isEarned ? 1 : 0.3);
+      }).setOrigin(0.5).setScale(0).setAlpha(isEarned ? 1 : 0.3).setAngle(-180);
 
-      // 하나씩 순서대로 등장 (0.4초 간격)
+      // 순차 등장: 회전하면서 커짐 (0.3초 간격)
       this.tweens.add({
         targets: starText,
         scaleX: isEarned ? 1.2 : 0.8,
         scaleY: isEarned ? 1.2 : 0.8,
-        duration: 400,
-        delay: 600 + i * 400, // 클리어 텍스트 후 0.6초부터 시작
+        angle: 0,  // 180도 회전하며 등장
+        duration: 500,
+        delay: 600 + i * 300,
         ease: 'Back.easeOut',
         onComplete: () => {
-          // 획득한 별은 살짝 줄어드는 바운스 (1.2 → 1.0)
           if (isEarned) {
+            // 획득한 별: 줄어드는 바운스 + 계속 미세하게 반짝이는 효과
             this.tweens.add({
               targets: starText,
               scaleX: 1,
               scaleY: 1,
               duration: 200,
               ease: 'Sine.easeInOut',
+              onComplete: () => {
+                // 별 반짝임 (크기 살짝 변화 반복)
+                this.tweens.add({
+                  targets: starText,
+                  scaleX: 1.1,
+                  scaleY: 1.1,
+                  duration: 600,
+                  yoyo: true,
+                  repeat: -1,
+                  ease: 'Sine.easeInOut',
+                });
+              },
             });
           }
         },
+      });
+    }
+  }
+
+  /**
+   * 배경 반짝이 파티클 생성 (축하 분위기!)
+   * 랜덤 위치에 작은 별 모양이 깜빡거림
+   */
+  _spawnSparkles(width, height) {
+    // 1초 간격으로 반짝이 생성 (총 8초간)
+    for (let t = 0; t < 8; t++) {
+      this.time.delayedCall(t * 1000, () => {
+        for (let i = 0; i < 3; i++) {
+          const x = Phaser.Math.Between(20, width - 20);
+          const y = Phaser.Math.Between(20, height - 40);
+          const size = Phaser.Math.Between(2, 5);
+          const color = Math.random() > 0.5 ? 0xFFD700 : 0xFFF8DC;
+
+          // 작은 반짝이 (다이아몬드 모양 = 45도 회전 사각형)
+          const sparkle = this.add.graphics();
+          sparkle.fillStyle(color, 0.8);
+          // 다이아몬드: 4꼭짓점으로 마름모 모양 그리기
+          sparkle.fillTriangle(
+            x, y - size * 2,  // 위
+            x + size, y,       // 오른쪽
+            x, y + size * 2   // 아래
+          );
+          sparkle.fillTriangle(
+            x, y - size * 2,  // 위
+            x - size, y,       // 왼쪽
+            x, y + size * 2   // 아래
+          );
+          sparkle.setAlpha(0).setDepth(5);
+
+          // 나타났다 사라지는 트윈
+          this.tweens.add({
+            targets: sparkle,
+            alpha: { from: 0, to: 0.8 },
+            scaleX: { from: 0.5, to: 1.2 },
+            scaleY: { from: 0.5, to: 1.2 },
+            duration: 400,
+            yoyo: true,
+            onComplete: () => sparkle.destroy(),
+          });
+        }
       });
     }
   }

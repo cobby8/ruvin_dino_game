@@ -75,10 +75,16 @@ export class DifficultyScene extends Phaser.Scene {
       // 카드 컨테이너 (배경 + 텍스트들을 한 묶음으로)
       const container = this.add.container(cx, cy);
 
+      // --- 카드 그림자 (입체감 추가) ---
+      const colorNum = parseInt(diff.color.replace('#', ''), 16);
+      const borderNum = parseInt(diff.borderColor.replace('#', ''), 16);
+      const cardShadow = this.add.graphics();
+      cardShadow.fillStyle(0x000000, 0.1);
+      cardShadow.fillRoundedRect(-cardW / 2 + 3, -cardH / 2 + 3, cardW, cardH, 16);
+      container.add(cardShadow);
+
       // --- 카드 배경 (라운드 사각형) ---
       const cardBg = this.add.graphics();
-      const colorNum = parseInt(diff.color.replace('#', ''), 16); // hex → 숫자
-      const borderNum = parseInt(diff.borderColor.replace('#', ''), 16);
       cardBg.fillStyle(colorNum, 0.95);
       cardBg.fillRoundedRect(-cardW / 2, -cardH / 2, cardW, cardH, 16);
       cardBg.lineStyle(3, borderNum, 1);
@@ -119,6 +125,30 @@ export class DifficultyScene extends Phaser.Scene {
         this._selectDifficulty(i);
       });
 
+      // 호버 효과: 살짝 커지고 테두리 반짝
+      hitArea.on('pointerover', () => {
+        if (this.selectedIndex !== i) {
+          this.tweens.add({
+            targets: container,
+            scaleX: 1.05,
+            scaleY: 1.05,
+            duration: 150,
+            ease: 'Sine.easeOut',
+          });
+        }
+      });
+      hitArea.on('pointerout', () => {
+        if (this.selectedIndex !== i) {
+          this.tweens.add({
+            targets: container,
+            scaleX: 1,
+            scaleY: 1,
+            duration: 150,
+            ease: 'Sine.easeOut',
+          });
+        }
+      });
+
       // 카드 정보 저장
       this.cards.push({
         container,
@@ -155,7 +185,14 @@ export class DifficultyScene extends Phaser.Scene {
         });
         card.container.setAlpha(1);
 
-        // 테두리 반짝 효과 (트윈으로 밝기 변화)
+        // 테두리 반짝 효과: 카드 배경을 다시 그려서 두꺼운 밝은 테두리
+        card.cardBg.clear();
+        card.cardBg.fillStyle(card.colorNum, 0.95);
+        card.cardBg.fillRoundedRect(-card.cardW / 2, -card.cardH / 2, card.cardW, card.cardH, 16);
+        card.cardBg.lineStyle(4, 0xFFD700, 1); // 금색 두꺼운 테두리
+        card.cardBg.strokeRoundedRect(-card.cardW / 2, -card.cardH / 2, card.cardW, card.cardH, 16);
+
+        // 반짝 트윈 (밝기 변화)
         this.tweens.add({
           targets: card.cardBg,
           alpha: 0.7,

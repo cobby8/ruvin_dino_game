@@ -36,10 +36,25 @@ export class GameOverScene extends Phaser.Scene {
     // 화면 전환 효과: 페이드인
     this.cameras.main.fadeIn(500, 0, 0, 0);
 
-    // 반투명 어두운 오버레이
+    // === 배경 붉은색에서 서서히 어두운색으로 전환 ===
+    const redOverlay = this.add.graphics();
+    redOverlay.fillStyle(0x660000, 0.7);
+    redOverlay.fillRect(0, 0, width, height);
+    redOverlay.setDepth(0);
+
+    // 붉은 배경 → 어두운 배경으로 서서히 전환 (1.5초)
+    this.tweens.add({
+      targets: redOverlay,
+      alpha: 0,
+      duration: 1500,
+      ease: 'Sine.easeOut',
+    });
+
+    // 최종 어두운 오버레이 (위 붉은색이 사라지면 이게 보임)
     const overlay = this.add.graphics();
     overlay.fillStyle(0x000000, 0.6);
     overlay.fillRect(0, 0, width, height);
+    overlay.setDepth(-1); // 붉은색 뒤에
 
     // === 최고기록 확인 및 갱신 ===
     const highScore = parseInt(localStorage.getItem('ruvin_dino_highscore') || '0', 10);
@@ -49,14 +64,34 @@ export class GameOverScene extends Phaser.Scene {
     }
     const currentHighScore = isNewRecord ? this.finalScore : highScore;
 
-    // === "앗!" 텍스트 ===
-    this.add.text(width / 2, height * 0.10, '앗!', {
+    // === "앗!" 텍스트 (흔들리며 등장!) ===
+    const oopsText = this.add.text(width / 2, height * 0.10, '앗!', {
       fontFamily: 'Jua, sans-serif',
       fontSize: '48px',
       color: '#FF6B6B',
       stroke: '#FFFFFF',
       strokeThickness: 4,
-    }).setOrigin(0.5);
+    }).setOrigin(0.5).setScale(0).setDepth(10);
+
+    // 확대되면서 흔들리는 등장 효과
+    this.tweens.add({
+      targets: oopsText,
+      scaleX: 1,
+      scaleY: 1,
+      duration: 400,
+      ease: 'Back.easeOut',
+      onComplete: () => {
+        // 좌우로 살짝 흔들림 (놀란 느낌)
+        this.tweens.add({
+          targets: oopsText,
+          angle: { from: -8, to: 8 },
+          duration: 100,
+          yoyo: true,
+          repeat: 3,
+          onComplete: () => { oopsText.setAngle(0); },
+        });
+      },
+    });
 
     this.add.text(width / 2, height * 0.19, '다시 해볼까?', {
       fontFamily: 'Jua, sans-serif',
@@ -81,17 +116,28 @@ export class GameOverScene extends Phaser.Scene {
       }).setOrigin(0.5);
     }
 
-    // === 넘어진 공룡 (프레임 3 = 넘어진 모습) ===
+    // === 넘어진 공룡 (프레임 3 = 넘어진 모습, 바운스하며 등장!) ===
     const dinoKey = this.registry.get('selectedDino') || 'brachio';
-    const fallenDino = this.add.sprite(width / 2, height * 0.40, dinoKey, 3);
-    fallenDino.setScale(1.5);
-    // 흔들리는 애니메이션
+    const fallenDino = this.add.sprite(width / 2, -50, dinoKey, 3);
+    fallenDino.setScale(1.5).setDepth(10);
+
+    // 위에서 떨어지면서 바닥에 "꿀렁" 바운스!
     this.tweens.add({
       targets: fallenDino,
-      angle: { from: -5, to: 5 },
-      duration: 300,
-      yoyo: true,
-      repeat: 2,
+      y: height * 0.40,
+      duration: 600,
+      ease: 'Bounce.easeOut',
+      onComplete: () => {
+        // 착지 후 좌우 흔들림
+        this.tweens.add({
+          targets: fallenDino,
+          angle: { from: -8, to: 8 },
+          duration: 250,
+          yoyo: true,
+          repeat: 2,
+          onComplete: () => { fallenDino.setAngle(0); },
+        });
+      },
     });
 
     // === 점수 표시 ===

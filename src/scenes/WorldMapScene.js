@@ -15,6 +15,7 @@ import Phaser from 'phaser';
 import { WORLDS } from '../data/worlds.js';
 import { STAGES } from '../data/stages.js';
 import { soundGenerator } from '../utils/SoundGenerator.js';
+import { ACHIEVEMENTS, loadUnlockedAchievements } from '../data/achievements.js';
 
 // 각 월드의 테마 카드 배경색 (연한 파스텔)
 const WORLD_CARD_COLORS = {
@@ -331,6 +332,26 @@ export class WorldMapScene extends Phaser.Scene {
         hitArea.setInteractive({ useHandCursor: true });
         this.scrollContainer.add(hitArea);
 
+        // 호버 효과: 스테이지 버튼이 살짝 커짐
+        hitArea.on('pointerover', () => {
+          this.tweens.add({
+            targets: btnG,
+            scaleX: 1.15,
+            scaleY: 1.15,
+            duration: 120,
+            ease: 'Sine.easeOut',
+          });
+        });
+        hitArea.on('pointerout', () => {
+          this.tweens.add({
+            targets: btnG,
+            scaleX: 1,
+            scaleY: 1,
+            duration: 120,
+            ease: 'Sine.easeOut',
+          });
+        });
+
         // pointerup에서 드래그 여부를 확인한 후 클릭 처리
         // (드래그 스크롤과 클릭 충돌 방지)
         hitArea.on('pointerup', () => {
@@ -423,17 +444,28 @@ export class WorldMapScene extends Phaser.Scene {
     bottomBg.setDepth(50);
 
     const btnY = height - height * 0.06;
-    const btnW = Math.min(width * 0.28, 110);
+    const btnW = Math.min(width * 0.21, 90);
     const btnH = Math.min(height * 0.06, 42);
-    const gap = Math.min(width * 0.02, 10);
+    const gap = Math.min(width * 0.015, 8);
 
-    // 3개 버튼 균등 배치: 공룡 바꾸기 | 난이도 변경 | 처음부터
-    const totalW = btnW * 3 + gap * 2;
+    // 4개 버튼 균등 배치: 업적 | 공룡 바꾸기 | 난이도 변경 | 처음부터
+    const totalW = btnW * 4 + gap * 3;
     const startX = (width - totalW) / 2 + btnW / 2;
+
+    // "업적" 버튼 (금색)
+    this._createPrettyButton(
+      startX, btnY,
+      '업적', btnW, btnH,
+      0xFFAA00,
+      () => {
+        soundGenerator.playSelect();
+        this._showAchievementOverlay(width, height);
+      }
+    );
 
     // "공룡 바꾸기" 버튼
     this._createPrettyButton(
-      startX, btnY,
+      startX + btnW + gap, btnY,
       '공룡 바꾸기', btnW, btnH,
       0x9B72CF,
       () => {
@@ -447,8 +479,8 @@ export class WorldMapScene extends Phaser.Scene {
 
     // "난이도 변경" 버튼
     this._createPrettyButton(
-      startX + btnW + gap, btnY,
-      '난이도 변경', btnW, btnH,
+      startX + (btnW + gap) * 2, btnY,
+      '난이도', btnW, btnH,
       0x4EAEFF,
       () => {
         soundGenerator.playSelect();
@@ -461,7 +493,7 @@ export class WorldMapScene extends Phaser.Scene {
 
     // "처음부터" 버튼
     this._createPrettyButton(
-      startX + (btnW + gap) * 2, btnY,
+      startX + (btnW + gap) * 3, btnY,
       '처음부터', btnW, btnH,
       0xE55B5B,
       () => {
@@ -566,6 +598,116 @@ export class WorldMapScene extends Phaser.Scene {
       noBg.destroy();
       noText.destroy();
       noHit.destroy();
+    });
+  }
+
+  /**
+   * 업적 목록 오버레이 팝업
+   * 달성한 업적은 컬러, 미달성은 회색으로 표시
+   */
+  _showAchievementOverlay(width, height) {
+    const unlocked = loadUnlockedAchievements();
+
+    // 반투명 오버레이
+    const overlay = this.add.graphics();
+    overlay.fillStyle(0x000000, 0.7);
+    overlay.fillRect(0, 0, width, height);
+    overlay.setDepth(200);
+    overlay.setInteractive(new Phaser.Geom.Rectangle(0, 0, width, height), Phaser.Geom.Rectangle.Contains);
+
+    // 팝업 박스
+    const dlgW = Math.min(width * 0.9, 340);
+    const dlgH = Math.min(height * 0.8, 500);
+    const dlgX = (width - dlgW) / 2;
+    const dlgY = (height - dlgH) / 2;
+
+    const dlgBg = this.add.graphics();
+    dlgBg.fillStyle(0xFFF8E1, 1);
+    dlgBg.fillRoundedRect(dlgX, dlgY, dlgW, dlgH, 16);
+    dlgBg.lineStyle(3, 0xFFAA00, 1);
+    dlgBg.strokeRoundedRect(dlgX, dlgY, dlgW, dlgH, 16);
+    dlgBg.setDepth(201);
+
+    // 제목
+    const title = this.add.text(width / 2, dlgY + 25, '업적', {
+      fontFamily: 'Jua, sans-serif',
+      fontSize: '22px',
+      color: '#8B6914',
+      stroke: '#FFFFFF',
+      strokeThickness: 2,
+    }).setOrigin(0.5).setDepth(202);
+
+    // 달성 카운트
+    const count = this.add.text(width / 2, dlgY + 50, `${unlocked.length} / ${ACHIEVEMENTS.length} 달성`, {
+      fontFamily: 'Jua, sans-serif',
+      fontSize: '13px',
+      color: '#AA8800',
+    }).setOrigin(0.5).setDepth(202);
+
+    // 업적 리스트
+    const achElements = [];
+    const listStartY = dlgY + 70;
+    const itemH = 32;
+
+    ACHIEVEMENTS.forEach((ach, i) => {
+      const isUnlocked = unlocked.includes(ach.id);
+      const itemY = listStartY + i * itemH;
+
+      // 아이콘 + 이름 + 설명
+      const iconText = this.add.text(dlgX + 15, itemY, ach.icon, {
+        fontSize: '18px',
+      }).setOrigin(0, 0.5).setDepth(202);
+
+      const nameText = this.add.text(dlgX + 40, itemY - 5, ach.name, {
+        fontFamily: 'Jua, sans-serif',
+        fontSize: '14px',
+        color: isUnlocked ? '#333333' : '#BBBBBB',
+      }).setOrigin(0, 0.5).setDepth(202);
+
+      const descText = this.add.text(dlgX + 40, itemY + 10, ach.desc, {
+        fontFamily: 'Jua, sans-serif',
+        fontSize: '10px',
+        color: isUnlocked ? '#888888' : '#CCCCCC',
+      }).setOrigin(0, 0.5).setDepth(202);
+
+      // 미달성은 아이콘 회색 처리
+      if (!isUnlocked) {
+        iconText.setAlpha(0.3);
+      }
+
+      achElements.push(iconText, nameText, descText);
+    });
+
+    // 닫기 버튼
+    const closeBtnW = 100;
+    const closeBtnH = 36;
+    const closeBtnX = width / 2;
+    const closeBtnY = dlgY + dlgH - 30;
+
+    const closeBg = this.add.graphics();
+    closeBg.fillStyle(0xFFAA00, 1);
+    closeBg.fillRoundedRect(closeBtnX - closeBtnW / 2, closeBtnY - closeBtnH / 2, closeBtnW, closeBtnH, closeBtnH / 2);
+    closeBg.setDepth(202);
+
+    const closeText = this.add.text(closeBtnX, closeBtnY, '닫기', {
+      fontFamily: 'Jua, sans-serif',
+      fontSize: '15px',
+      color: '#FFFFFF',
+    }).setOrigin(0.5).setDepth(203);
+
+    const closeHit = this.add.rectangle(closeBtnX, closeBtnY, closeBtnW, closeBtnH, 0x000000, 0);
+    closeHit.setInteractive({ useHandCursor: true }).setDepth(204);
+
+    closeHit.on('pointerdown', () => {
+      // 모든 요소 정리
+      overlay.destroy();
+      dlgBg.destroy();
+      title.destroy();
+      count.destroy();
+      closeBg.destroy();
+      closeText.destroy();
+      closeHit.destroy();
+      achElements.forEach(el => el.destroy());
     });
   }
 

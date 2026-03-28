@@ -96,6 +96,34 @@ function drawSurprisedFace(g, x, y) {
 }
 
 /**
+ * 눈 깜빡임 얼굴 (blink): 감은 눈(살짝 웃는 눈) + 볼터치 + 미소
+ * 달리기 중 랜덤으로 잠깐 표시되어 생동감을 줌
+ */
+function drawBlinkFace(g, x, y) {
+  const spacing = 14;
+
+  // 감은 눈 (아래로 볼록한 곡선 = 웃는 눈)
+  g.lineStyle(3, 0x444444, 1);
+  g.beginPath();
+  g.arc(x - spacing / 2, y, 6, 0.2, Math.PI - 0.2, false);
+  g.strokePath();
+  g.beginPath();
+  g.arc(x + spacing / 2, y, 6, 0.2, Math.PI - 0.2, false);
+  g.strokePath();
+
+  // 핑크 볼터치 (살짝 더 크게 = 기분 좋은 표현)
+  g.fillStyle(0xFFB0C0, 0.6);
+  g.fillEllipse(x - 18, y + 10, 12, 7);
+  g.fillEllipse(x + 18, y + 10, 12, 7);
+
+  // 미소 (살짝 더 넓게)
+  g.lineStyle(2, 0x444444, 1);
+  g.beginPath();
+  g.arc(x + 2, y + 8, 6, 0.1, Math.PI - 0.1, false);
+  g.strokePath();
+}
+
+/**
  * [P1] 슬라이드 얼굴: 감은 눈(일자) + 볼터치 + 입 꾹
  * 몸을 납작하게 숙이고 있는 집중한 표정
  */
@@ -153,6 +181,7 @@ function drawBrachio(g, ox, frame) {
   const isJump = frame === 2;
   const isFall = frame === 3;
   const isSlide = frame === 4; // [P1] 슬라이드 프레임
+  const isBlink = frame === 5; // 눈 깜빡임 프레임
   // 다리 오프셋: 달리기 프레임간 차이를 12px로 확실하게
   const legL = frame === 0 ? -6 : frame === 1 ? 6 : 0;
   const legR = frame === 0 ? 6 : frame === 1 ? -6 : 0;
@@ -194,7 +223,9 @@ function drawBrachio(g, ox, frame) {
   g.fillCircle(ox + 30 + tilt, SIZE - 76, 8);
 
   // --- 얼굴 ---
-  if (isSlide) {
+  if (isBlink) {
+    drawBlinkFace(g, ox + 34 + tilt, SIZE - 76);
+  } else if (isSlide) {
     drawSlideFace(g, ox + 34 + tilt, SIZE - 76);
   } else if (isFall) {
     drawFallenFace(g, ox + 34 + tilt, SIZE - 76);
@@ -230,6 +261,7 @@ function drawTrex(g, ox, frame) {
   const isJump = frame === 2;
   const isFall = frame === 3;
   const isSlide = frame === 4; // [P1]
+  const isBlink = frame === 5; // 눈 깜빡임
   const legL = frame === 0 ? -6 : frame === 1 ? 6 : 0;
   const legR = frame === 0 ? 6 : frame === 1 ? -6 : 0;
   const tilt = isFall ? 4 : 0;
@@ -273,7 +305,9 @@ function drawTrex(g, ox, frame) {
   g.fillTriangle(ox + 76 + tilt, SIZE - 43, ox + 79 + tilt, SIZE - 38, ox + 73 + tilt, SIZE - 38);
 
   // --- 얼굴 ---
-  if (isSlide) {
+  if (isBlink) {
+    drawBlinkFace(g, ox + 56 + tilt, SIZE - 62);
+  } else if (isSlide) {
     drawSlideFace(g, ox + 56 + tilt, SIZE - 62);
   } else if (isFall) {
     drawFallenFace(g, ox + 56 + tilt, SIZE - 62);
@@ -311,6 +345,7 @@ function drawTricera(g, ox, frame) {
   const isJump = frame === 2;
   const isFall = frame === 3;
   const isSlide = frame === 4; // [P1]
+  const isBlink = frame === 5; // 눈 깜빡임
   const legL = frame === 0 ? -6 : frame === 1 ? 6 : 0;
   const legR = frame === 0 ? 6 : frame === 1 ? -6 : 0;
   const tilt = isFall ? 4 : 0;
@@ -374,7 +409,9 @@ function drawTricera(g, ox, frame) {
   );
 
   // --- 얼굴 ---
-  if (isSlide) {
+  if (isBlink) {
+    drawBlinkFace(g, ox + 66 + tilt, SIZE - 54);
+  } else if (isSlide) {
     drawSlideFace(g, ox + 66 + tilt, SIZE - 54);
   } else if (isFall) {
     drawFallenFace(g, ox + 66 + tilt, SIZE - 54);
@@ -407,6 +444,7 @@ function drawPtera(g, ox, frame) {
   const isJump = frame === 2;
   const isFall = frame === 3;
   const isSlide = frame === 4; // [P1]
+  const isBlink = frame === 5; // 눈 깜빡임
   const tilt = isFall ? 3 : 0;
 
   // 날개 각도: 달리기1 위, 달리기2 아래, 점프 활짝 위로
@@ -471,7 +509,9 @@ function drawPtera(g, ox, frame) {
   );
 
   // --- 얼굴 ---
-  if (isSlide) {
+  if (isBlink) {
+    drawBlinkFace(g, ox + 58 + tilt, SIZE - 58);
+  } else if (isSlide) {
     drawSlideFace(g, ox + 58 + tilt, SIZE - 58);
   } else if (isFall) {
     drawFallenFace(g, ox + 58 + tilt, SIZE - 58);
@@ -509,12 +549,13 @@ export function createDinoTextures(scene) {
   const drawFunctions = [drawBrachio, drawTrex, drawTricera, drawPtera];
 
   DINOS.forEach((dino, index) => {
-    // 480x96 RenderTexture 생성 (5프레임 x 96px = 480px 너비) [P1: 슬라이드 프레임 추가]
-    const rt = scene.add.renderTexture(0, 0, SIZE * 5, SIZE);
+    // 576x96 RenderTexture 생성 (6프레임 x 96px = 576px 너비)
+    // 프레임: [달리기1, 달리기2, 점프, 넘어짐, 슬라이드, 눈깜빡임(blink)]
+    const rt = scene.add.renderTexture(0, 0, SIZE * 6, SIZE);
     rt.setVisible(false); // 화면에는 안 보이게
 
-    // 5프레임 그리기 (달리기1, 달리기2, 점프, 넘어짐, 슬라이드)
-    for (let frame = 0; frame < 5; frame++) {
+    // 6프레임 그리기
+    for (let frame = 0; frame < 6; frame++) {
       const g = scene.add.graphics();
       drawFunctions[index](g, 0, frame);
 
@@ -535,6 +576,7 @@ export function createDinoTextures(scene) {
     texture.add(2, 0, SIZE * 2, 0, SIZE, SIZE);    // 프레임 2: 점프
     texture.add(3, 0, SIZE * 3, 0, SIZE, SIZE);    // 프레임 3: 넘어짐
     texture.add(4, 0, SIZE * 4, 0, SIZE, SIZE);    // 프레임 4: 슬라이드 [P1]
+    texture.add(5, 0, SIZE * 5, 0, SIZE, SIZE);    // 프레임 5: 눈 깜빡임 (blink)
 
     // 애니메이션 등록
     scene.anims.create({

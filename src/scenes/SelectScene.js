@@ -79,12 +79,18 @@ export class SelectScene extends Phaser.Scene {
       // 카드 컨테이너 (배경 + 공룡 + 이름을 묶음)
       const container = this.add.container(cx, cy);
 
-      // 카드 배경 (둥근 사각형)
+      // 카드 그림자 (부드러운 그림자 효과)
+      const cardShadow = this.add.graphics();
+      cardShadow.fillStyle(0x000000, 0.12);
+      cardShadow.fillRoundedRect(-cardW / 2 + 3, -cardH / 2 + 3, cardW, cardH, 16);
+      container.add(cardShadow);
+
+      // 카드 배경 (더 둥근 사각형 + 부드러운 테두리)
       const cardBg = this.add.graphics();
-      cardBg.fillStyle(0xFFFFFF, 0.9);
-      cardBg.fillRoundedRect(-cardW / 2, -cardH / 2, cardW, cardH, 12);
+      cardBg.fillStyle(0xFFFFFF, 0.95);
+      cardBg.fillRoundedRect(-cardW / 2, -cardH / 2, cardW, cardH, 16);
       cardBg.lineStyle(3, dino.color, 1);
-      cardBg.strokeRoundedRect(-cardW / 2, -cardH / 2, cardW, cardH, 12);
+      cardBg.strokeRoundedRect(-cardW / 2, -cardH / 2, cardW, cardH, 16);
       container.add(cardBg);
 
       // 컬러 원 (공룡 아이콘 배경)
@@ -126,6 +132,30 @@ export class SelectScene extends Phaser.Scene {
       // 터치/클릭 이벤트
       hitArea.on('pointerdown', () => {
         this._selectDino(i);
+      });
+
+      // 호버 효과 (데스크탑): 살짝 커지는 트윈
+      hitArea.on('pointerover', () => {
+        if (this.selectedDino !== i) {
+          this.tweens.add({
+            targets: container,
+            scaleX: 1.05,
+            scaleY: 1.05,
+            duration: 150,
+            ease: 'Sine.easeOut',
+          });
+        }
+      });
+      hitArea.on('pointerout', () => {
+        if (this.selectedDino !== i) {
+          this.tweens.add({
+            targets: container,
+            scaleX: 1,
+            scaleY: 1,
+            duration: 150,
+            ease: 'Sine.easeOut',
+          });
+        }
       });
 
       // 카드 정보 저장

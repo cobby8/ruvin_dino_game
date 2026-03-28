@@ -32,6 +32,7 @@ import { SpringManager } from '../objects/Spring.js';
 import { BoostPadManager } from '../objects/BoostPad.js';
 import { getStage, getStageTarget } from '../data/stages.js';
 import { getWorld } from '../data/worlds.js';
+import { loadStats, saveStats, checkNewAchievements } from '../data/achievements.js';
 
 export class GameScene extends Phaser.Scene {
   constructor() {
@@ -217,6 +218,15 @@ export class GameScene extends Phaser.Scene {
     if (dinoData && dinoData.ability === 'shield') {
       this.dino.applyPowerUp('shield');
     }
+
+    // === 업적 시스템: 게임 내 누적 통계 (스테이지 진행 중 임시 카운터) ===
+    this._sessionStomps = 0;      // 이번 플레이에서 밟은 적 수
+    this._sessionStars = 0;       // 이번 플레이에서 모은 별 수
+
+    // === 눈 깜빡임(blink) 타이머 ===
+    // 0.5초마다 5% 확률로 눈을 감았다 뜸 (생동감 있는 표정)
+    this._blinkTimer = 0;         // 다음 깜빡임 체크까지 남은 시간
+    this._isBlinking = false;     // 현재 깜빡이는 중인지
 
     // === 배경 특수 파티클 타이머 (월드별 분위기 연출) ===
     // 화산=불씨, 바다=물거품, 하늘=반짝이별
@@ -417,6 +427,9 @@ export class GameScene extends Phaser.Scene {
       }
     }
 
+    // === 눈 깜빡임 업데이트 (0.5초마다 5% 확률로 blink) ===
+    this._updateBlink(delta);
+
     // === 배경 특수 파티클 (월드별 분위기 연출) ===
     this._updateBgParticles(time, delta);
   }
@@ -471,6 +484,9 @@ export class GameScene extends Phaser.Scene {
     // 중복 호출 방지 (forEach 안에서 여러 장애물이 동시에 조건 충족 시)
     if (this.isStageClear) return;
     this.isStageClear = true;
+
+    // 업적 시스템: 클리어 시 통계 저장 + 업적 체크
+    this._saveStatsAndCheckAchievements(true);
 
     // BGM 정지
     soundGenerator.stopBGM();
@@ -564,6 +580,9 @@ export class GameScene extends Phaser.Scene {
     if (this.isGameOver) return;
     this.isGameOver = true;
 
+    // 업적 시스템: 게임오버 시에도 통계 저장 (클리어는 아님)
+    this._saveStatsAndCheckAchievements(false);
+
     soundGenerator.stopBGM();
     soundGenerator.playGameOver();
 
@@ -656,6 +675,9 @@ export class GameScene extends Phaser.Scene {
       this.clearScore += earnedPoints;
       this.stageHUD.updateScore(this.clearScore);
 
+      // 업적용: 밟기 카운트 누적
+      this._sessionStomps++;
+
       // 처치 효과음
       soundGenerator.playEnemyDefeat();
 
@@ -705,7 +727,18 @@ export class GameScene extends Phaser.Scene {
     if (type === 'star') {
       // 별: starCount +1 (클리어 점수와 별도, 100개=목숨+1)
       this.starCount += GAME.ITEMS.STAR_POINTS;
+      this._sessionStars++;  // 업적용: 별 수집 누적
       soundGenerator.playItemCollect();
+
+      // 아이템 수집 시 공룡이 잠깐 밝아지는 효과 (기쁜 표현)
+      if (!this.dino.powerUp) {
+        this.dino.setTint(0xFFFFCC);
+        this.time.delayedCall(150, () => {
+          if (this.dino && this.dino.active && !this.dino.powerUp) {
+            this.dino.clearTint();
+          }
+        });
+      }
 
       // 별 카운터 HUD 업데이트
       this.stageHUD.updateStarCount(this.starCount);
@@ -1084,6 +1117,155 @@ export class GameScene extends Phaser.Scene {
         onComplete: () => particle.destroy(),
       });
       this._bgParticles.push(particle);
+    }
+  }
+
+  // =========================================================
+  // 업적 시스템: 통계 저장 + 업적 체크
+  // =========================================================
+
+  /**
+   * 게임 종료 시(클리어/게임오버) 누적 통계를 저장하고 업적을 체크
+   * @param {boolean} isCleared - 스테이지를 클리어했는지 여부
+   */
+  _saveStatsAndCheckAchievements(isCleared) {
+    const stats = loadStats();
+
+    // 누적 통계 업데이트
+    stats.totalStomps += this._sessionStomps;
+    stats.totalStars += this._sessionStars;
+    // 최대 콤보 갱신
+    if (this.comboCount > stats.maxCombo) {
+      stats.maxCombo = this.comboCount;
+    }
+
+    // 클리어 시: 클리어 스테이지 수 갱신 (진행도와 동기화)
+    if (isCleared) {
+      try {
+        const progress = JSON.parse(localStorage.getItem('ruvin_dino_progress')) || {};
+        stats.clearedStages = (progress.clearedStages || []).length;
+      } catch {
+        // 진행도 읽기 실패 시 기존값 유지
+      }
+
+      // 무피격 클리어 체크 (hitCount === 0이면 달성)
+      if (this.hitCount === 0) {
+        stats.noHitClear = true;
+      }
+    }
+
+    // 사용한 공룡 기록 (중복 없이)
+    const dinoKey = this.registry.get('selectedDino') || 'brachio';
+    if (!Array.isArray(stats.usedDinos)) stats.usedDinos = [];
+    if (!stats.usedDinos.includes(dinoKey)) {
+      stats.usedDinos.push(dinoKey);
+    }
+
+    // 저장
+    saveStats(stats);
+
+    // 업적 체크: 새로 달성한 것이 있으면 배너 표시
+    const newAchievements = checkNewAchievements(stats);
+    if (newAchievements.length > 0) {
+      // 첫 번째 업적만 배너로 표시 (여러 개면 3초 간격)
+      newAchievements.forEach((ach, i) => {
+        this.time.delayedCall(i * 3500, () => {
+          this._showAchievementBanner(ach);
+        });
+      });
+    }
+  }
+
+  /**
+   * 업적 달성 배너: 화면 상단에 3초간 팝업
+   * @param {object} achievement - 업적 데이터 (icon, name 등)
+   */
+  _showAchievementBanner(achievement) {
+    const { width } = this.scale;
+
+    // 배너 배경 (화면 상단에 가로로 긴 라운드 사각형)
+    const bannerW = Math.min(width * 0.8, 300);
+    const bannerH = 50;
+    const bannerX = width / 2;
+    const bannerY = -bannerH; // 화면 위에서 시작 (아래로 내려옴)
+
+    const container = this.add.container(bannerX, bannerY).setDepth(300);
+
+    // 배경
+    const bg = this.add.graphics();
+    bg.fillStyle(0xFFD700, 0.95);
+    bg.fillRoundedRect(-bannerW / 2, -bannerH / 2, bannerW, bannerH, 16);
+    bg.lineStyle(2, 0xFF8C00, 1);
+    bg.strokeRoundedRect(-bannerW / 2, -bannerH / 2, bannerW, bannerH, 16);
+    container.add(bg);
+
+    // 텍스트: "업적 달성! [아이콘] [이름]"
+    const text = this.add.text(0, 0, `업적 달성! ${achievement.icon} ${achievement.name}`, {
+      fontFamily: 'Jua, sans-serif',
+      fontSize: '16px',
+      color: '#5A3000',
+      stroke: '#FFFFFF',
+      strokeThickness: 1,
+    }).setOrigin(0.5);
+    container.add(text);
+
+    // 위에서 아래로 슬라이드인
+    this.tweens.add({
+      targets: container,
+      y: bannerH / 2 + 10,
+      duration: 400,
+      ease: 'Back.easeOut',
+      onComplete: () => {
+        // 3초 유지 후 위로 사라짐
+        this.time.delayedCall(3000, () => {
+          this.tweens.add({
+            targets: container,
+            y: -bannerH,
+            alpha: 0,
+            duration: 300,
+            ease: 'Sine.easeIn',
+            onComplete: () => container.destroy(),
+          });
+        });
+      },
+    });
+  }
+
+  // =========================================================
+  // 눈 깜빡임 (blink) 시스템
+  // =========================================================
+
+  /**
+   * 0.5초마다 5% 확률로 눈 깜빡임 → 생동감 있는 표정
+   * blink 프레임(프레임5)을 잠깐 재생한 후 run으로 복귀
+   */
+  _updateBlink(delta) {
+    if (!this.dino || !this.dino.body) return;
+    // 바닥에서 달리는 중에만 깜빡임 (점프/슬라이드/게임오버 중엔 X)
+    if (!this.dino.body.blocked.down || this.dino.isSliding) return;
+
+    this._blinkTimer -= delta;
+    if (this._blinkTimer <= 0) {
+      this._blinkTimer = 500; // 0.5초마다 체크
+
+      // 5% 확률로 깜빡임 발동
+      if (!this._isBlinking && Math.random() < 0.05) {
+        this._isBlinking = true;
+        const dinoKey = this.dino.dinoKey;
+
+        // blink 프레임(5번) 표시
+        this.dino.setFrame(5);
+
+        // 150ms 후 달리기로 복귀
+        this.time.delayedCall(150, () => {
+          if (this.dino && this.dino.active && this.dino.body &&
+              this.dino.body.blocked.down && !this.dino.isSliding &&
+              !this.isGameOver && !this.isStageClear) {
+            this.dino.play(`${dinoKey}_run`);
+          }
+          this._isBlinking = false;
+        });
+      }
     }
   }
 
