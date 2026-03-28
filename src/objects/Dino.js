@@ -83,6 +83,7 @@ export class Dino extends Phaser.Physics.Arcade.Sprite {
     this.isJumpHeld = false;         // 버튼을 누르고 있는 중인지
     this.isDoubleJumpUsed = false;   // 이번 점프에서 2단 점프를 썼는지
     this._isJumping = false;         // 점프 중인지 (착지 전까지 true 유지)
+    this._lastJumpTime = 0;          // 마지막 바닥 점프 시각 (쿨다운용)
     this.canDoubleJump = true;       // 난이도에 따라 2단 점프 허용 여부
     this.doubleJumpLimit = Infinity; // 스테이지 내 2단 점프 최대 횟수
     this.doubleJumpCount = 0;        // 현재까지 사용한 2단 점프 횟수
@@ -144,17 +145,21 @@ export class Dino extends Phaser.Physics.Arcade.Sprite {
     // 비행 중에는 점프 불가 (프테라노가 날고 있을 때)
     if (this.isFlying) return;
 
-    if (this.body.blocked.down) {
-      // 바닥 → 점프! (blocked.down이 true면 확실히 바닥)
+    const now = Date.now();
+
+    // 바닥 점프: blocked.down이고 쿨다운(200ms) 지남
+    // 쿨다운 = 점프 직후 blocked.down이 아직 true일 때 재발동 방지
+    if (this.body.blocked.down && (now - this._lastJumpTime > 200)) {
       const jumpMulti = this.ability === 'highJump' ? 1.2 : 1.0;
       this.body.setVelocityY(GAME.JUMP.LOW_VELOCITY * jumpMulti);
       this.play(`${this.dinoKey}_jump`);
       soundGenerator.playJump();
 
-      this._isJumping = true;        // 즉시 공중 상태로 표시
-      this.isDoubleJumpUsed = false;  // 2단 점프 사용 가능
-    } else if (!this.isDoubleJumpUsed) {
-      // 공중 + 아직 2단 점프 안 씀 → 2단 점프!
+      this._lastJumpTime = now;       // 쿨다운 시작
+      this._isJumping = true;
+      this.isDoubleJumpUsed = false;
+    } else if (!this.body.blocked.down && !this.isDoubleJumpUsed) {
+      // 확실히 공중(blocked.down=false) + 2단 점프 미사용 → 2단 점프!
       this.doubleJump();
     }
   }
