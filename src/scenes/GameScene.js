@@ -288,6 +288,7 @@ export class GameScene extends Phaser.Scene {
       this._isPointerDown = true;
       this._pointerStartY = pointer.y;
       if (!this.isGameOver && !this.isStageClear) {
+        this.dino._holdStartTime = Date.now(); // 프테라노 비행: 누른 시각 기록
         this.dino.startJump();
       }
     });

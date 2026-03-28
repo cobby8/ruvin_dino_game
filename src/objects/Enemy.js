@@ -544,8 +544,8 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
     // 관대한 히트박스 (6살 배려: 중심부만 판정, 가장자리는 안전)
     // 이미지 사용 시 원본 크기 기준으로 설정 (스케일이 자동 적용됨)
     if (useImage) {
-      const bodyW = 160 * 0.5;    // 너비 넉넉하게 (밟기 쉽게)
-      const bodyH = 160 * 0.5;    // 높이도 넉넉하게
+      const bodyW = 160 * 0.35;   // 적 중심부만 판정 (데미지 범위 축소)
+      const bodyH = 160 * 0.35;   // 밟기는 top+40 허용으로 넉넉
       this.body.setSize(bodyW, bodyH);
       // 히트박스를 이미지 상단으로! (적 그래픽이 프레임 상단에 위치)
       // 기존: (720-bodyH)/2 = 336px (정중앙) → 변경: 30px (상단 근처)

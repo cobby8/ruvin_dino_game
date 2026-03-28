@@ -93,6 +93,7 @@ export class Dino extends Phaser.Physics.Arcade.Sprite {
     this.flyTimer = null;            // 비행 지속 타이머
     this.flyDuration = 3000;         // 비행 지속 시간 (3초)
     this.isHoldingJump = false;      // GameScene에서 매 프레임 설정 (터치 누르고 있는지)
+    this._holdStartTime = 0;         // 터치 시작 시각 (비행 0.3초 판정용)
 
     // === [P1] 슬라이드 시스템 속성 ===
     this.isSliding = false;          // 슬라이드(구르기) 중인지
@@ -437,12 +438,12 @@ export class Dino extends Phaser.Physics.Arcade.Sprite {
       this.setRotation(0);
     }
 
-    // === 프테라노 비행 능력: 점프 정점에서 터치 유지 시 3초간 공중 정지 ===
-    // (기존 glide=하강 중 중력 50%를 완전 교체)
+    // === 프테라노 비행 능력: 점프 정점에서 0.3초 이상 터치 유지 시 비행 ===
     if (this.ability === 'glide' && !this.body.blocked.down && !this.isFlying) {
-      // 정점 근처: velocity.y가 -50 ~ 50 사이 (거의 멈춤 = 점프 꼭대기)
-      // 이 순간 터치를 누르고 있으면 비행 모드 발동!
-      if (Math.abs(this.body.velocity.y) < 50 && this.isHoldingJump) {
+      // 정점 근처 + 0.3초 이상 누르고 있어야 비행 발동
+      // (짧은 터치로 점프만 할 때는 비행 안 됨)
+      const holdTime = this.isHoldingJump ? (this.scene.time.now - (this._holdStartTime || 0)) : 0;
+      if (Math.abs(this.body.velocity.y) < 50 && this.isHoldingJump && holdTime >= 300) {
         this.startFly();
       }
     }
