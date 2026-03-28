@@ -101,12 +101,22 @@ export class SelectScene extends Phaser.Scene {
       container.add(sprite);
 
       // 공룡 이름 (한글)
-      const nameText = this.add.text(0, cardH / 2 - 22, dino.name, {
+      const nameText = this.add.text(0, cardH / 2 - 32, dino.name, {
         fontFamily: 'Jua, sans-serif',
         fontSize: '16px',
         color: dino.hex,
       }).setOrigin(0.5);
       container.add(nameText);
+
+      // 특수능력 설명 (카드 하단에 작게 표시)
+      if (dino.abilityName) {
+        const abilityText = this.add.text(0, cardH / 2 - 14, dino.abilityDesc, {
+          fontFamily: 'Jua, sans-serif',
+          fontSize: '10px',
+          color: '#888888',
+        }).setOrigin(0.5);
+        container.add(abilityText);
+      }
 
       // 터치 영역 설정 (투명한 히트 영역)
       const hitArea = this.add.rectangle(0, 0, cardW, cardH, 0x000000, 0);

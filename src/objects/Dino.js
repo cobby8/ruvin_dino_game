@@ -19,7 +19,7 @@
  */
 
 import Phaser from 'phaser';
-import { GAME } from '../config.js';
+import { GAME, DINOS } from '../config.js';
 import { soundGenerator } from '../utils/SoundGenerator.js';
 
 export class Dino extends Phaser.Physics.Arcade.Sprite {
@@ -84,6 +84,11 @@ export class Dino extends Phaser.Physics.Arcade.Sprite {
     this.powerUp = null;             // 현재 파워업 종류 ('invincible', 'magnet', 'shield', null)
     this.powerUpTimer = null;        // 파워업 지속 타이머
     this.hasShield = false;          // 방어막 보유 여부
+
+    // === 공룡별 특수능력 데이터 로드 ===
+    // DINOS 배열에서 현재 공룡의 능력 정보를 가져옴
+    this.dinoData = DINOS.find(d => d.key === dinoKey) || DINOS[0];
+    this.ability = this.dinoData.ability || null;
   }
 
   /**
@@ -114,7 +119,9 @@ export class Dino extends Phaser.Physics.Arcade.Sprite {
 
     if (this.body.blocked.down) {
       // 바닥에 있으면 → 즉시 낮은 점프 실행 (1단 점프)
-      this.body.setVelocityY(GAME.JUMP.LOW_VELOCITY);
+      // 브라키오 특수능력: 목이 긴 초식공룡이라 점프가 20% 더 높음!
+      const jumpMulti = this.ability === 'highJump' ? 1.2 : 1.0;
+      this.body.setVelocityY(GAME.JUMP.LOW_VELOCITY * jumpMulti);
       this.play(`${this.dinoKey}_jump`);
       soundGenerator.playJump();
 
@@ -144,7 +151,9 @@ export class Dino extends Phaser.Physics.Arcade.Sprite {
     // 100ms 이상 눌렀고, 아직 위로 올라가는 중이면 (velocity가 음수 = 상승 중)
     if (holdDuration >= GAME.JUMP.HOLD_THRESHOLD && this.body.velocity.y < 0) {
       // 높은 점프로 부스트! (속도를 더 강하게 바꿈)
-      this.body.setVelocityY(GAME.JUMP.HIGH_VELOCITY);
+      // 브라키오 특수능력: 높은 점프도 20% 더 높음
+      const jumpMulti = this.ability === 'highJump' ? 1.2 : 1.0;
+      this.body.setVelocityY(GAME.JUMP.HIGH_VELOCITY * jumpMulti);
     }
     // 100ms 미만이면 → 이미 LOW_VELOCITY로 점프 중이므로 자연스럽게 낮은 점프가 됨
   }
@@ -377,5 +386,20 @@ export class Dino extends Phaser.Physics.Arcade.Sprite {
    */
   update() {
     // 착지 감지는 GameScene에서 body.blocked.down 체크 후 onLand() 호출로 처리
+
+    // 프테라노 특수능력(활강): 공중에서 하강 중일 때 중력을 50%로 줄여
+    // 날개가 있어서 천천히 내려옴 (파라슈트처럼!)
+    if (this.ability === 'glide' && !this.body.blocked.down) {
+      if (this.body.velocity.y > 0) {
+        // 하강 중이면 중력을 절반으로 줄임 (기본 800 → 400)
+        this.body.setGravityY(GAME.GRAVITY * 0.5);
+      } else {
+        // 상승 중에는 기본 중력 유지 (점프 높이에는 영향 없음)
+        this.body.setGravityY(GAME.GRAVITY);
+      }
+    } else if (this.ability === 'glide' && this.body.blocked.down) {
+      // 착지하면 기본 중력으로 복원
+      this.body.setGravityY(GAME.GRAVITY);
+    }
   }
 }

@@ -395,10 +395,18 @@ export class Background {
    */
   update(speed, delta) {
     const dt = delta / 1000;
+    // 경과 시간 누적 (풀밭 흔들림 계산용)
+    this._elapsed = (this._elapsed || 0) + delta;
+
     this.sky.tilePositionX += speed * 0.05 * dt;
+    // 구름: 게임 속도의 0.2배로 천천히 스크롤
     this.clouds.tilePositionX += speed * this.cloudSpeed * dt;
     this.mountains.tilePositionX += speed * this.mountainSpeed * dt;
     this.grass.tilePositionX += speed * this.grassSpeed * dt;
+
+    // 풀밭 장식 흔들림: sin파로 tilePositionY를 살짝 변화시켜
+    // 풀이 바람에 흔들리는 느낌을 줌 (진폭 2px)
+    this.grass.tilePositionY = Math.sin(this._elapsed / 500) * 2;
   }
 
   /**

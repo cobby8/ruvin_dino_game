@@ -20,7 +20,7 @@ export const GAME = {
   // === 기본 속도/장애물 설정 (난이도 미선택 시 기본값) ===
   INITIAL_SPEED: 140,        // 처음 달리기 속도 (px/초) - 기본 = 씩씩한공룡 기준
   MAX_SPEED: 300,            // 최대 속도
-  SPEED_INCREMENT: 2,        // 10점마다 이만큼 빨라짐
+  SPEED_INCREMENT: 5,        // 10점마다 이만큼 빨라짐 (2→5로 증가: 후반 속도감 강화)
   OBSTACLE_GAP_MIN: 1800,    // 장애물 사이 최소 간격 (밀리초)
   OBSTACLE_GAP_MAX: 3000,    // 장애물 사이 최대 간격
   OBSTACLE_GAP_DECREASE: 50, // 난이도 올라갈 때 간격이 이만큼 줄어듦
@@ -93,10 +93,31 @@ export const GAME = {
   ],
 };
 
-// 공룡 종류별 정보 (이름, 색상, 텍스처 키)
+// 공룡 종류별 정보 (이름, 색상, 텍스처 키, 특수능력)
+// 각 공룡마다 고유 스킬이 있음 (마리오 vs 루이지처럼!)
 export const DINOS = [
-  { key: 'brachio',   name: '브라키오',   color: 0x6BCB77, hex: '#6BCB77' },
-  { key: 'trex',      name: '티라노',     color: 0xFF8C42, hex: '#FF8C42' },
-  { key: 'tricera',   name: '트리케라',   color: 0x9B72CF, hex: '#9B72CF' },
-  { key: 'ptera',     name: '프테라노',   color: 0x4EAEFF, hex: '#4EAEFF' },
+  {
+    key: 'brachio', name: '브라키오', color: 0x6BCB77, hex: '#6BCB77',
+    ability: 'highJump',       // 특수능력 코드
+    abilityName: '높이뛰기',    // 화면에 표시할 능력 이름
+    abilityDesc: '점프가 20% 더 높아요!', // 설명
+  },
+  {
+    key: 'trex', name: '티라노', color: 0xFF8C42, hex: '#FF8C42',
+    ability: 'strongStomp',
+    abilityName: '강한밟기',
+    abilityDesc: '밟기로 2배 점수!',
+  },
+  {
+    key: 'tricera', name: '트리케라', color: 0x9B72CF, hex: '#9B72CF',
+    ability: 'shield',
+    abilityName: '단단한방패',
+    abilityDesc: '시작할 때 방어막 1개!',
+  },
+  {
+    key: 'ptera', name: '프테라노', color: 0x4EAEFF, hex: '#4EAEFF',
+    ability: 'glide',
+    abilityName: '활강',
+    abilityDesc: '점프 후 천천히 내려와요!',
+  },
 ];

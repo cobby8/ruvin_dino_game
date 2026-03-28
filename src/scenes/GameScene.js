@@ -15,7 +15,7 @@
  */
 
 import Phaser from 'phaser';
-import { GAME } from '../config.js';
+import { GAME, DINOS } from '../config.js';
 import { Dino } from '../objects/Dino.js';
 import { ObstacleManager } from '../objects/Obstacle.js';
 import { Background } from '../objects/Background.js';
@@ -198,9 +198,9 @@ export class GameScene extends Phaser.Scene {
     // === 입력 설정 ===
     this._setupInput();
 
-    // === 효과음 + BGM ===
+    // === 효과음 + BGM (월드별 다른 멜로디!) ===
     soundGenerator.init();
-    soundGenerator.startBGM();
+    soundGenerator.startBGM(this.worldData.id);
 
     // 화면 전환 효과: 검은색에서 밝아짐 (씬 진입 시)
     this.cameras.main.fadeIn(500, 0, 0, 0);
@@ -210,6 +210,18 @@ export class GameScene extends Phaser.Scene {
 
     // 착지 상태 추적
     this.wasInAir = false;
+
+    // === 트리케라 특수능력: 게임 시작 시 방어막 1개 자동 부여 ===
+    // 트리케라의 방패 뿔이 있어서 1회 피격을 무시!
+    const dinoData = DINOS.find(d => d.key === dinoKey);
+    if (dinoData && dinoData.ability === 'shield') {
+      this.dino.applyPowerUp('shield');
+    }
+
+    // === 배경 특수 파티클 타이머 (월드별 분위기 연출) ===
+    // 화산=불씨, 바다=물거품, 하늘=반짝이별
+    this._bgParticleTimer = 0;    // 다음 파티클 생성까지 남은 시간
+    this._bgParticles = [];       // 활성 배경 파티클 목록
 
     // 화면 크기 변경 대응
     this.scale.on('resize', this._onResize, this);
@@ -392,7 +404,7 @@ export class GameScene extends Phaser.Scene {
         // 속도 증가 (10점마다)
         if (this.clearScore % 10 === 0) {
           this.currentSpeed = Math.min(
-            this.currentSpeed + GAME.SPEED_INCREMENT * 5,
+            this.currentSpeed + GAME.SPEED_INCREMENT,
             this.difficulty.maxSpeed
           );
           this.obstacleManager.updateSpeed(this.currentSpeed);
@@ -404,6 +416,9 @@ export class GameScene extends Phaser.Scene {
         }
       }
     }
+
+    // === 배경 특수 파티클 (월드별 분위기 연출) ===
+    this._updateBgParticles(time, delta);
   }
 
   /** 장애물 하나 생성 + [P3] 아이템/블록 스폰 */
@@ -634,7 +649,9 @@ export class GameScene extends Phaser.Scene {
       this.effectManager.showDefeatEffect(enemy.x, enemy.y);
 
       // 적 처치 → clearScore에 콤보 배율 적용
-      const earnedPoints = enemy.enemyData.points * this.comboMultiplier;
+      // 티라노 특수능력(강한밟기): 가장 강한 공룡이라 밟기 점수 2배!
+      const stompBonus = this.dino.ability === 'strongStomp' ? 2 : 1;
+      const earnedPoints = enemy.enemyData.points * this.comboMultiplier * stompBonus;
       this.effectManager.showScorePopup(enemy.x, enemy.y, earnedPoints);
       this.clearScore += earnedPoints;
       this.stageHUD.updateScore(this.clearScore);
@@ -978,6 +995,98 @@ export class GameScene extends Phaser.Scene {
     });
   }
 
+  // =========================================================
+  // 배경 특수 파티클 (월드별 분위기)
+  // =========================================================
+
+  /**
+   * 월드별 배경 파티클 업데이트
+   * 화산(4): 하늘에서 떨어지는 작은 불씨
+   * 바다(5): 바닥에서 올라오는 물거품
+   * 하늘(6): 반짝이는 별 파티클
+   */
+  _updateBgParticles(time, delta) {
+    const wid = this.worldData.id;
+    // 월드 4, 5, 6만 파티클 생성
+    if (wid !== 4 && wid !== 5 && wid !== 6) return;
+
+    // 타이머 감소 (1~3초 간격으로 파티클 생성)
+    this._bgParticleTimer -= delta;
+    if (this._bgParticleTimer <= 0) {
+      this._bgParticleTimer = Phaser.Math.Between(1000, 3000);
+      this._spawnBgParticle(wid);
+    }
+
+    // 화면 밖으로 나간 파티클 정리
+    this._bgParticles = this._bgParticles.filter(p => {
+      if (p && p.active) return true;
+      return false;
+    });
+  }
+
+  /**
+   * 월드별 배경 파티클 1개 생성
+   * 작은 원을 트윈으로 이동 + 사라지게 처리
+   */
+  _spawnBgParticle(wid) {
+    const { width, height } = this.scale;
+
+    if (wid === 4) {
+      // 화산: 하늘 상단에서 작은 불씨가 떨어짐 (주황/빨강 원)
+      const x = Phaser.Math.Between(0, width);
+      const color = Math.random() > 0.5 ? 0xFF6600 : 0xFF3300;
+      const particle = this.add.circle(x, -10, Phaser.Math.Between(2, 4), color, 0.7);
+      particle.setDepth(4);
+      // 아래로 떨어지면서 좌우로 흔들리며 사라짐
+      this.tweens.add({
+        targets: particle,
+        y: this.groundY,
+        x: x + Phaser.Math.Between(-30, 30),
+        alpha: 0,
+        duration: Phaser.Math.Between(2000, 4000),
+        ease: 'Sine.easeIn',
+        onComplete: () => particle.destroy(),
+      });
+      this._bgParticles.push(particle);
+    } else if (wid === 5) {
+      // 바다: 바닥에서 작은 물거품이 올라옴 (흰/파란 원)
+      const x = Phaser.Math.Between(0, width);
+      const color = Math.random() > 0.5 ? 0xFFFFFF : 0x88CCFF;
+      const size = Phaser.Math.Between(2, 5);
+      const particle = this.add.circle(x, this.groundY, size, color, 0.5);
+      particle.setDepth(4);
+      // 위로 올라가면서 사라짐
+      this.tweens.add({
+        targets: particle,
+        y: this.groundY - Phaser.Math.Between(50, 120),
+        x: x + Phaser.Math.Between(-15, 15),
+        alpha: 0,
+        duration: Phaser.Math.Between(1500, 3000),
+        ease: 'Sine.easeOut',
+        onComplete: () => particle.destroy(),
+      });
+      this._bgParticles.push(particle);
+    } else if (wid === 6) {
+      // 하늘: 랜덤 위치에서 반짝이는 별 (노란/흰 원이 커졌다 작아졌다 사라짐)
+      const x = Phaser.Math.Between(0, width);
+      const y = Phaser.Math.Between(20, height * 0.6);
+      const color = Math.random() > 0.5 ? 0xFFD700 : 0xFFFFFF;
+      const particle = this.add.circle(x, y, Phaser.Math.Between(1, 3), color, 0.8);
+      particle.setDepth(4);
+      // 반짝반짝 (확대 후 축소하며 사라짐)
+      this.tweens.add({
+        targets: particle,
+        scaleX: 2,
+        scaleY: 2,
+        alpha: 0,
+        duration: Phaser.Math.Between(1000, 2000),
+        ease: 'Sine.easeInOut',
+        onComplete: () => particle.destroy(),
+      });
+      this._bgParticles.push(particle);
+    }
+  }
+
   /** 화면 크기 변경 대응 */
   _onResize(gameSize) {
     const { width, height } = gameSize;
@@ -1033,5 +1142,11 @@ export class GameScene extends Phaser.Scene {
       this._boostTimer.destroy();
     }
     this._hideSpeedLines();
+
+    // 배경 파티클 정리
+    if (this._bgParticles) {
+      this._bgParticles.forEach(p => { if (p && p.active) p.destroy(); });
+      this._bgParticles = [];
+    }
   }
 }

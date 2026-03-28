@@ -187,20 +187,35 @@ export class SoundGenerator {
     }, notes.length * 180 + 150);
   }
 
-  /** BGM 시작: 단순한 멜로디 루프 */
-  startBGM() {
+  /**
+   * BGM 시작: 월드별 다른 멜로디 루프
+   * 각 월드마다 분위기에 맞는 음계, 템포, 파형이 다름
+   * @param {number} worldId - 월드 번호 (1~6, 기본 1)
+   */
+  startBGM(worldId = 1) {
     if (!this.ctx) return;
-    // BGM은 간단한 도레미 패턴을 반복
-    const melody = [262, 294, 330, 349, 330, 294, 262]; // 도레미파미레도
-    const noteLength = 0.3; // 한 음 길이 (초)
+
+    // 월드별 BGM 설정 (음계 + 템포 + 파형)
+    // 풀밭=밝은 도레미파, 사막=이국적, 숲=경쾌, 화산=긴장감, 바다=평화, 하늘=신비
+    const bgms = {
+      1: { notes: [262, 294, 330, 349, 330, 294, 262],         tempo: 400, type: 'sine' },
+      2: { notes: [220, 247, 262, 294, 262, 247, 220],         tempo: 350, type: 'triangle' },
+      3: { notes: [330, 392, 440, 494, 440, 392, 330],         tempo: 450, type: 'sine' },
+      4: { notes: [196, 220, 262, 196, 220, 196, 175],         tempo: 300, type: 'sawtooth' },
+      5: { notes: [330, 349, 392, 440, 392, 349, 330],         tempo: 500, type: 'sine' },
+      6: { notes: [440, 494, 523, 587, 523, 494, 440],         tempo: 350, type: 'triangle' },
+    };
+
+    const bgm = bgms[worldId] || bgms[1];
+    const noteLength = bgm.tempo / 1000; // ms → 초 변환
 
     this._bgmInterval = setInterval(() => {
-      melody.forEach((freq, i) => {
+      bgm.notes.forEach((freq, i) => {
         setTimeout(() => {
-          this._playTone(freq, freq, noteLength * 0.8, 'sine', 0.05);
-        }, i * noteLength * 1000);
+          this._playTone(freq, freq, noteLength * 0.8, bgm.type, 0.05);
+        }, i * bgm.tempo);
       });
-    }, melody.length * noteLength * 1000);
+    }, bgm.notes.length * bgm.tempo);
   }
 
   /** BGM 정지 */

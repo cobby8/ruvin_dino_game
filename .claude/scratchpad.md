@@ -22,40 +22,41 @@
 | 2026-03-28 | Capacitor + Android 설정 완료 | 완료 |
 | 2026-03-28 | 종합 개선 계획 수립 (재미+밸런스+그래픽, 20항목 로드맵) | 설계 완료 |
 | 2026-03-28 | 개선 페이즈1 구현 (콤보+파티클3종+화면전환+튜토리얼, 12파일) | 빌드 통과 |
+| 2026-03-28 | 개선 페이즈2 구현 (공룡능력4종+BGM다양화+밸런스+배경파티클, 6파일) | 빌드 통과 |
 
 ## 구현 기록 (developer)
 
-### 개선 페이즈 1 전체 구현 (2026-03-28)
+### 개선 페이즈 2 전체 구현 (2026-03-28)
 
-구현한 기능: 콤보 시스템 + 파티클 이펙트 3종 + 화면 전환 효과 + 튜토리얼
+구현한 기능: 공룡별 특수능력 4종 + BGM 월드별 다양화 + 밸런스 조정 + 배경 애니메이션
 
 | 파일 경로 | 변경 내용 | 신규/수정 |
 |----------|----------|----------|
-| src/config.js | COMBO 설정 추가 (TIMEOUT:2000, MAX:5, MESSAGES) | 수정 |
-| src/objects/EffectManager.js | showCombo, showRunDust, showLandingDust 추가 + showDefeatEffect 연기 파티클 강화 | 수정 |
-| src/scenes/GameScene.js | 콤보 변수+로직(_addCombo), 달리기 먼지+착지 충격파 호출, fadeIn/fadeOut 추가 | 수정 |
-| src/scenes/TutorialScene.js | 3장 슬라이드 조작 안내 (점프/높은점프/슬라이드), localStorage 저장 | 신규 |
-| src/main.js | TutorialScene import + 씬 배열에 등록 | 수정 |
-| src/scenes/BootScene.js | fadeOut 추가 | 수정 |
-| src/scenes/SelectScene.js | fadeIn + fadeOut 추가 | 수정 |
-| src/scenes/DifficultyScene.js | fadeIn + fadeOut + 튜토리얼 분기 추가 | 수정 |
-| src/scenes/StageClearScene.js | fadeIn + 모든 버튼에 fadeOut 추가 | 수정 |
-| src/scenes/GameOverScene.js | fadeIn + 모든 버튼에 fadeOut 추가 | 수정 |
-| src/scenes/WorldMapScene.js | fadeIn + 모든 버튼에 fadeOut 추가 | 수정 |
-| src/scenes/EndingScene.js | fadeIn + 모든 버튼에 fadeOut 추가 | 수정 |
+| src/config.js | DINOS에 ability/abilityName/abilityDesc 추가, SPEED_INCREMENT 2→5 | 수정 |
+| src/objects/Dino.js | 브라키오 점프1.2배, 프테라노 활강(하강중력50%), ability 속성 | 수정 |
+| src/scenes/GameScene.js | 트리케라 시작방어막, 티라노 밟기2배점수, BGM월드별, 배경파티클3종 | 수정 |
+| src/scenes/SelectScene.js | 공룡 카드에 특수능력 설명 텍스트 표시 | 수정 |
+| src/utils/SoundGenerator.js | startBGM(worldId) 월드별 음계/템포/파형 분리 | 수정 |
+| src/objects/Background.js | update()에 풀밭 흔들림 sin파 추가 | 수정 |
 
 tester 참고:
-- 테스트 방법: 게임 플레이하며 아래 항목 확인
-- 콤보: 장애물 연속 넘기거나 적 연속 밟으면 "2콤보!", "3콤보!" 금색 팝업 + 화면 살짝 흔들림. 2초 지나면 리셋.
-- 파티클: 바닥 달릴 때 발 뒤에 흙색 먼지, 점프 후 착지 시 양쪽 먼지 퍼짐, 적 처치 시 회색 연기+별 파티클
-- 화면 전환: 모든 씬 전환 시 검은색 페이드인/아웃 (500ms/300ms)
-- 튜토리얼: localStorage에서 ruvin_tutorial_done 삭제 후 첫 플레이 시 3장 슬라이드 표시. "건너뛰기"도 동작. 완료 후 다시는 안 나옴.
-- 정상 동작: 씬 전환이 부드럽게 페이드, 콤보 배율이 clearScore에 반영
-- 주의할 입력: 콤보 MAX(5배) 상태에서 클리어 점수가 급격히 올라갈 수 있음
+- 테스트 방법: 4종 공룡 각각 선택 후 게임 플레이
+- 브라키오: 점프 높이가 다른 공룡보다 20% 더 높은지 (눈으로 비교)
+- 티라노: 적 밟기 시 점수 팝업이 다른 공룡보다 2배인지 확인
+- 트리케라: 게임 시작 직후 파란색 틴트(방어막) 있는지, 첫 피격 시 방어막 소멸되는지
+- 프테라노: 점프 후 내려올 때 천천히 내려오는지 (파라슈트 느낌)
+- 공룡 선택 화면: 각 카드 하단에 능력 설명 텍스트 보이는지
+- BGM: 월드 1(풀밭)과 월드 4(화산) BGM 멜로디/템포가 다른지
+- 배경: 화산(월드4) 불씨 떨어짐, 바다(월드5) 물거품 올라옴, 하늘(월드6) 별 반짝임
+- 풀밭 바닥이 살짝 흔들리는지 (sin파 y 움직임)
+- 밸런스: 10점마다 속도 증가가 체감되는지 (이전보다 2.5배 빠르게 증가)
+- 정상 동작: 빌드 통과, 기존 기능(콤보/파티클/전환) 정상 유지
+- 주의할 입력: 티라노 + 콤보MAX(5배) + 밟기 = 5x2=10배 점수 가능
 
 reviewer 참고:
-- 콤보 타이머는 time.delayedCall 사용 (설계서에서 수동 관리 권장했지만, pause 시 게임이 멈추므로 delayedCall도 같이 멈춰서 문제없음)
-- 파티클은 매번 생성+파괴 방식 (개수가 적어 풀링 불필요)
+- 프테라노 활강은 Dino.update()에서 매 프레임 중력값 변경 (하강중 50%, 상승중 100%, 착지시 복원)
+- 배경 파티클은 Phaser Circle + Tween 방식 (1~3초 간격, 화면 밖 나가면 destroy)
+- SPEED_INCREMENT 변경과 함께 GameScene에서 기존 x5 곱셈 제거 (중복 방지)
 
 ## 기획설계 (planner-architect)
 
