@@ -91,8 +91,9 @@ export class SelectScene extends Phaser.Scene {
       container.add(circle);
 
       // 공룡 스프라이트 (달리기 애니메이션)
+      // 96px 스프라이트를 카드 크기에 맞게 축소 (카드폭 대비 적절한 비율)
       const sprite = this.add.sprite(0, -cardH * 0.1, dino.key, 0);
-      sprite.setScale(Math.min(cardW / 60, 1.8));
+      sprite.setScale(Math.min(cardW / 110, 1.0));
       sprite.play(`${dino.key}_run`);
       container.add(sprite);
 

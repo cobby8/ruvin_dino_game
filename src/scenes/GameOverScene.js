@@ -56,7 +56,8 @@ export class GameOverScene extends Phaser.Scene {
     // === 넘어진 공룡 표시 ===
     const dinoKey = this.registry.get('selectedDino') || 'brachio';
     const fallenDino = this.add.sprite(width / 2, height * 0.38, dinoKey, 3); // 프레임 3 = 넘어짐
-    fallenDino.setScale(2.5);
+    // 96px 스프라이트이므로 확대 배율을 줄임 (2.5 → 1.5)
+    fallenDino.setScale(1.5);
 
     // 공룡이 살짝 흔들리는 효과 (넘어진 느낌)
     this.tweens.add({

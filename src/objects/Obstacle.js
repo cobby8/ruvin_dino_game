@@ -2,6 +2,8 @@
  * Obstacle.js - 장애물 레고블록
  * 선인장, 돌멩이 등 장애물을 코드로 그리고 관리하는 클래스
  * 오브젝트 풀링(재활용) 패턴으로 메모리 효율적
+ *
+ * 고도화: 선인장 하이라이트/가시/꽃, 돌멩이 그라디언트/금무늬
  */
 
 import { GAME } from '../config.js';
@@ -15,20 +17,36 @@ export function createObstacleTextures(scene) {
   // === 작은 선인장 (20x30) ===
   const g1 = scene.add.graphics();
 
-  // 선인장 몸통 (진한 녹색 기둥)
+  // 선인장 몸통 (진녹 본체)
   g1.fillStyle(0x2D8B46);
   g1.fillRoundedRect(5, 5, 10, 25, 3);
 
+  // 하이라이트 줄 (연녹색 세로줄 - 입체감)
+  g1.fillStyle(0x5BC37A, 0.6);
+  g1.fillRoundedRect(8, 6, 3, 23, 1);
+
   // 선인장 팔 (왼쪽으로 작은 가지)
+  g1.fillStyle(0x2D8B46);
   g1.fillRoundedRect(0, 12, 7, 4, 2);
+  // 팔 하이라이트
+  g1.fillStyle(0x5BC37A, 0.5);
+  g1.fillRoundedRect(1, 13, 5, 2, 1);
 
-  // 가시 (작은 점들로 표현)
+  // 가시들 (작은 삼각형 - 더 많이)
   g1.fillStyle(0x1A6B30);
-  g1.fillCircle(8, 8, 1);
-  g1.fillCircle(12, 15, 1);
-  g1.fillCircle(7, 22, 1);
+  g1.fillTriangle(15, 10, 18, 9, 15, 8);
+  g1.fillTriangle(15, 16, 18, 15, 15, 14);
+  g1.fillTriangle(15, 22, 17, 21, 15, 20);
+  g1.fillTriangle(5, 9, 2, 8, 5, 7);
+  g1.fillTriangle(5, 20, 2, 19, 5, 18);
+  g1.fillTriangle(5, 25, 3, 24, 5, 23);
 
-  // 텍스처로 저장 (generateTexture: Graphics -> 이미지 텍스처 변환)
+  // 꼭대기 작은 분홍 꽃
+  g1.fillStyle(0xFFB0C0);
+  g1.fillCircle(10, 4, 3);
+  g1.fillStyle(0xFFE066);
+  g1.fillCircle(10, 4, 1.2);
+
   g1.generateTexture('obstacle_small_cactus', 20, 30);
   g1.destroy();
 
@@ -39,37 +57,73 @@ export function createObstacleTextures(scene) {
   g2.fillStyle(0x2D8B46);
   g2.fillRoundedRect(8, 5, 14, 40, 4);
 
+  // 몸통 하이라이트 줄
+  g2.fillStyle(0x5BC37A, 0.6);
+  g2.fillRoundedRect(12, 6, 4, 38, 2);
+
   // 왼쪽 팔
+  g2.fillStyle(0x2D8B46);
   g2.fillRoundedRect(0, 15, 10, 5, 2);
-  g2.fillRoundedRect(0, 10, 5, 10, 2);
+  g2.fillRoundedRect(0, 10, 5, 12, 2);
+  // 왼팔 하이라이트
+  g2.fillStyle(0x5BC37A, 0.5);
+  g2.fillRoundedRect(1, 12, 3, 8, 1);
 
   // 오른쪽 팔
+  g2.fillStyle(0x2D8B46);
   g2.fillRoundedRect(20, 22, 10, 5, 2);
-  g2.fillRoundedRect(25, 18, 5, 10, 2);
+  g2.fillRoundedRect(25, 18, 5, 12, 2);
+  // 오른팔 하이라이트
+  g2.fillStyle(0x5BC37A, 0.5);
+  g2.fillRoundedRect(26, 20, 3, 8, 1);
 
-  // 가시들
+  // 가시들 (더 많이!)
   g2.fillStyle(0x1A6B30);
-  g2.fillCircle(12, 8, 1.5);
-  g2.fillCircle(18, 20, 1.5);
-  g2.fillCircle(12, 32, 1.5);
+  // 오른쪽 가시
+  g2.fillTriangle(22, 8, 25, 7, 22, 6);
+  g2.fillTriangle(22, 14, 25, 13, 22, 12);
+  g2.fillTriangle(22, 28, 25, 27, 22, 26);
+  g2.fillTriangle(22, 36, 24, 35, 22, 34);
+  // 왼쪽 가시
+  g2.fillTriangle(8, 8, 5, 7, 8, 6);
+  g2.fillTriangle(8, 22, 5, 21, 8, 20);
+  g2.fillTriangle(8, 32, 6, 31, 8, 30);
+  g2.fillTriangle(8, 40, 5, 39, 8, 38);
+  // 팔 가시
+  g2.fillTriangle(3, 10, 1, 8, 5, 10);
+  g2.fillTriangle(28, 18, 30, 16, 26, 18);
+
+  // 꼭대기 분홍 꽃
+  g2.fillStyle(0xFFB0C0);
+  g2.fillCircle(15, 4, 3.5);
+  g2.fillStyle(0xFFE066);
+  g2.fillCircle(15, 4, 1.5);
 
   g2.generateTexture('obstacle_big_cactus', 30, 45);
   g2.destroy();
 
-  // === 돌멩이 (25x20) ===
+  // === 돌멩이 (25x20) - 그라디언트 + 하이라이트 + 금무늬 ===
   const g3 = scene.add.graphics();
 
-  // 돌 몸체 (회색 둥근 사각형)
-  g3.fillStyle(0x8E8E8E);
-  g3.fillRoundedRect(2, 4, 21, 14, 5);
-
-  // 돌 하이라이트 (밝은 부분 - 입체감)
-  g3.fillStyle(0xAAAAAA);
-  g3.fillEllipse(10, 8, 8, 4);
-
-  // 돌 어두운 부분
+  // 돌 몸체 하단 (어두운 회색)
   g3.fillStyle(0x6E6E6E);
-  g3.fillEllipse(16, 14, 6, 3);
+  g3.fillRoundedRect(2, 6, 21, 12, 5);
+
+  // 돌 몸체 상단 (밝은 회색 - 위가 밝고 아래가 어둡게)
+  g3.fillStyle(0x9E9E9E);
+  g3.fillRoundedRect(2, 4, 21, 10, 5);
+
+  // 하이라이트 점 (밝은 부분 - 반짝이는 느낌)
+  g3.fillStyle(0xBBBBBB);
+  g3.fillCircle(8, 7, 3);
+  g3.fillStyle(0xD0D0D0);
+  g3.fillCircle(7, 6, 1.5);
+
+  // 갈색 금 무늬 1~2줄 (돌의 질감)
+  g3.lineStyle(1, 0x8B7355, 0.6);
+  g3.lineBetween(6, 10, 18, 12);
+  g3.lineStyle(0.8, 0x8B7355, 0.4);
+  g3.lineBetween(10, 7, 20, 9);
 
   g3.generateTexture('obstacle_rock', 25, 20);
   g3.destroy();
@@ -107,13 +161,13 @@ export class ObstacleManager {
 
     if (rand < 0.5) {
       textureKey = 'obstacle_small_cactus';
-      yOffset = 15;   // 바닥에서 살짝 위로
+      yOffset = 15;
     } else if (rand < 0.8) {
       textureKey = 'obstacle_big_cactus';
-      yOffset = 22;   // 큰 선인장은 더 위로
+      yOffset = 22;
     } else {
       textureKey = 'obstacle_rock';
-      yOffset = 10;   // 돌멩이는 바닥에 붙어있게
+      yOffset = 10;
     }
 
     // 오브젝트 풀에서 비활성 장애물 꺼내기 (없으면 새로 만듦)
@@ -128,14 +182,14 @@ export class ObstacleManager {
     } else {
       // 새로 생성
       obstacle = this.group.create(x, groundY - yOffset, textureKey);
-      obstacle.setOrigin(0.5, 1);  // 기준점을 아래쪽 중앙으로
+      obstacle.setOrigin(0.5, 1);
     }
 
     // 물리 설정
-    obstacle.body.setVelocityX(-speed); // 왼쪽으로 이동
+    obstacle.body.setVelocityX(-speed);
     obstacle.body.setAllowGravity(false);
     obstacle.body.setImmovable(true);
-    obstacle.scored = false;  // 점수 처리 여부 플래그
+    obstacle.scored = false;
 
     // 충돌 박스를 살짝 작게 (히트박스 관대하게 = 6살 배려)
     const bodyW = obstacle.width * 0.6;

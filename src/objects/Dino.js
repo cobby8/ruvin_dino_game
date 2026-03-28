@@ -36,8 +36,9 @@ export class Dino extends Phaser.Physics.Arcade.Sprite {
     this.body.setBounce(0);                     // 바운스 없음
 
     // 충돌 박스를 몸체에 맞게 축소 (여유있는 히트박스 = 6살 배려)
-    this.body.setSize(GAME.DINO_SIZE * 0.5, GAME.DINO_SIZE * 0.7);
-    this.body.setOffset(GAME.DINO_SIZE * 0.25, GAME.DINO_SIZE * 0.3);
+    // 96px 기준: 폭 48px(50%), 높이 58px(60%), 중앙 정렬
+    this.body.setSize(GAME.DINO_SIZE * 0.5, GAME.DINO_SIZE * 0.6);
+    this.body.setOffset(GAME.DINO_SIZE * 0.25, GAME.DINO_SIZE * 0.35);
 
     // 달리기 애니메이션 시작
     this.play(`${dinoKey}_run`);
