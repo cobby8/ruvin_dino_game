@@ -40,13 +40,23 @@ export class GameScene extends Phaser.Scene {
     this.difficulty = this.registry.get('selectedDifficulty') || DEFAULT_DIFFICULTY;
 
     // === 스테이지/월드 데이터 가져오기 ===
+    // currentStage가 0이면 자유 모드 (무한 러너, 스테이지 없음)
     // currentStage가 없으면 1번 스테이지부터 시작
-    const currentStageId = this.registry.get('currentStage') || 1;
-    this.stageData = getStage(currentStageId);
-    this.worldData = getWorld(this.stageData.world);
+    const currentStageId = this.registry.get('currentStage');
+    this.isFreeMode = (currentStageId === 0); // 자유 모드 여부
 
-    // 실제 목표 점수 계산 (스테이지 기본값 x 난이도 배율)
-    this.targetScore = getStageTarget(currentStageId, this.difficulty.id);
+    if (this.isFreeMode) {
+      // 자유 모드: 스테이지 1 데이터를 사용하되, 목표 없이 무한 플레이
+      this.stageData = getStage(1);
+      this.worldData = getWorld(1);
+      this.targetScore = Infinity; // 목표 무한 = 절대 클리어 안됨
+    } else {
+      const stageId = currentStageId || 1;
+      this.stageData = getStage(stageId);
+      this.worldData = getWorld(this.stageData.world);
+      // 실제 목표 점수 계산 (스테이지 기본값 x 난이도 배율)
+      this.targetScore = getStageTarget(stageId, this.difficulty.id);
+    }
 
     // === 게임 상태 초기화 ===
     this.score = 0;
@@ -54,6 +64,7 @@ export class GameScene extends Phaser.Scene {
     this.currentSpeed = this.difficulty.initialSpeed + this.stageData.speedBonus;
     this.isGameOver = false;
     this.isStageClear = false;  // 스테이지 클리어 여부
+    this.deathCount = 0;        // 이번 스테이지에서 죽은 횟수 (별 3개 조건에 사용)
     this.lastObstacleTime = 0;
     this.nextObstacleDelay = 2000;
 
@@ -82,8 +93,10 @@ export class GameScene extends Phaser.Scene {
     );
 
     // === StageHUD (스테이지 정보 표시) ===
+    // 자유 모드에서는 목표를 999로 표시 (무한 느낌)
+    const displayTarget = this.isFreeMode ? 999 : this.targetScore;
     this.stageHUD = new StageHUD(
-      this, this.stageData, this.worldData, this.difficulty, this.targetScore
+      this, this.stageData, this.worldData, this.difficulty, displayTarget
     );
 
     // === 입력 설정 ===
@@ -248,18 +261,20 @@ export class GameScene extends Phaser.Scene {
     const nextStageId = this.stageData.id + 1;
     const isLastStage = nextStageId > 30;
 
-    // 1.5초 후 GameOverScene으로 전환 (임시 - 나중에 StageClearScene으로 교체)
+    // 1.5초 후 StageClearScene으로 전환
     this.time.delayedCall(1500, () => {
       if (!isLastStage) {
         // 다음 스테이지 설정
         this.registry.set('currentStage', nextStageId);
       }
 
-      this.scene.start('GameOverScene', {
+      // StageClearScene으로 이동 (별 계산 + 진행도 저장은 그쪽에서)
+      this.scene.start('StageClearScene', {
         score: this.score,
-        stageClear: true,
         stageData: this.stageData,
         worldData: this.worldData,
+        targetScore: this.targetScore,
+        deathCount: this.deathCount || 0,
         isLastStage: isLastStage,
         nextStageId: nextStageId,
       });
@@ -284,9 +299,9 @@ export class GameScene extends Phaser.Scene {
     this.time.delayedCall(800, () => {
       this.scene.start('GameOverScene', {
         score: this.score,
-        stageClear: false,
         stageData: this.stageData,
         worldData: this.worldData,
+        isFreeMode: this.isFreeMode,
       });
     });
   }

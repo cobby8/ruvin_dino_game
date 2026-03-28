@@ -84,6 +84,35 @@ export class SoundGenerator {
     this._playTone(600, 800, 0.08, 'sine', 0.15);
   }
 
+  /** 스테이지 클리어 팡파레: 상승 음계 도-미-솔-도 (밝은 음색) */
+  playStageClear() {
+    // 도(523) → 미(659) → 솔(784) → 높은도(1047), 각 0.15초 간격
+    const notes = [523, 659, 784, 1047];
+    notes.forEach((freq, i) => {
+      setTimeout(() => {
+        this._playTone(freq, freq, 0.15, 'sine', 0.2);
+      }, i * 150);
+    });
+  }
+
+  /** 엔딩 축하 멜로디: 길고 화려한 상승 음계 + 트릴 */
+  playEnding() {
+    // 더 긴 멜로디: 도-레-미-파-솔-라-시-도 + 트릴
+    const notes = [523, 587, 659, 698, 784, 880, 988, 1047];
+    notes.forEach((freq, i) => {
+      setTimeout(() => {
+        this._playTone(freq, freq, 0.18, 'sine', 0.18);
+      }, i * 180);
+    });
+    // 마지막에 트릴 효과 (높은 음에서 빠른 반복)
+    setTimeout(() => {
+      this._playTone(1047, 1200, 0.3, 'sine', 0.15);
+    }, notes.length * 180);
+    setTimeout(() => {
+      this._playTone(1200, 1047, 0.3, 'sine', 0.15);
+    }, notes.length * 180 + 150);
+  }
+
   /** BGM 시작: 단순한 멜로디 루프 */
   startBGM() {
     if (!this.ctx) return;

@@ -8,6 +8,9 @@ import { SelectScene } from './scenes/SelectScene.js';
 import { DifficultyScene } from './scenes/DifficultyScene.js';
 import { GameScene } from './scenes/GameScene.js';
 import { GameOverScene } from './scenes/GameOverScene.js';
+import { StageClearScene } from './scenes/StageClearScene.js';
+import { WorldMapScene } from './scenes/WorldMapScene.js';
+import { EndingScene } from './scenes/EndingScene.js';
 
 // Phaser 게임 설정 (레고 조립 설명서 같은 역할)
 const config = {
@@ -34,8 +37,8 @@ const config = {
   // 배경색 (하늘색)
   backgroundColor: '#87CEEB',
 
-  // 씬 등록 순서: Boot(로딩) -> Select(공룡선택) -> Difficulty(난이도) -> Game(플레이) -> GameOver(결과)
-  scene: [BootScene, SelectScene, DifficultyScene, GameScene, GameOverScene],
+  // 씬 등록 순서: Boot → Select → Difficulty → WorldMap → Game → StageClear → GameOver → Ending
+  scene: [BootScene, SelectScene, DifficultyScene, WorldMapScene, GameScene, StageClearScene, GameOverScene, EndingScene],
 
   // 렌더링 설정
   render: {

@@ -211,8 +211,16 @@ export class DifficultyScene extends Phaser.Scene {
 
         soundGenerator.playSelect();
 
-        // 게임 씬으로 출발!
-        this.scene.start('GameScene');
+        // 진행도 확인: 이전 진행 있으면 월드맵, 없으면 스테이지 1로 바로 시작
+        const progress = this._loadProgress();
+        if (progress.clearedStages.length > 0) {
+          // 이어하기: 월드맵에서 스테이지 선택
+          this.scene.start('WorldMapScene');
+        } else {
+          // 첫 플레이: 스테이지 1로 바로 시작
+          this.registry.set('currentStage', 1);
+          this.scene.start('GameScene');
+        }
       }
     });
   }
@@ -235,6 +243,22 @@ export class DifficultyScene extends Phaser.Scene {
       yoyo: true,
       ease: 'Sine.easeInOut',
     });
+  }
+
+  /**
+   * localStorage에서 진행도 불러오기
+   * clearedStages 배열이 있으면 이전에 플레이한 적 있는 것
+   */
+  _loadProgress() {
+    try {
+      const data = JSON.parse(localStorage.getItem('ruvin_dino_progress'));
+      if (data && data.clearedStages) {
+        return { clearedStages: data.clearedStages };
+      }
+    } catch {
+      // 파싱 실패
+    }
+    return { clearedStages: [] };
   }
 
   /** 화면 크기 변경 대응 */
