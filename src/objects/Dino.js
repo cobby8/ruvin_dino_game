@@ -61,17 +61,14 @@ export class Dino extends Phaser.Physics.Arcade.Sprite {
     // (월드 하단 경계와 ground가 동시에 blocked.down을 true로 만들어 간섭 발생)
     this.body.setBounce(0);
 
-    // 실제 그래픽 기반 판정 (그래픽이 닿으면 데미지)
-    // 이미지 텍스처는 원본 크기(516x512) 기준으로 body를 설정해야 함
-    // (setScale이 적용되면 body도 자동으로 스케일됨)
+    // 실제 보이는 그래픽에 맞춘 히트박스 (PNG 투명 영역 제외)
+    // 공룡 그림이 프레임 중앙~하단에 약 55%x65% 차지
     if (this.useImage) {
-      // 이미지 기준: 원본 크기의 80%/85% 비율로 히트박스 설정
-      this.body.setSize(516 * 0.8, 512 * 0.85);
-      this.body.setOffset(516 * 0.1, 512 * 0.15);
+      this.body.setSize(516 * 0.55, 512 * 0.65);
+      this.body.setOffset(516 * 0.225, 512 * 0.35);
     } else {
-      // Graphics 기준: 96px
-      this.body.setSize(GAME.DINO_SIZE * 0.8, GAME.DINO_SIZE * 0.85);
-      this.body.setOffset(GAME.DINO_SIZE * 0.1, GAME.DINO_SIZE * 0.15);
+      this.body.setSize(GAME.DINO_SIZE * 0.55, GAME.DINO_SIZE * 0.65);
+      this.body.setOffset(GAME.DINO_SIZE * 0.225, GAME.DINO_SIZE * 0.35);
     }
 
     // 달리기 애니메이션 시작
@@ -297,16 +294,15 @@ export class Dino extends Phaser.Physics.Arcade.Sprite {
 
     this.isSliding = true;
 
-    // 슬라이드 히트박스도 그래픽 기반으로 확대 (scaleY는 건드리지 않음! 바닥뚫기 방지)
+    // 슬라이드 히트박스 (납작하게 엎드린 그래픽에 맞춤)
     if (this.useImage) {
-      // 이미지 기준: 원본 크기로 히트박스 설정 (스케일은 자동 적용됨)
-      const slideHeight = 512 * 0.35;
-      this.body.setSize(516 * 0.85, slideHeight);
-      this.body.setOffset(516 * 0.075, 512 - slideHeight);
+      const slideHeight = 512 * 0.3;
+      this.body.setSize(516 * 0.6, slideHeight);
+      this.body.setOffset(516 * 0.2, 512 - slideHeight);
     } else {
-      const slideHeight = GAME.DINO_SIZE * 0.35;
-      this.body.setSize(GAME.DINO_SIZE * 0.85, slideHeight);
-      this.body.setOffset(GAME.DINO_SIZE * 0.075, GAME.DINO_SIZE - slideHeight);
+      const slideHeight = GAME.DINO_SIZE * 0.3;
+      this.body.setSize(GAME.DINO_SIZE * 0.6, slideHeight);
+      this.body.setOffset(GAME.DINO_SIZE * 0.2, GAME.DINO_SIZE - slideHeight);
     }
 
     // 슬라이드 애니메이션 재생 (납작한 포즈 - scaleY 변경 없이 애니메이션으로 표현)
@@ -328,13 +324,13 @@ export class Dino extends Phaser.Physics.Arcade.Sprite {
     if (!this.isSliding) return;
     this.isSliding = false;
 
-    // 히트박스 원래대로 복원 (실제 그래픽 기반 판정)
+    // 히트박스 원래대로 복원 (실제 보이는 그래픽에 맞춤)
     if (this.useImage) {
-      this.body.setSize(516 * 0.8, 512 * 0.85);
-      this.body.setOffset(516 * 0.1, 512 * 0.15);
+      this.body.setSize(516 * 0.55, 512 * 0.65);
+      this.body.setOffset(516 * 0.225, 512 * 0.35);
     } else {
-      this.body.setSize(GAME.DINO_SIZE * 0.8, GAME.DINO_SIZE * 0.85);
-      this.body.setOffset(GAME.DINO_SIZE * 0.1, GAME.DINO_SIZE * 0.15);
+      this.body.setSize(GAME.DINO_SIZE * 0.55, GAME.DINO_SIZE * 0.65);
+      this.body.setOffset(GAME.DINO_SIZE * 0.225, GAME.DINO_SIZE * 0.35);
     }
 
     // 타이머 정리

@@ -668,11 +668,11 @@ export class ObstacleManager {
     obstacle.body.setImmovable(true);
     obstacle.scored = false;
 
-    // 실제 그래픽 기반 판정 (그래픽이 닿으면 데미지)
-    const bodyW = obstacle.width * 0.9;
-    const bodyH = obstacle.height * 0.9;
+    // 실제 보이는 그래픽에 맞춘 히트박스 (PNG 투명 영역 제외)
+    const bodyW = obstacle.width * 0.65;
+    const bodyH = obstacle.height * 0.75;
     obstacle.body.setSize(bodyW, bodyH);
-    obstacle.body.setOffset((obstacle.width - bodyW) / 2, (obstacle.height - bodyH) * 0.5);
+    obstacle.body.setOffset((obstacle.width - bodyW) / 2, (obstacle.height - bodyH) * 0.6);
 
     return obstacle;
   }
