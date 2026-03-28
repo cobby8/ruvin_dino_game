@@ -14,6 +14,12 @@
 - **내용**: Phaser의 group.getChildren().forEach 안에서 _onStageClear() 같은 씬 전환 함수를 호출하면, forEach가 끝나지 않아 나머지 반복에서 점수 추가 + 중복 씬 전환이 발생할 수 있음. for + break로 교체하거나, 함수 시작에 중복 호출 방지 가드(if (this.isStageClear) return)를 추가해야 함.
 - **참조횟수**: 0
 
+### [2026-03-28] Phaser 스크롤 컨테이너 내 버튼 클릭과 드래그 스크롤 충돌
+- **분류**: error
+- **발견자**: debugger
+- **내용**: scrollContainer 안의 interactive 오브젝트에 pointerdown으로 클릭 이벤트를 걸고, 동시에 씬 전체 input에 pointerdown으로 드래그 스크롤을 걸면 충돌 발생. 손가락이 조금만 움직여도 드래그로 인식되어 클릭이 작동하지 않음. 해결: 버튼 이벤트를 pointerup으로 변경하고, pointerdown 시작 위치와 pointerup 위치의 차이가 5px 미만이면 클릭으로 판정하는 _wasDragging 플래그를 사용.
+- **참조횟수**: 0
+
 ### [2026-03-28] Phaser setCollideWorldBounds + ground collider 간섭
 - **분류**: error
 - **발견자**: debugger

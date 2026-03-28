@@ -328,7 +328,12 @@ export class WorldMapScene extends Phaser.Scene {
         hitArea.setInteractive({ useHandCursor: true });
         this.scrollContainer.add(hitArea);
 
-        hitArea.on('pointerdown', () => {
+        // pointerup에서 드래그 여부를 확인한 후 클릭 처리
+        // (드래그 스크롤과 클릭 충돌 방지)
+        hitArea.on('pointerup', () => {
+          // 드래그 중이었으면 클릭 무시
+          if (this._wasDragging) return;
+
           soundGenerator.playSelect();
 
           // 선택 시 확대 + 반짝이 효과
@@ -412,13 +417,17 @@ export class WorldMapScene extends Phaser.Scene {
     bottomBg.setDepth(50);
 
     const btnY = height - height * 0.06;
-    const btnW = Math.min(width * 0.36, 140);
+    const btnW = Math.min(width * 0.28, 110);
     const btnH = Math.min(height * 0.06, 42);
-    const gap = Math.min(width * 0.04, 20);
+    const gap = Math.min(width * 0.02, 10);
+
+    // 3개 버튼 균등 배치: 공룡 바꾸기 | 난이도 변경 | 처음부터
+    const totalW = btnW * 3 + gap * 2;
+    const startX = (width - totalW) / 2 + btnW / 2;
 
     // "공룡 바꾸기" 버튼
     this._createPrettyButton(
-      width / 2 - btnW / 2 - gap, btnY,
+      startX, btnY,
       '공룡 바꾸기', btnW, btnH,
       0x9B72CF,
       () => {
@@ -429,7 +438,7 @@ export class WorldMapScene extends Phaser.Scene {
 
     // "난이도 변경" 버튼
     this._createPrettyButton(
-      width / 2 + btnW / 2 + gap, btnY,
+      startX + btnW + gap, btnY,
       '난이도 변경', btnW, btnH,
       0x4EAEFF,
       () => {
@@ -437,6 +446,112 @@ export class WorldMapScene extends Phaser.Scene {
         this.scene.start('DifficultyScene');
       }
     );
+
+    // "처음부터" 버튼
+    this._createPrettyButton(
+      startX + (btnW + gap) * 2, btnY,
+      '처음부터', btnW, btnH,
+      0xE55B5B,
+      () => {
+        soundGenerator.playSelect();
+        this._showResetConfirm(width, height);
+      }
+    );
+  }
+
+  /**
+   * "처음부터" 확인 다이얼로그
+   * 실수로 누르는 것을 방지하기 위해 확인 메시지 표시
+   */
+  _showResetConfirm(width, height) {
+    // 반투명 오버레이
+    const overlay = this.add.graphics();
+    overlay.fillStyle(0x000000, 0.6);
+    overlay.fillRect(0, 0, width, height);
+    overlay.setDepth(200);
+    overlay.setInteractive(new Phaser.Geom.Rectangle(0, 0, width, height), Phaser.Geom.Rectangle.Contains);
+
+    // 다이얼로그 박스
+    const dlgW = Math.min(width * 0.75, 300);
+    const dlgH = 160;
+    const dlgX = (width - dlgW) / 2;
+    const dlgY = (height - dlgH) / 2;
+
+    const dlgBg = this.add.graphics();
+    dlgBg.fillStyle(0xFFF8E8, 1);
+    dlgBg.fillRoundedRect(dlgX, dlgY, dlgW, dlgH, 16);
+    dlgBg.lineStyle(3, 0xE55B5B, 1);
+    dlgBg.strokeRoundedRect(dlgX, dlgY, dlgW, dlgH, 16);
+    dlgBg.setDepth(201);
+
+    // 메시지
+    const msg = this.add.text(width / 2, dlgY + 40, '정말 처음부터 할까요?', {
+      fontFamily: 'Jua, sans-serif',
+      fontSize: '18px',
+      color: '#333333',
+    }).setOrigin(0.5).setDepth(202);
+
+    const subMsg = this.add.text(width / 2, dlgY + 65, '모든 진행 기록이 사라져요!', {
+      fontFamily: 'Jua, sans-serif',
+      fontSize: '13px',
+      color: '#999999',
+    }).setOrigin(0.5).setDepth(202);
+
+    // "네" 버튼
+    const yesBtnW = 90;
+    const yesBtnH = 36;
+    const yesBtnX = width / 2 - 55;
+    const yesBtnY = dlgY + dlgH - 45;
+
+    const yesBg = this.add.graphics();
+    yesBg.fillStyle(0xE55B5B, 1);
+    yesBg.fillRoundedRect(yesBtnX - yesBtnW / 2, yesBtnY - yesBtnH / 2, yesBtnW, yesBtnH, yesBtnH / 2);
+    yesBg.setDepth(202);
+
+    const yesText = this.add.text(yesBtnX, yesBtnY, '네!', {
+      fontFamily: 'Jua, sans-serif',
+      fontSize: '15px',
+      color: '#FFFFFF',
+    }).setOrigin(0.5).setDepth(203);
+
+    const yesHit = this.add.rectangle(yesBtnX, yesBtnY, yesBtnW, yesBtnH, 0x000000, 0);
+    yesHit.setInteractive({ useHandCursor: true }).setDepth(204);
+
+    yesHit.on('pointerdown', () => {
+      localStorage.removeItem('ruvin_dino_progress');
+      this.scene.start('SelectScene');
+    });
+
+    // "아니오" 버튼
+    const noBtnX = width / 2 + 55;
+
+    const noBg = this.add.graphics();
+    noBg.fillStyle(0xAAAAAA, 1);
+    noBg.fillRoundedRect(noBtnX - yesBtnW / 2, yesBtnY - yesBtnH / 2, yesBtnW, yesBtnH, yesBtnH / 2);
+    noBg.setDepth(202);
+
+    const noText = this.add.text(noBtnX, yesBtnY, '아니오', {
+      fontFamily: 'Jua, sans-serif',
+      fontSize: '15px',
+      color: '#FFFFFF',
+    }).setOrigin(0.5).setDepth(203);
+
+    const noHit = this.add.rectangle(noBtnX, yesBtnY, yesBtnW, yesBtnH, 0x000000, 0);
+    noHit.setInteractive({ useHandCursor: true }).setDepth(204);
+
+    noHit.on('pointerdown', () => {
+      // 다이얼로그 닫기
+      overlay.destroy();
+      dlgBg.destroy();
+      msg.destroy();
+      subMsg.destroy();
+      yesBg.destroy();
+      yesText.destroy();
+      yesHit.destroy();
+      noBg.destroy();
+      noText.destroy();
+      noHit.destroy();
+    });
   }
 
   /**
@@ -493,13 +608,23 @@ export class WorldMapScene extends Phaser.Scene {
    * 스크롤 입력 설정 (드래그로 세로 스크롤)
    */
   _setupScroll(screenH) {
-    if (this.maxScrollY <= 0) return; // 스크롤 필요 없으면 설정 안 함
+    // 드래그/클릭 구분용 변수 (스크롤이 없어도 초기화)
+    this._wasDragging = false;
+    this._pointerStartX = 0;
+    this._pointerStartY = 0;
+
+    if (this.maxScrollY <= 0) return; // 스크롤 필요 없으면 스크롤 설정 안 함
 
     this.isDragging = false;
     this.dragStartY = 0;
     this.dragStartScrollY = 0;
 
     this.input.on('pointerdown', (pointer) => {
+      // 드래그 판별을 위해 시작 위치 기록
+      this._pointerStartX = pointer.x;
+      this._pointerStartY = pointer.y;
+      this._wasDragging = false;
+
       // 하단 버튼 영역은 스크롤 무시
       if (pointer.y > screenH * 0.88) return;
       this.isDragging = true;
@@ -510,6 +635,13 @@ export class WorldMapScene extends Phaser.Scene {
     this.input.on('pointermove', (pointer) => {
       if (!this.isDragging) return;
       const dy = this.dragStartY - pointer.y;
+
+      // 이동 거리가 5px 이상이면 드래그로 판정
+      const totalDist = Math.abs(pointer.x - this._pointerStartX) + Math.abs(pointer.y - this._pointerStartY);
+      if (totalDist >= 5) {
+        this._wasDragging = true;
+      }
+
       this.scrollY = Phaser.Math.Clamp(
         this.dragStartScrollY + dy,
         0,
