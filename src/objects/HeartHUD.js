@@ -1,14 +1,12 @@
 /**
  * HeartHUD.js - 하트(HP) 표시 UI
- * 화면 왼쪽 상단에 하트 아이콘을 표시하는 HUD.
+ * 화면 왼쪽 상단 2행에 하트 아이콘을 표시하는 HUD.
  * 빨간 하트 = 남은 체력, 회색 빈 하트 = 잃은 체력.
  *
- * 비유: 젤다의 전설에서 화면 위에 하트가 쭉 나열되는 것과 같은 원리.
- *
- * 기능:
- * - 하트 감소 시: 흔들림 + 빨간→회색 전환 애니메이션
- * - 하트 회복 시: 팡! 커졌다 줄어듦 애니메이션
- * - depth: 10 (UI 레벨, 게임 오브젝트보다 항상 위)
+ * 배치: HUD 2행 좌측 (y=58, x=15부터)
+ * - 하트 크기: 32px (6살이 잘 볼 수 있는 크기)
+ * - 하트 간격: 42px (겹치지 않으면서 콤팩트)
+ * - 프로그레스 바, 별 카운터와 같은 행에 배치 (겹침 없음)
  */
 
 import { GAME } from '../config.js';
@@ -23,12 +21,12 @@ export class HeartHUD {
   constructor(scene, maxHearts, x, y) {
     this.scene = scene;
     this.maxHearts = maxHearts;
-    this.currentHearts = maxHearts; // 시작 시 꽉 참
+    this.currentHearts = maxHearts;
     this.x = x;
     this.y = y;
-    this.heartSize = 28;           // 하트 아이콘 크기 27% 확대 (22→28, 배경과 겹쳐도 잘 보임)
-    this.spacing = 56;             // 하트 간격도 확대 (48→56, 큰 하트에 맞춤)
-    this.hearts = [];              // 하트 Graphics 배열
+    this.heartSize = 32;           // 하트 크기 32px (6살 눈에 잘 보임)
+    this.spacing = 42;             // 하트 간격 42px (겹치지 않으면서 콤팩트)
+    this.hearts = [];
 
     this._createHearts();
   }
@@ -41,9 +39,8 @@ export class HeartHUD {
     for (let i = 0; i < this.maxHearts; i++) {
       const hx = this.x + i * this.spacing;
 
-      // 각 하트마다 독립 Graphics 객체 생성 (개별 애니메이션을 위해)
       const g = this.scene.add.graphics();
-      g.setDepth(100); // UI 레벨 (반투명 배경 패널 depth=99 위에 표시)
+      g.setDepth(100);
       g.setPosition(hx, this.y);
 
       // 빨간 하트 그리기 (초기 상태 = 모두 채워진 하트)
@@ -51,7 +48,7 @@ export class HeartHUD {
 
       this.hearts.push({
         graphics: g,
-        filled: true,  // 채워진 상태인지
+        filled: true,
         x: hx,
         y: this.y,
       });
@@ -63,7 +60,7 @@ export class HeartHUD {
    * @param {Phaser.GameObjects.Graphics} g - Graphics 객체
    * @param {number} cx - 중심 x (로컬 좌표)
    * @param {number} cy - 중심 y (로컬 좌표)
-   * @param {boolean} filled - true=빨간 하트, false=빈 하트(회색 외곽선)
+   * @param {boolean} filled - true=빨간 하트, false=빈 하트(회색)
    */
   _drawHeart(g, cx, cy, filled) {
     g.clear();
@@ -72,12 +69,8 @@ export class HeartHUD {
     if (filled) {
       // 채워진 빨간 하트
       g.fillStyle(0xFF4444, 1);
-
-      // 왼쪽 위 원 (하트의 왼쪽 볼록한 부분)
       g.fillCircle(cx - s * 0.3, cy - s * 0.15, s * 0.45);
-      // 오른쪽 위 원 (하트의 오른쪽 볼록한 부분)
       g.fillCircle(cx + s * 0.3, cy - s * 0.15, s * 0.45);
-      // 아래 삼각형 (하트의 뾰족한 끝)
       g.fillTriangle(
         cx - s * 0.7, cy,
         cx + s * 0.7, cy,
@@ -88,9 +81,8 @@ export class HeartHUD {
       g.fillStyle(0xFFAAAA, 0.6);
       g.fillCircle(cx - s * 0.2, cy - s * 0.3, s * 0.15);
     } else {
-      // 빈 하트 (회색 외곽선만)
+      // 빈 하트 (회색)
       g.fillStyle(0x666666, 0.3);
-
       g.fillCircle(cx - s * 0.3, cy - s * 0.15, s * 0.45);
       g.fillCircle(cx + s * 0.3, cy - s * 0.15, s * 0.45);
       g.fillTriangle(
@@ -115,7 +107,6 @@ export class HeartHUD {
 
     this.currentHearts--;
 
-    // 감소되는 하트의 인덱스 (오른쪽부터 줄어듦)
     const idx = this.currentHearts;
     const heart = this.hearts[idx];
 
@@ -130,14 +121,13 @@ export class HeartHUD {
         yoyo: true,
         repeat: 3,
         onComplete: () => {
-          // 흔들림 끝나면 빈 하트로 교체
           heart.graphics.setPosition(heart.x, heart.y);
           this._drawHeart(heart.graphics, 0, 0, false);
         },
       });
     }
 
-    // 남은 하트들도 잠깐 빨갛게 깜빡 (위험 경고)
+    // 마지막 1개 남으면 깜빡 (위험 경고)
     if (this.currentHearts <= 1 && this.currentHearts > 0) {
       const lastHeart = this.hearts[0];
       this.scene.tweens.add({
@@ -150,13 +140,11 @@ export class HeartHUD {
       });
     }
 
-    // 하트가 0이면 게임오버
     return this.currentHearts <= 0;
   }
 
   /**
    * 하트 1개 회복 (하트 아이템 먹었을 때)
-   * 최대값을 넘지 않음
    */
   heal() {
     if (this.currentHearts >= this.maxHearts) return;

@@ -1,19 +1,19 @@
 /**
  * StageHUD.js - 스테이지 진행 상황을 보여주는 HUD (헤드업 디스플레이)
- * 화면 상단에 현재 월드, 스테이지, 점수/목표, 난이도를 표시
+ * 6살 아이가 쉽게 읽을 수 있도록 2행 레이아웃으로 구성
  *
- * 구성:
- * - 반투명 검정 배경 패널 (어떤 월드 배경에서든 글씨가 잘 보이도록)
- * - 상단 왼쪽: 월드 이름 + 스테이지 번호 (예: "풀밭 나라 1-3")
- * - 상단 중앙: 현재 점수 / 목표 (예: "3 / 10")
- * - 상단 오른쪽: 난이도 별 표시 + 별 카운터 (독립 표시)
- * - 프로그레스 바: 목표까지 진행도 (200x16, 확대)
+ * 레이아웃 (높이 95px, 반투명 배경):
+ * ┌──────────────────────────────────────────────┐
+ * │ 1행: 월드명 + 스테이지 번호          ⏸ 일시정지 │
+ * │ 2행: ❤️❤️❤️   ═══ 0/50 ═══        ⭐ 0     │
+ * └──────────────────────────────────────────────┘
+ *
+ * 제거된 요소 (겹침 방지):
+ * - 스테이지 부제목 ("첫걸음") → 제거
+ * - 난이도 이름 ("씩씩한공룡") → 제거 (DifficultyScene에서 이미 선택)
+ * - 난이도 별 (★★★) → 제거 (중복 정보)
  */
 
-/**
- * StageHUD 클래스
- * GameScene에서 생성하여 스테이지 정보를 화면에 표시
- */
 export class StageHUD {
   /**
    * @param {Phaser.Scene} scene - 게임 씬
@@ -27,84 +27,41 @@ export class StageHUD {
     this.targetScore = targetScore;
     const { width } = scene.scale;
 
-    // === 반투명 배경 패널 (TV 자막 배경처럼, 어떤 월드 배경에서든 글씨가 잘 보임) ===
-    // depth=99: HUD 텍스트(100)보다 1단계 아래, 게임 오브젝트보다 위
+    // === 반투명 배경 패널 (높이 95px로 확대 - 2행이 들어갈 공간 확보) ===
     this.bgPanel = scene.add.graphics();
     this.bgPanel.setDepth(99);
-    this.bgPanel.fillStyle(0x000000, 0.3);
-    this.bgPanel.fillRect(0, 0, width, 80);
+    this.bgPanel.fillStyle(0x000000, 0.35);
+    this.bgPanel.fillRect(0, 0, width, 95);
 
-    // 깊이를 높게 설정해서 항상 맨 위에 표시 (depth: 100)
     const depth = 100;
 
-    // === 1줄 좌측: 월드명 + 스테이지 (폰트 28px, 확대) ===
+    // === 1행 (y=12): 월드명 + 스테이지 번호 (fontSize 24px, 6살이 읽을 수 있는 크기) ===
     const stageInWorld = ((stageData.id - 1) % 5) + 1;
     const worldLabel = `${worldData.emoji} ${worldData.name} ${worldData.id}-${stageInWorld}`;
 
-    this.worldText = scene.add.text(15, 10, worldLabel, {
+    this.worldText = scene.add.text(15, 12, worldLabel, {
       fontFamily: 'Jua, sans-serif',
-      fontSize: '28px',
+      fontSize: '24px',
       color: '#FFFFFF',
       stroke: '#333333',
       strokeThickness: 3,
     }).setOrigin(0, 0).setDepth(depth);
 
-    // === 스테이지 이름 (월드명 오른쪽에 작게 표시) ===
-    this.stageNameText = scene.add.text(15, 42, `"${stageData.name}"`, {
-      fontFamily: 'Jua, sans-serif',
-      fontSize: '16px',
-      color: '#FFE066',
-      stroke: '#333333',
-      strokeThickness: 2,
-    }).setOrigin(0, 0).setDepth(depth);
-
-    // === 1줄 중앙: 클리어 점수 (폰트 32px, 확대) ===
-    this.scoreText = scene.add.text(width / 2, 10, `0 / ${targetScore}`, {
-      fontFamily: 'Jua, sans-serif',
-      fontSize: '32px',
-      color: '#FFFFFF',
-      stroke: '#333333',
-      strokeThickness: 4,
-    }).setOrigin(0.5, 0).setDepth(depth);
-
-    // === 1줄 우측: 난이도 별 표시 (난이도만 표시, 별 카운터는 분리) ===
-    const stars = '⭐'.repeat(difficulty.stars);
-    this.difficultyText = scene.add.text(width - 15, 8, stars, {
-      fontFamily: 'Jua, sans-serif',
-      fontSize: '24px',
-      color: '#FFD700',
-      stroke: '#333333',
-      strokeThickness: 2,
-    }).setOrigin(1, 0).setDepth(depth);
-
-    // 난이도 이름 (별 아래)
-    this.diffNameText = scene.add.text(width - 15, 36, difficulty.name, {
-      fontFamily: 'Jua, sans-serif',
-      fontSize: '16px',
-      color: '#CCCCCC',
-      stroke: '#333333',
-      strokeThickness: 1,
-    }).setOrigin(1, 0).setDepth(depth);
-
-    // === 별 카운터 독립 표시 (난이도 텍스트에서 분리, 더 크고 눈에 띄게) ===
-    // 별 아이콘 + 큰 숫자로 독립 표시 ("⭐ 0" 형태)
-    this.starCountText = scene.add.text(width - 15, 56, '⭐ 0', {
-      fontFamily: 'Jua, sans-serif',
-      fontSize: '20px',
-      color: '#FFD700',
-      stroke: '#333333',
-      strokeThickness: 2,
-    }).setOrigin(1, 0).setDepth(depth);
-
-    // === 2줄 중앙: 프로그레스 바 (확대: 160x12 -> 200x16) ===
-    const barWidth = 200;
-    const barHeight = 16;
+    // === 2행 중앙: 프로그레스 바 + 점수 텍스트 (y=55~75) ===
+    // 바 크기를 키우고 흰 테두리를 추가해서 배경과 구분
+    const barWidth = 180;
+    const barHeight = 18;
     const barX = width / 2 - barWidth / 2;
-    const barY = 48;
+    const barY = 58;
+
+    // 바 외곽 테두리 (흰색, 배경과 확실히 구분)
+    this.barBorder = scene.add.graphics().setDepth(depth);
+    this.barBorder.lineStyle(2, 0xFFFFFF, 0.8);
+    this.barBorder.strokeRoundedRect(barX - 1, barY - 1, barWidth + 2, barHeight + 2, 5);
 
     // 바 배경 (어두운 반투명)
     this.barBg = scene.add.graphics().setDepth(depth);
-    this.barBg.fillStyle(0x000000, 0.3);
+    this.barBg.fillStyle(0x000000, 0.4);
     this.barBg.fillRoundedRect(barX, barY, barWidth, barHeight, 4);
 
     // 바 채움 (밝은 초록)
@@ -114,23 +71,39 @@ export class StageHUD {
     this.barWidth = barWidth;
     this.barHeight = barHeight;
 
+    // 프로그레스 바 위에 점수 텍스트 (바 중앙에 겹쳐서 표시)
+    this.scoreText = scene.add.text(width / 2, barY + barHeight / 2, `0 / ${targetScore}`, {
+      fontFamily: 'Jua, sans-serif',
+      fontSize: '14px',
+      color: '#FFFFFF',
+      stroke: '#000000',
+      strokeThickness: 3,
+    }).setOrigin(0.5, 0.5).setDepth(depth + 1);
+
+    // === 2행 우측: 별 카운터 (큰 아이콘 + 숫자, y=60) ===
+    this.starCountText = scene.add.text(width - 15, 60, '⭐ 0', {
+      fontFamily: 'Jua, sans-serif',
+      fontSize: '22px',
+      color: '#FFD700',
+      stroke: '#333333',
+      strokeThickness: 3,
+    }).setOrigin(1, 0).setDepth(depth);
+
     // 초기 상태 (0%)
     this._drawProgressBar(0);
   }
 
   /**
-   * 점수 업데이트 → 텍스트 + 프로그레스 바 갱신
+   * 점수 업데이트 -> 텍스트 + 프로그레스 바 갱신
    * @param {number} current - 현재 점수
    */
   updateScore(current) {
-    // 텍스트 업데이트
     this.scoreText.setText(`${current} / ${this.targetScore}`);
 
-    // 프로그레스 바 업데이트
     const progress = Math.min(current / this.targetScore, 1);
     this._drawProgressBar(progress);
 
-    // 점수 텍스트 바운스 효과
+    // 점수 텍스트 바운스 효과 (아이가 좋아하는 통통 튀는 느낌)
     this.scene.tweens.add({
       targets: this.scoreText,
       scaleX: 1.2,
@@ -148,8 +121,8 @@ export class StageHUD {
     this.barFill.clear();
     if (progress <= 0) return;
 
-    // 진행도에 따라 색상 변화 (초록 → 금색 when 완료)
-    const color = progress >= 1 ? 0xFFD700 : 0x66CC77; // 완료 시 금색
+    // 진행도에 따라 색상 변화 (초록 -> 금색 when 완료)
+    const color = progress >= 1 ? 0xFFD700 : 0x66CC77;
     this.barFill.fillStyle(color);
     this.barFill.fillRoundedRect(
       this.barX, this.barY,
@@ -159,21 +132,21 @@ export class StageHUD {
   }
 
   /**
-   * 별 수집 수 업데이트 (독립 별 카운터)
+   * 별 수집 수 업데이트
    * @param {number} starCount - 현재 별 수집 수
    */
   updateStarCount(starCount) {
-    // 별 카운터를 독립 텍스트로 업데이트 (난이도 텍스트와 분리됨)
     this.starCountText.setText(`⭐ ${starCount}`);
   }
 
   /**
-   * 목표 달성 시 호출 → 축하 효과
+   * 목표 달성 시 호출 -> 축하 효과
    */
   showClear() {
     this.scoreText.setColor('#FFD700');
     this.scoreText.setStroke('#FF6B00', 4);
     this.scoreText.setText('클리어!');
+    this.scoreText.setFontSize(22);
 
     this.scene.tweens.add({
       targets: this.scoreText,

@@ -107,10 +107,10 @@ export class GameScene extends Phaser.Scene {
       this
     );
 
-    // === [P1] 하트 HUD 생성 (화면 왼쪽 상단) ===
+    // === [P1] 하트 HUD 생성 (2행 좌측, 프로그레스바/별과 같은 행) ===
     const maxHearts = this.difficulty.maxHearts || 3;
-    // 하트 위치: y=72 (반투명 배경 패널 안에 들어가도록 조정)
-    this.heartHUD = new HeartHUD(this, maxHearts, 20, 72);
+    // 하트 위치: y=58 (HUD 2행에 배치, 1행 월드명과 겹치지 않음)
+    this.heartHUD = new HeartHUD(this, maxHearts, 15, 58);
     this.hitCount = 0; // 이번 스테이지에서 피격 횟수 (통계용)
 
     // === [P2] 적 캐릭터 매니저 (월드별 적 스폰) ===
@@ -1353,11 +1353,11 @@ export class GameScene extends Phaser.Scene {
 
     // [P3-Pause] 일시정지 버튼 위치도 재조정
     if (this._pauseBtnHitArea) {
-      this._pauseBtnHitArea.setPosition(width - 40, 40);
+      this._pauseBtnHitArea.setPosition(width - 30, 24);
     }
     if (this._pauseBtnGraphics) {
       this._pauseBtnGraphics.clear();
-      this._drawPauseIcon(this._pauseBtnGraphics, width - 40, 40);
+      this._drawPauseIcon(this._pauseBtnGraphics, width - 30, 24);
     }
   }
 
@@ -1368,8 +1368,8 @@ export class GameScene extends Phaser.Scene {
    */
   _createPauseButton() {
     const { width } = this.scale;
-    const btnX = width - 40;  // 우상단
-    const btnY = 40;
+    const btnX = width - 30;  // 우상단 (별 카운터와 겹치지 않게 조정)
+    const btnY = 24;          // 1행 높이에 맞춤 (y=24, 월드명과 같은 행)
 
     // || 아이콘을 Graphics로 그림
     this._pauseBtnGraphics = this.add.graphics();
