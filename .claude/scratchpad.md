@@ -90,6 +90,27 @@ reviewer 참고:
 - tileSprite 이음새: AI 생성 이미지라 좌우 끝이 매끄럽지 않을 수 있으나, 0.15배속이라 눈에 잘 안 띔
 - GameScene.js는 수정 불필요 (이미 background.update(speed, delta) 호출 중)
 
+### 반투명 바닥 레이어 구현 (2026-03-28)
+
+📝 구현한 기능: AI 배경 이미지 위에 반투명 바닥(grass) + 경계선 + 땅속 영역을 겹쳐 바닥 위치 명확히 표시
+
+| 파일 경로 | 변경 내용 | 신규/수정 |
+|----------|----------|----------|
+| src/objects/Background.js | constructor: grass setVisible(true)+setAlpha(0.7), groundLine 추가, belowGround 추가 | 수정 |
+| src/objects/Background.js | setWorld(): AI 이미지 월드에서 grass 보이기+반투명 처리 | 수정 |
+| src/objects/Background.js | resize(): groundLine, belowGround 위치/크기 업데이트 추가 | 수정 |
+
+💡 tester 참고:
+- 테스트 방법: 게임 실행 후 바닥 영역이 반투명하게 보이는지 확인
+- 정상 동작: AI 배경 위에 바닥 텍스처가 70% 불투명도로 겹쳐 보임
+- 바닥 상단에 흰색 얇은 경계선이 보이는지 확인
+- 바닥 아래(화면 하단)가 약간 어둡게 처리되는지 확인
+- 화면 리사이즈 시 경계선/바닥 아래 영역도 정상 대응하는지 확인
+
+⚠️ reviewer 참고:
+- alpha 0.7이 시각적으로 적절한지 실플레이 확인 필요 (너무 진하거나 투명할 수 있음)
+- groundLine depth=4로 바닥(3)과 장애물(5) 사이에 배치됨
+
 ## 기획설계 (planner-architect)
 
 ### 배경 스크롤링 시스템 설계 (2026-03-28)

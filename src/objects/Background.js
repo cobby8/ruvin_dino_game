@@ -384,8 +384,25 @@ export class Background {
       this.sky.setVisible(false);
       this.clouds.setVisible(false);
       this.mountains.setVisible(false);
-      // 바닥(grass)은 유지: 게임 바닥 표시에 필요
-      this.grass.setVisible(false);
+      // 바닥(grass)은 반투명으로 표시: AI 배경 위에 바닥 위치를 시각적으로 보여줌
+      this.grass.setVisible(true);
+      this.grass.setAlpha(0.7);  // 반투명 → AI 배경이 살짝 비쳐서 자연스러움
+    }
+
+    // 바닥 경계선: 바닥 상단에 얇은 밝은 선을 그어 바닥과 배경의 경계를 명확하게 표시
+    this.groundLine = scene.add.rectangle(width / 2, groundY, width, 3, 0xFFFFFF, 0.4);
+    this.groundLine.setDepth(4);        // 바닥(depth 3) 위, 장애물(depth 5) 아래
+    this.groundLine.setOrigin(0.5, 0.5);
+
+    // 바닥 아래 영역: 어두운 반투명 사각형으로 "땅속" 느낌 연출
+    const belowGroundH = height - groundY - 40; // grass 높이(40px) 제외
+    if (belowGroundH > 0) {
+      this.belowGround = scene.add.rectangle(
+        width / 2, groundY + 40 + belowGroundH / 2,
+        width, belowGroundH,
+        0x000000, 0.3
+      );
+      this.belowGround.setDepth(3);     // 바닥과 같은 depth
     }
   }
 
@@ -427,11 +444,13 @@ export class Background {
         // 이전 월드에 이미지가 없었으면 새로 생성
         this._setupBgImage(worldId, width, height);
       }
-      // 패럴랙스 레이어 숨김
+      // 패럴랙스 레이어 숨김 (하늘/구름/산은 AI 이미지가 대체)
       this.sky.setVisible(false);
       this.clouds.setVisible(false);
       this.mountains.setVisible(false);
-      this.grass.setVisible(false);
+      // 바닥(grass)은 반투명으로 유지: 바닥 위치 시각적 표시
+      this.grass.setVisible(true);
+      this.grass.setAlpha(0.7);
     } else {
       // AI 이미지가 없는 월드 → 기존 Graphics 배경 사용
       if (this.bgImage) {
@@ -497,5 +516,19 @@ export class Background {
     this.mountains.y = groundY - 180;
     this.grass.width = width;
     this.grass.y = groundY;
+
+    // 바닥 경계선 리사이즈: 바닥 상단 위치와 너비 업데이트
+    if (this.groundLine) {
+      this.groundLine.setPosition(width / 2, groundY);
+      this.groundLine.width = width;
+    }
+
+    // 바닥 아래 영역 리사이즈: 화면 높이 변경에 맞춰 크기/위치 재계산
+    if (this.belowGround) {
+      const belowH = height - groundY - 40;
+      this.belowGround.setPosition(width / 2, groundY + 40 + belowH / 2);
+      this.belowGround.width = width;
+      this.belowGround.height = belowH;
+    }
   }
 }
