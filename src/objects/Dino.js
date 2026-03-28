@@ -144,17 +144,16 @@ export class Dino extends Phaser.Physics.Arcade.Sprite {
     // 비행 중에는 점프 불가 (프테라노가 날고 있을 때)
     if (this.isFlying) return;
 
-    // _isJumping으로 바닥/공중 판정 (body.blocked.down은 1프레임 지연될 수 있음!)
-    if (!this._isJumping && this.body.blocked.down) {
-      // 바닥 → 점프!
+    if (this.body.blocked.down) {
+      // 바닥 → 점프! (blocked.down이 true면 확실히 바닥)
       const jumpMulti = this.ability === 'highJump' ? 1.2 : 1.0;
       this.body.setVelocityY(GAME.JUMP.LOW_VELOCITY * jumpMulti);
       this.play(`${this.dinoKey}_jump`);
       soundGenerator.playJump();
 
-      this._isJumping = true;        // 즉시 공중 상태로! (물리 엔진 지연 무시)
+      this._isJumping = true;        // 즉시 공중 상태로 표시
       this.isDoubleJumpUsed = false;  // 2단 점프 사용 가능
-    } else if (this._isJumping && !this.isDoubleJumpUsed) {
+    } else if (!this.isDoubleJumpUsed) {
       // 공중 + 아직 2단 점프 안 씀 → 2단 점프!
       this.doubleJump();
     }
