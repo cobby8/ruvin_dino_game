@@ -397,10 +397,12 @@ export class Background {
     const imgKey = `img_bg_world${worldId}`;
     // 텍스처가 존재하고 기본 '__MISSING' 텍스처가 아닌지 확인
     if (this.scene.textures.exists(imgKey) && imgKey !== '__MISSING') {
-      this.bgImage = this.scene.add.image(width / 2, height / 2, imgKey);
-      this.bgImage.setDisplaySize(width, height); // 화면 크기에 맞춰 늘림
-      this.bgImage.setDepth(-1);                  // 모든 레이어 뒤에
-      this.bgImage.setScrollFactor(0);             // 카메라 따라가지 않음
+      // tileSprite: 벽지처럼 이미지를 가로로 이어붙여서 무한 스크롤 가능
+      // add.image()는 고정이지만, tileSprite는 tilePositionX로 스크롤됨
+      this.bgImage = this.scene.add.tileSprite(0, 0, width, height, imgKey);
+      this.bgImage.setOrigin(0, 0);               // 좌상단 기준 배치
+      this.bgImage.setDepth(-1);                   // 모든 레이어 뒤에
+      this.bgImage.setScrollFactor(0);              // 카메라 따라가지 않음
     }
   }
 
@@ -413,14 +415,14 @@ export class Background {
     this.currentWorldId = worldId;
     const { width, height } = this.scene.scale;
 
-    // AI 배경 이미지 교체
+    // AI 배경 이미지 교체 (tileSprite)
     const imgKey = `img_bg_world${worldId}`;
     if (this.scene.textures.exists(imgKey) && imgKey !== '__MISSING') {
-      // AI 이미지가 있는 월드 → 이미지 배경 사용
+      // AI 이미지가 있는 월드 → tileSprite 배경 사용
       if (this.bgImage) {
-        // 기존 이미지 텍스처만 교체
+        // 기존 tileSprite 텍스처만 교체 + 스크롤 위치 리셋
         this.bgImage.setTexture(imgKey);
-        this.bgImage.setDisplaySize(width, height);
+        this.bgImage.tilePositionX = 0; // 새 월드에서 처음부터 스크롤 시작
       } else {
         // 이전 월드에 이미지가 없었으면 새로 생성
         this._setupBgImage(worldId, width, height);
@@ -459,6 +461,12 @@ export class Background {
     // 경과 시간 누적 (풀밭 흔들림 계산용)
     this._elapsed = (this._elapsed || 0) + delta;
 
+    // AI 배경 이미지 스크롤 (게임 속도의 15% = 먼 풍경이 천천히 흘러가는 느낌)
+    // 자동차 타고 달릴 때 먼 산이 느리게 움직이는 것과 같은 원리
+    if (this.bgImage) {
+      this.bgImage.tilePositionX += speed * 0.15 * dt;
+    }
+
     this.sky.tilePositionX += speed * 0.05 * dt;
     // 구름: 게임 속도의 0.2배로 천천히 스크롤
     this.clouds.tilePositionX += speed * this.cloudSpeed * dt;
@@ -476,10 +484,10 @@ export class Background {
   resize(width, groundY) {
     const height = this.scene.scale.height;
 
-    // AI 배경 이미지 리사이즈
+    // AI 배경 이미지 리사이즈 (tileSprite는 width/height 직접 변경)
     if (this.bgImage) {
-      this.bgImage.setPosition(width / 2, height / 2);
-      this.bgImage.setDisplaySize(width, height);
+      this.bgImage.width = width;
+      this.bgImage.height = height;
     }
 
     this.sky.width = width;

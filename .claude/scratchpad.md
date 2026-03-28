@@ -1,18 +1,16 @@
 # 작업 스크래치패드
 
 ## 현재 작업
-- **요청**: 4가지 개선사항 (점프 버튼 분리, HUD 가시성, 일시정지, 메뉴 고도화)
+- **요청**: 배경 스크롤링 시스템 (패럴랙스 효과로 달리는 느낌 주기)
 - **상태**: 기획설계 완료
 - **현재 담당**: planner-architect -> pm
 
 ## 진행 현황
 | 단계 | 상태 | 담당 |
 |------|------|------|
-| 1. 4가지 개선사항 기획설계 | 완료 | planner-architect |
-| 2. 페이즈1: 점프 버튼 분리 | 구현완료 | developer |
-| 3. 페이즈2: HUD 가시성 개선 | 구현완료 | developer |
-| 4. 페이즈3: 일시정지 기능 | 구현완료 | developer |
-| 5. 페이즈4: 메뉴 고도화 | 구현완료 | developer |
+| 1. 배경 스크롤링 기획설계 | 완료 | planner-architect |
+| 2. Background.js 수정 구현 | 대기 | developer |
+| 3. 빌드 테스트 | 대기 | tester |
 
 ## 작업 로그
 | 날짜 | 작업 | 결과 |
@@ -24,375 +22,133 @@
 | 2026-03-28 | 4가지 개선사항 전체 기획설계 (점프분리+HUD+정지+메뉴) | 설계 완료 |
 | 2026-03-28 | 페이즈1: 점프 버튼 분리 (좌우터치+Z/X키+가이드HUD+튜토리얼갱신) | 빌드 통과 |
 | 2026-03-28 | 페이즈4: 메뉴 고도화 (Select미리보기+Difficulty성장단계+WorldMap좌우스와이프) | 빌드 통과 |
-
-## 테스트 결과 (tester)
-
-### 페이즈1: 점프 버튼 분리 빌드 검증 (2026-03-28)
-
-| 테스트 항목 | 결과 | 비고 |
-|-----------|------|------|
-| npx vite build 프로덕션 빌드 | 통과 | 1.30s, 에러 없음 (chunk 크기 경고만 있음 - 기능 무관) |
-| config.js HIGH_VELOCITY=-790 | 통과 | LOW(-495)의 160% = -792, 반올림 -790 적용 확인 |
-| Dino.js startJump(isHigh) 파라미터 | 통과 | isHigh=true시 HIGH_VELOCITY, false시 LOW_VELOCITY 선택 |
-| Dino.js executeJump() 빈 메서드 | 통과 | 의도적 비움 + 주석 설명 있음, 하위 호환 유지 |
-| GameScene.js 좌우 터치 분할 | 통과 | pointer.x > cameras.main.width / 2 로 판정 |
-| GameScene.js Z키=낮은, X키=높은 점프 | 통과 | keydown-Z, keydown-X 이벤트 등록 확인 |
-| GameScene.js SPACE=높은 점프 | 통과 | 기존 SPACE 키가 startJump(true)로 높은 점프 동작 |
-| GameScene.js executeJump 호출 제거 | 통과 | pointerup, keyup-SPACE에서 주석으로 제거 명시 |
-| GameScene.js JumpGuideHUD import+생성 | 통과 | import 및 create()에서 new JumpGuideHUD(this) 확인 |
-| GameScene.js shutdown() Z/X 키 해제 | 통과 | keydown-Z, keyup-Z, keydown-X, keyup-X off 확인 |
-| JumpGuideHUD.js 파일 존재+문법 | 통과 | 54줄, Phaser import, 좌우 가이드 텍스트, 5초 페이드아웃 |
-| TutorialScene.js 안내 문구 갱신 | 통과 | 슬라이드1=낮은점프(Z키), 슬라이드2=높은점프(X키/SPACE)+2단점프 |
-
-종합: 12개 중 12개 통과 / 0개 실패
+| 2026-03-28 | 배경 스크롤링 기획설계 (AI이미지 tileSprite 교체 + 패럴랙스) | 설계 완료 |
 
 ## 구현 기록 (developer)
 
-### 페이즈1: 점프 버튼 분리 (2026-03-28)
+### 배경 스크롤링 시스템 구현 (2026-03-28)
 
-구현한 기능: 홀드 부스트 방식 -> 좌우 영역 분할 즉시 판정 방식으로 점프 시스템 전면 개편
-
-| 파일 경로 | 변경 내용 | 신규/수정 |
-|----------|----------|----------|
-| src/config.js | HIGH_VELOCITY -700 -> -790 (160% 비율), HOLD_THRESHOLD 레거시 주석 | 수정 |
-| src/objects/Dino.js | startJump(isHigh) 파라미터 추가, executeJump 빈 메서드화, 상단 주석 갱신 | 수정 |
-| src/scenes/GameScene.js | _setupInput() 좌우 터치 분할 + Z/X/SPACE 키 매핑 + import/생성 JumpGuideHUD | 수정 |
-| src/objects/JumpGuideHUD.js | 5초간 좌우 점프 가이드 반투명 UI (톡! 낮은점프 / 쑥! 높은점프) | 신규 |
-| src/scenes/TutorialScene.js | 튜토리얼 슬라이드 안내 문구를 버튼 분리 방식에 맞게 업데이트 | 수정 |
-
-tester 참고:
-- 테스트 방법: 게임 시작 후 화면 왼쪽 터치=낮은 점프, 오른쪽 터치=높은 점프 확인
-- 키보드: Z=낮은, X/SPACE=높은 점프 확인
-- 정상 동작: 높은 점프가 낮은 점프보다 확연히 높아야 함 (160%)
-- 주의: 공중에서는 좌우 구분 없이 2단 점프 발동, 게임 시작 5초간 가이드 표시 확인
-
-reviewer 참고:
-- executeJump()는 하위 호환을 위해 빈 메서드로 유지 (다른 곳에서 호출해도 에러 안남)
-- shutdown()에 Z/X 키보드 이벤트 해제 추가됨
-
-### 페이즈2: HUD 가시성 개선 (2026-03-28)
-
-구현한 기능: HUD 전체 가시성 개선 (반투명 배경 + 하트 확대 + 별 카운터 독립 + 파워업 공룡 추적)
+📝 구현한 기능: AI 배경 이미지를 tileSprite로 교체하여 게임 속도에 비례하는 무한 스크롤 적용
 
 | 파일 경로 | 변경 내용 | 신규/수정 |
 |----------|----------|----------|
-| src/objects/StageHUD.js | 반투명 검정 배경 패널(alpha=0.3, 80px) 추가, 프로그레스 바 200x16 확대, 별 카운터 독립 텍스트로 분리 | 수정 |
-| src/objects/HeartHUD.js | heartSize 22->28, spacing 48->56, depth 10->100 (배경 패널 위) | 수정 |
-| src/objects/PowerUpHUD.js | 우상단 고정 -> 공룡 머리 위 추적(dino.y-60), depth 10->100, 라벨 12px->14px | 수정 |
-| src/scenes/GameScene.js | HeartHUD y=68->72, PowerUpHUD에 dino 참조 전달 | 수정 |
+| src/objects/Background.js | _setupBgImage: add.image() -> add.tileSprite() 교체 | 수정 |
+| src/objects/Background.js | update(): bgImage.tilePositionX 스크롤 추가 (speed * 0.15) | 수정 |
+| src/objects/Background.js | setWorld(): tileSprite 텍스처 교체 + tilePositionX 리셋 | 수정 |
+| src/objects/Background.js | resize(): setPosition+setDisplaySize -> width/height 직접 변경 | 수정 |
 
-tester 참고:
-- 테스트 방법: 게임 시작 후 상단에 반투명 검정 배경이 깔려있는지 확인
-- 정상 동작: 어떤 월드 배경에서든 HUD 텍스트가 잘 보여야 함
-- 하트가 기존보다 크게 표시되어야 함 (27% 확대)
-- 별 카운터가 난이도 별과 분리되어 독립적으로 표시되어야 함
-- 파워업 아이템 획득 시 공룡 머리 위에 파워업 HUD가 따라다녀야 함
-- 주의: 파워업 종료 시 HUD가 정상적으로 사라지는지 확인
+💡 tester 참고:
+- 테스트 방법: 게임을 실행하고 배경이 왼쪽으로 천천히 흘러가는지 확인
+- 정상 동작: 공룡이 달릴 때 AI 배경 이미지가 게임 속도의 15%로 느리게 스크롤됨
+- 월드 전환 시 새 배경이 처음부터 스크롤 시작되는지 확인
+- 화면 리사이즈 시 배경이 정상적으로 채워지는지 확인
 
-reviewer 참고:
-- StageHUD 배경 패널 depth=99, HUD 텍스트/하트 depth=100으로 레이어 분리
-- PowerUpHUD._update()에서 50ms마다 공룡 위치를 추적하여 graphics를 매번 다시 그림
-
-### 페이즈3: 게임 일시정지(Pause) 기능 (2026-03-28)
-
-구현한 기능: ESC/P키 또는 우상단 버튼으로 게임 일시정지, 계속/다시/나가기 메뉴
-
-| 파일 경로 | 변경 내용 | 신규/수정 |
-|----------|----------|----------|
-| src/scenes/PauseScene.js | 반투명 오버레이 씬 (어두운 배경 + || 아이콘 + 버튼 3개: 계속/다시/나가기) | 신규 |
-| src/scenes/GameScene.js | 우상단 || 일시정지 버튼(Graphics) + ESC/P키 이벤트 + _pauseGame() + shutdown 정리 | 수정 |
-| src/main.js | PauseScene import + scene 배열에 등록 | 수정 |
-
-tester 참고:
-- 테스트 방법: 게임 중 ESC키, P키, 또는 우상단 || 버튼 클릭으로 일시정지 진입
-- 정상 동작: 게임이 완전히 멈추고 (공룡/장애물 정지) 반투명 어두운 배경에 메뉴 3개 표시
-- "계속하기" 클릭 시 게임 재개, "다시하기" 시 현재 스테이지 처음부터, "나가기" 시 월드맵으로
-- 주의: 게임오버/클리어 상태에서는 일시정지가 동작하지 않아야 함
-- PauseScene에서도 ESC/P 키로 "계속하기" 가능
-
-reviewer 참고:
-- PauseScene은 launch()로 GameScene 위에 오버레이 실행 (start가 아님)
-- "다시하기"/"나가기"는 registry 기반이므로 별도 데이터 전달 없이 scene.start로 처리
-- 일시정지 버튼 depth=101 (StageHUD 배경 99, HUD 텍스트 100 위)
-
-### 페이즈4: 메뉴 고도화 (3개 씬 수정) (2026-03-28)
-
-구현한 기능: SelectScene/DifficultyScene/WorldMapScene 전면 UI 개선
-
-| 파일 경로 | 변경 내용 | 신규/수정 |
-|----------|----------|----------|
-| src/scenes/SelectScene.js | 카드 선택 시 가운데 달리기 미리보기 + 능력 설명 확대 + 한 줄 쉬운 설명 + 금테두리 강조 | 수정 |
-| src/scenes/DifficultyScene.js | 난이도별 카드 크기 차이(성장단계) + 이모지 크기 변화 + 설명 확대 + 금테두리 글로우 | 수정 |
-| src/scenes/WorldMapScene.js | 세로 스크롤 -> 좌우 스와이프 + 포커스 모드(현재 월드 크게) + 화살표 네비게이션 + 월드 인디케이터 | 수정 |
-
-tester 참고:
-- SelectScene: 공룡 카드 클릭 시 하단에 반투명 박스 안에 큰 공룡 달리기 애니메이션 + "이 공룡은 높이 뛸 수 있어요!" 같은 설명 표시 확인
-- DifficultyScene: 5개 카드가 위에서 아래로 점점 커지는 "성장 단계" 느낌인지 확인 (아기공룡=작고, 전설의공룡=크게)
-- WorldMapScene: 좌우 스와이프 또는 화살표 클릭으로 월드 전환, 현재 월드가 크게 표시되고 스테이지 버튼 5개 클릭 가능
-- 주의: 각 씬에서 다음 씬으로 전환이 정상 작동하는지 확인 (Select->Difficulty->WorldMap->Game)
-- 주의: WorldMapScene 하단 5개 버튼(상점/업적/공룡/난이도/리셋) 모두 정상 동작하는지
-
-reviewer 참고:
-- SelectScene: DINO_EASY_DESC 상수로 한 줄 설명 관리, 미리보기는 왼쪽에서 슬라이드인 애니메이션
-- DifficultyScene: CARD_SCALE 배열로 난이도별 카드 크기 계수 관리 (0.85~1.1)
-- WorldMapScene: 세로 스크롤(scrollContainer+setupScroll) 완전 제거 -> 좌우 스와이프(setupSwipe) + 화살표(navigateWorld) 방식으로 교체
-- WorldMapScene: _getFirstUnfinishedWorldIndex()로 초기 포커스 월드 자동 결정
+⚠️ reviewer 참고:
+- tileSprite 이음새: AI 생성 이미지라 좌우 끝이 매끄럽지 않을 수 있으나, 0.15배속이라 눈에 잘 안 띔
+- GameScene.js는 수정 불필요 (이미 background.update(speed, delta) 호출 중)
 
 ## 기획설계 (planner-architect)
 
-### 4가지 개선사항 전체 설계 (2026-03-28)
+### 배경 스크롤링 시스템 설계 (2026-03-28)
+
+**목표: 배경이 왼쪽으로 흘러가서 공룡이 달리는 느낌을 주기**
+
+**비유: 자동차 타고 달릴 때 창밖 풍경**
+자동차를 타고 고속도로를 달리면, 먼 산은 거의 안 움직이는 것처럼 보이고,
+길가 가로수는 쌩쌩 지나가잖아요? 이것이 "패럴랙스(시차) 효과"입니다.
+지금 게임은 자동차 안에서 창문 사진을 벽에 붙여놓은 것처럼 배경이 꼼짝도 안 해요.
 
 ---
 
-#### [개선 1] 점프 시스템 개편: 버튼 2개 분리
+**현재 문제 분석:**
 
-**현재 문제 (비유: 에어컨 리모컨)**
-현재는 하나의 버튼으로 "짧게 누르면 송풍, 길게 누르면 냉방"처럼 동작합니다.
-6살 아이에게는 "이 버튼은 송풍, 저 버튼은 냉방"처럼 완전 분리가 더 쉽습니다.
+| 상황 | 현재 동작 | 문제 |
+|------|----------|------|
+| AI 이미지 있는 월드 (6개 전부) | `add.image()`로 고정 배치 | 배경이 1px도 안 움직임 |
+| 코드 생성 배경 (AI 없을 때 대비) | `tileSprite`로 패럴랙스 스크롤 | 정상 동작하지만 AI 있으면 숨겨짐 |
+| update() 호출 시 | `background.update(speed, delta)` | AI 이미지에는 아무 효과 없음 |
 
-**현재 구현 분석:**
-- Dino.js `startJump()`: pointerdown 시 바닥이면 LOW_VELOCITY(-495)로 즉시 점프
-- Dino.js `executeJump()`: pointerup 시 150ms 이상 눌렀으면 HIGH_VELOCITY(-700)로 부스트
-- GameScene.js `_setupInput()`: pointerdown=startJump, pointerup=executeJump 또는 slide
-- 키보드: SPACE=점프, DOWN=슬라이드
-- 터치: 화면 아무 곳 터치=점프, 아래 스와이프(50px+)=슬라이드
-- 2단 점프: 공중에서 startJump() 재호출 시 doubleJump()
+**핵심 원인:** AI 배경 이미지가 `scene.add.image()`(일반 이미지)로 만들어져서 스크롤이 안 됨.
+`tileSprite`(타일 반복 이미지)로 바꿔야 무한 스크롤이 가능함.
 
-**요청 수치: 높은 점프 = 낮은 점프의 160%**
-- 현재 LOW=-495, HIGH=-700 (HIGH/LOW = 141%)
-- 160% 적용: HIGH = -495 x 1.6 = **-792** (반올림 -790)
-- 물리 계산: 최대 높이 = 790^2 / (2x800) = **390px** (현재 306px에서 27% 증가)
-- 체공 시간 = 2x790/800 = **1.975초**
-- 브라키오(x1.2): -948, 최대 562px, 2.37초
+---
 
-**설계안: 화면 좌/우 영역 분할**
+**설계안: AI 배경을 tileSprite로 교체 + 패럴랙스 적용**
 
 ```
-[화면 구조 - 세로 모바일]
-┌────────────────────┐
-│     HUD 영역        │
-│                    │
-│    게임 플레이 영역    │
-│                    │
-├─────────┬──────────┤  <-- 바닥 아래 영역 (투명 터치존)
-│ 낮은점프  │ 높은점프   │
-│  (왼쪽)  │  (오른쪽)  │
-└─────────┴──────────┘
+[레이어 구조 - 뒤에서 앞으로]
+┌──────────────────────────────────────┐
+│ depth -1: AI 배경 이미지 (tileSprite) │ <-- 가장 느리게 (0.15배속)
+│ depth  0: 하늘 그라디언트             │ <-- AI 있으면 숨김
+│ depth  1: 구름/원경                  │ <-- AI 있으면 숨김
+│ depth  2: 산                        │ <-- AI 있으면 숨김
+│ depth  3: 바닥                      │ <-- AI 있으면 숨김
+│ depth  5: 장애물/적                  │
+│ depth  6: 공룡                      │
+│ depth 10+: HUD                     │
+└──────────────────────────────────────┘
 ```
 
-- **왼쪽 절반 터치** = 낮은 점프 (즉시 발동, 누르기만 하면 됨)
-- **오른쪽 절반 터치** = 높은 점프 (즉시 발동, 누르기만 하면 됨)
-- **아래 스와이프** = 기존 슬라이드 유지
-- **공중에서 아무 곳 터치** = 2단 점프 (기존 유지)
-- **키보드**: Z=낮은점프, X=높은점프, DOWN=슬라이드 (SPACE는 높은점프와 동일)
+**방법: add.image() -> add.tileSprite() 교체**
 
-**UI 버튼 표시 (반투명 가이드):**
-- 게임 화면 하단에 반투명 좌우 화살표 아이콘 표시
-- 왼쪽: 작은 위쪽 화살표 + "톡" 글자
-- 오른쪽: 큰 위쪽 화살표 + "쑥" 글자
-- 첫 플레이 시에만 표시, 5초 후 페이드아웃 (또는 튜토리얼에서 안내)
+tileSprite는 "벽지처럼 같은 이미지를 옆으로 계속 이어붙여주는" Phaser 기능입니다.
+매 프레임 `tilePositionX`를 조금씩 늘리면 배경이 왼쪽으로 흘러가는 효과가 생깁니다.
 
-**2단 점프와의 관계:**
-- 바닥: 왼쪽=낮은, 오른쪽=높은
-- 공중: 왼쪽이든 오른쪽이든 = 2단 점프 (공중에서는 구분 불필요)
-- 이유: 2단 점프는 "추가 한번 더"의 의미이므로 높이 구분이 없음
+- AI 배경 이미지를 `tileSprite`로 교체
+- `update()`에서 `bgImage.tilePositionX += speed * 0.15 * dt`
+- 속도 0.15배 = 먼 배경이므로 아주 천천히 움직임 (게임 속도의 15%)
+- 이미지가 가로로 반복되면서 무한 스크롤 효과
 
-**공룡 특수능력 호환성:**
-- 브라키오(highJump): jumpMulti=1.2는 양쪽 모두에 적용됨 (변경 불필요)
-- 프테라노(glide): 하강 중력 감소는 점프 방식과 무관 (변경 불필요)
-- 티라노/트리케라: 점프와 무관 (변경 불필요)
+**이미지 반복 이음새 문제 대응:**
+- 현재 배경 이미지(world1~6.jpg)는 AI 생성이라 좌우 끝이 매끄럽게 이어지지 않을 수 있음
+- 해결 방법 1: 스크롤 속도를 매우 느리게 (0.15배) -> 이음새가 잘 안 보임
+- 해결 방법 2: 이미지 가로 크기가 화면보다 크면 이음새가 화면 밖에서 발생
+- 최악의 경우에도 "고정 배경"보다는 훨씬 나은 체험
+
+---
 
 **수정할 파일:**
 
 | 파일 경로 | 역할 | 신규/수정 |
 |----------|------|----------|
-| src/config.js | HIGH_VELOCITY -700 -> -790 (160% 비율) | 수정 |
-| src/objects/Dino.js | startJump(isHigh) 파라미터 추가, executeJump 홀드 로직 제거 | 수정 |
-| src/scenes/GameScene.js | _setupInput() 좌우 영역 분할 로직 | 수정 |
-| src/objects/JumpGuideHUD.js | 좌우 점프 가이드 UI (반투명 화살표) | **신규** |
+| src/objects/Background.js | _setupBgImage를 tileSprite로 교체 + update에 bgImage 스크롤 추가 + setWorld에서도 tileSprite 교체 | 수정 |
+
+**수정 범위: Background.js 1개 파일만 수정 (매우 작은 작업)**
 
 ---
 
-#### [개선 2] HUD 가시성 개선
+**구체적 변경 내용:**
 
-**현재 HUD 분석:**
+1. `_setupBgImage()` 메서드 (396~405행):
+   - `scene.add.image()` -> `scene.add.tileSprite(0, 0, width, height, imgKey)`
+   - `setOrigin(0, 0)` 설정 (tileSprite는 원점 기준이 다름)
+   - `setDisplaySize` 대신 tileSprite 크기 직접 지정
 
-| HUD | 위치 | 크기 | 문제점 |
-|-----|------|------|--------|
-| StageHUD 월드명 | 좌상단 (15,10) | 28px | 배경과 겹칠 때 안 보임 |
-| StageHUD 점수 | 중상단 | 32px | 괜찮음 |
-| StageHUD 난이도별 | 우상단 (w-15,8) | 24px | 별/카운터가 작음 |
-| HeartHUD | 좌상단 (20,68) | 22px 하트 | 배경색에 따라 안 보임 |
-| PowerUpHUD | 우상단 (w-90,30) | 12px 라벨 | 너무 작고 StageHUD와 겹침 |
-| 프로그레스 바 | 중앙 (y=48) | 160x12 | 얇아서 못 봄 |
+2. `update()` 메서드 (457~471행):
+   - AI 배경 이미지가 있으면 `this.bgImage.tilePositionX += speed * 0.15 * dt` 추가
+   - 기존 패럴랙스 레이어는 그대로 유지 (AI 없을 때 사용)
 
-**설계안:**
+3. `setWorld()` 메서드 (411~449행):
+   - 월드 교체 시 기존 bgImage를 destroy하고 새로 tileSprite 생성
+   - 또는 setTexture()로 텍스처만 교체 (tileSprite도 setTexture 가능)
 
-1. **반투명 배경 패널 추가** (비유: TV 자막 배경처럼)
-   - HUD 전체를 감싸는 반투명 검정 패널 (alpha=0.3)
-   - 높이 약 80px, 상단 전체
-   - 이렇게 하면 어떤 배경이든 글씨가 잘 보임
-
-2. **하트 크기 확대 + 위치 조정**
-   - heartSize: 22 -> 28 (27% 확대)
-   - spacing: 48 -> 56
-   - 위치: y=68 -> y=72 (배경 패널 안에)
-
-3. **별 카운터 독립 표시**
-   - 현재: 난이도 텍스트에 통합 ("별별별 23/100")
-   - 변경: 별 아이콘 + 큰 숫자로 독립 ("별 23" 형태, 24px)
-   - 위치: 하트 오른쪽에 배치
-
-4. **프로그레스 바 확대**
-   - barWidth: 160 -> 200
-   - barHeight: 12 -> 16
-   - 바 양쪽에 현재/목표 숫자 표시
-
-5. **PowerUpHUD 위치 이동**
-   - 현재: 우상단 (StageHUD와 겹침)
-   - 변경: 공룡 머리 위 (dino.x, dino.y - 60)
-   - 공룡을 따라다니므로 항상 눈에 들어옴
-
-**수정할 파일:**
-
-| 파일 경로 | 역할 | 신규/수정 |
-|----------|------|----------|
-| src/objects/StageHUD.js | 반투명 배경 + 프로그레스 바 확대 + 별 카운터 독립 | 수정 |
-| src/objects/HeartHUD.js | 하트 크기 확대 + 위치 조정 | 수정 |
-| src/objects/PowerUpHUD.js | 위치를 공룡 머리 위로 변경 | 수정 |
-| src/scenes/GameScene.js | HUD 초기화 위치값 조정 | 수정 |
+4. `resize()` 메서드 (476~492행):
+   - bgImage가 tileSprite일 때 width/height 재설정 방식 변경
 
 ---
 
-#### [개선 3] 게임 일시정지 (Pause) 기능
+**실행 계획:**
 
-**비유: 영화 보다가 화장실 갈 때 리모컨의 일시정지 버튼**
-
-**Phaser에서 일시정지하는 방법:**
-- `this.scene.pause('GameScene')` = 해당 씬의 update() 호출 중지 + 물리 엔진 정지
-- `this.scene.resume('GameScene')` = 다시 시작
-- 별도의 PauseScene을 GameScene 위에 overlay로 실행하는 방식이 가장 깔끔
-
-**설계안:**
-
-```
-[일시정지 화면 구조]
-┌────────────────────┐
-│    ██████████████   │  <-- 반투명 어두운 오버레이
-│                    │
-│    ⏸ 일시정지       │  <-- 큰 텍스트
-│                    │
-│   [▶ 계속하기]      │  <-- 버튼 1
-│   [🔄 다시하기]     │  <-- 버튼 2
-│   [🏠 나가기]      │  <-- 버튼 3
-│                    │
-└────────────────────┘
-```
-
-**일시정지 진입 방법:**
-- 화면 우상단 일시정지 아이콘 터치 (항상 표시)
-- 키보드 ESC 키
-- 키보드 P 키
-
-**버튼 기능:**
-- "계속하기": scene.resume('GameScene') + PauseScene 종료
-- "다시하기": GameScene 재시작 (현재 스테이지 처음부터)
-- "나가기": WorldMapScene으로 이동 (진행 중 데이터 저장 안 함)
-
-**구현 핵심:**
-- PauseScene은 GameScene 위에 launch()로 실행 (start가 아님!)
-- launch = "덮어서 실행" (아래 씬이 살아있음)
-- start = "교체" (아래 씬이 사라짐)
-
-**수정할 파일:**
-
-| 파일 경로 | 역할 | 신규/수정 |
-|----------|------|----------|
-| src/scenes/PauseScene.js | 일시정지 오버레이 씬 (반투명 배경 + 3개 버튼) | **신규** |
-| src/scenes/GameScene.js | 일시정지 버튼 추가 + ESC/P 키 이벤트 | 수정 |
-| src/main.js | PauseScene 등록 | 수정 |
-
----
-
-#### [개선 4] 메뉴 고도화
-
-**현재 메뉴 흐름 분석:**
-
-```
-BootScene(로딩) -> SelectScene(공룡4종) -> DifficultyScene(난이도5단계)
-  -> TutorialScene(첫회만) -> WorldMapScene(월드맵) -> GameScene
-```
-
-**각 씬 현재 상태 평가:**
-
-| 씬 | 현재 상태 | 개선 포인트 |
-|----|----------|-----------|
-| SelectScene | 2x2 카드, 능력 텍스트 작음 | 카드 크기 확대, 능력 아이콘 추가, 미리보기 애니메이션 |
-| DifficultyScene | 5개 세로 카드 | 설명이 짧음, 각 난이도 차이 시각화 부족 |
-| WorldMapScene | 6개 월드 카드+스테이지 버튼 | 스크롤이 필요하여 전체 파악 어려움 |
-
-**설계안:**
-
-A. **SelectScene 개선**
-- 카드 선택 시 공룡이 가운데서 달리기 애니메이션 (미리보기)
-- 능력 설명을 아이콘+큰 텍스트로 변경
-- "이 공룡은 높이 뛸 수 있어요!" 같은 한 줄 설명 추가
-
-B. **DifficultyScene 개선**
-- 각 난이도별 아이콘 크게 표시 (알, 아기공룡, 꼬마공룡 등 성장 단계)
-- 현재 진행도 표시 ("이 난이도로 3스테이지까지 클리어했어요")
-- 하단에 "자유 모드" 버튼 추가 (스테이지 없이 무한 러닝)
-
-C. **WorldMapScene 개선**
-- 현재 월드를 크게, 나머지는 작게 (포커스 모드)
-- 좌우 스와이프로 월드 전환 (현재는 세로 스크롤)
-- 각 월드 카드에 배경 이미지 미리보기 추가
-
-**수정할 파일:**
-
-| 파일 경로 | 역할 | 신규/수정 |
-|----------|------|----------|
-| src/scenes/SelectScene.js | 카드 확대 + 미리보기 + 능력 강조 | 수정 |
-| src/scenes/DifficultyScene.js | 아이콘 + 진행도 + 자유모드 버튼 | 수정 |
-| src/scenes/WorldMapScene.js | 좌우 스와이프 + 포커스 모드 | 수정 |
-
----
-
-### 전체 로드맵 (우선순위 + 의존관계)
-
-**페이즈 분배 기준:** 독립적이고 체감이 큰 것 먼저
-
-| 페이즈 | 작업 | 파일 수 | 예상 시간 | 의존관계 |
-|--------|------|--------|----------|---------|
-| **P1** | 점프 버튼 분리 | 4 (신규1+수정3) | 15분 | 없음 |
-| **P2** | HUD 가시성 개선 | 4 (수정4) | 15분 | 없음 |
-| **P3** | 일시정지 기능 | 3 (신규1+수정2) | 10분 | 없음 |
-| **P4** | 메뉴 고도화 | 3 (수정3) | 20분 | 없음 |
-
-P1~P3은 서로 독립적이므로 병렬 가능하지만, 한 번에 하나씩 진행 권장.
-P4는 게임플레이와 무관하므로 가장 나중에.
-
-### 실행 계획
-
-| 순서 | 작업 | 담당 | 선행 조건 | 수정 파일 |
-|------|------|------|----------|----------|
-| 1 | config.js HIGH_VELOCITY 변경 (-700 -> -790) | developer | 없음 | config.js |
-| 2 | Dino.js startJump(isHigh) 분기 + executeJump 홀드 제거 | developer | 1 | Dino.js |
-| 3 | GameScene.js 좌우 터치 분할 + 키보드 Z/X 매핑 | developer | 2 | GameScene.js |
-| 4 | JumpGuideHUD.js 신규 생성 (반투명 가이드) | developer | 3 | JumpGuideHUD.js (신규) |
-| 5 | 빌드 테스트 | tester | 1~4 | - |
-| 6 | HUD 4파일 수정 (StageHUD+HeartHUD+PowerUpHUD+GameScene) | developer | 5 통과 | 4파일 |
-| 7 | 빌드 테스트 | tester | 6 | - |
-| 8 | PauseScene.js 신규 + GameScene/main.js 수정 | developer | 7 통과 | 3파일 |
-| 9 | 빌드 테스트 | tester | 8 | - |
-| 10 | 메뉴 3씬 수정 (Select+Difficulty+WorldMap) | developer | 9 통과 | 3파일 |
-| 11 | 최종 빌드 테스트 | tester | 10 | - |
+| 순서 | 작업 | 담당 | 선행 조건 |
+|------|------|------|----------|
+| 1 | Background.js 수정 (image->tileSprite + update 스크롤) | developer | 없음 |
+| 2 | 빌드 테스트 (vite build) | tester | 1 |
 
 **developer 주의사항:**
-- P1: startJump()의 기존 홀드 부스트(jumpStartTime, isJumpHeld, executeJump) 로직을 완전 제거해야 함
-- P1: 좌우 영역 판정은 `pointer.x < width / 2`로 간단히 구분
-- P1: 공중에서는 좌우 구분 없이 무조건 doubleJump() 호출 (기존과 동일)
-- P2: StageHUD 반투명 배경은 `fillStyle(0x000000, 0.3)` + `fillRect(0, 0, width, 80)` 으로 처리
-- P3: PauseScene에서 scene.pause/resume 사용 시 BGM도 일시정지해야 함 (soundGenerator)
-- P3: launch() 사용 시 PauseScene은 별도 카메라가 필요하지 않음 (전체화면 오버레이)
-- P4: WorldMapScene 좌우 스와이프는 기존 세로 스크롤 코드를 교체하는 방식
+- `add.tileSprite(x, y, width, height, textureKey)` 형식. add.image와 파라미터가 다름
+- tileSprite는 `setOrigin(0, 0)`을 해야 좌상단 기준 배치됨 (기본은 0.5, 0.5)
+- `setDisplaySize()` 대신 생성자에서 width, height를 직접 지정
+- `tilePositionX`를 증가시키면 이미지가 왼쪽으로 흘러감 (양수 = 왼쪽 스크롤)
+- bgImage.tilePositionX 스크롤은 기존 sky/clouds/mountains/grass 스크롤과 동일한 패턴
+- resize() 시 tileSprite는 `bgImage.width = newWidth; bgImage.height = newHeight` 로 조정
+- setWorld() 시 tileSprite의 setTexture()는 동작하지만 tilePositionX는 리셋해줘야 자연스러움
