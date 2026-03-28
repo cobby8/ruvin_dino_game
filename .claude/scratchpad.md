@@ -35,6 +35,17 @@
 - Dino.js: setScale 제거, 히트박스만 변경으로 수정
 - GameScene.js: y좌표 보정 코드 추가
 
+### 3가지 버그 수정 (debugger, 2026-03-28)
+
+#### 수정 이력
+| 회차 | 수정 내용 | 수정 파일 | 비고 |
+|------|----------|----------|------|
+| 1차 | body offsetY 0.35->0.4 (바닥 뚫기 수정) | Dino.js L54, L285 | 생성자+endSlide 둘 다 수정 |
+| 1차 | setCollideWorldBounds(true) 제거 | Dino.js L49 | ground collider 간섭 방지, 2단점프 정상화 |
+| 2차 | _onStageClear 중복호출 방지 가드 추가 | GameScene.js L430 | if (this.isStageClear) return |
+| 2차 | forEach->for+break 변환 (점수체크 루프) | GameScene.js L351-381 | 클리어 후 추가 점수 방지 |
+| 2차 | _onCollectItem에 isStageClear 가드 추가 | GameScene.js L641 | 아이템 수집 중 클리어 중복 방지 |
+
 ### P4: 스프링 점프대 + 부스트 구간 + 밸런스 조정
 
 | 파일 | 변경 내용 | 신규/수정 |
@@ -355,6 +366,13 @@ reviewer 참고:
 7. **Graphics 텍스처 생성**: 적과 아이템 모두 외부 이미지 없이 Phaser Graphics로 그릴 것. 기존 장애물 패턴 그대로 따라갈 것. 귀여운 느낌으로 (둥글둥글, 눈 달린).
 
 ## 테스트 결과 (tester)
+
+### 버그 수정 (debugger)
+| 버그 | 원인 | 수정 파일 | 수정 내용 |
+|------|------|----------|----------|
+| 공룡 바닥 아래 떨어짐 | body offsetY 불일치 (0.35 -> 0.4 필요) + setCollideWorldBounds 간섭 | Dino.js | offsetY 0.35->0.4 수정, setCollideWorldBounds(true) 제거 |
+| 스테이지 클리어 안됨 | _onStageClear 중복 호출 + forEach 내 break 불가 | GameScene.js | _onStageClear에 가드 추가, forEach->for+break 변환, _onCollectItem에 가드 추가 |
+| 2단 점프 안됨 | setCollideWorldBounds와 ground collider 간섭으로 blocked.down 불안정 | Dino.js | setCollideWorldBounds(true) 제거로 해결 (ground collider만 사용) |
 
 ### P4 스프링+부스트+밸런스 빌드/코드 검증 (2026-03-28)
 

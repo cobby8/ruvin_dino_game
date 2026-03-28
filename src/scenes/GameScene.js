@@ -348,7 +348,11 @@ export class GameScene extends Phaser.Scene {
     }
 
     // === 점수 체크: 장애물이 공룡 뒤를 지나면 +1 ===
-    this.obstacleManager.group.getChildren().forEach(obstacle => {
+    const obstacles = this.obstacleManager.group.getChildren();
+    for (let i = 0; i < obstacles.length; i++) {
+      const obstacle = obstacles[i];
+      // 이미 스테이지 클리어 처리됐으면 더 이상 점수 체크 안 함
+      if (this.isStageClear) break;
       if (obstacle.active && !obstacle.scored && obstacle.x < this.dino.x - 20) {
         obstacle.scored = true;
         this.score++;
@@ -360,7 +364,7 @@ export class GameScene extends Phaser.Scene {
         // === 스테이지 클리어 체크 ===
         if (this.score >= this.targetScore) {
           this._onStageClear();
-          return;
+          break; // 클리어 후 즉시 루프 종료 (추가 점수 방지)
         }
 
         // 속도 증가 (10점마다)
@@ -377,7 +381,7 @@ export class GameScene extends Phaser.Scene {
           this._showPraise();
         }
       }
-    });
+    }
   }
 
   /** 장애물 하나 생성 + [P3] 아이템/블록 스폰 */
@@ -427,6 +431,8 @@ export class GameScene extends Phaser.Scene {
    * 다음 스테이지로 넘어가거나, 마지막이면 축하
    */
   _onStageClear() {
+    // 중복 호출 방지 (forEach 안에서 여러 장애물이 동시에 조건 충족 시)
+    if (this.isStageClear) return;
     this.isStageClear = true;
 
     // BGM 정지
@@ -633,6 +639,7 @@ export class GameScene extends Phaser.Scene {
    */
   _onCollectItem(dino, item) {
     if (!item.active) return;
+    if (this.isGameOver || this.isStageClear) return;
 
     const type = item.itemType;
 

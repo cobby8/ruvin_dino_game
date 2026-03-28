@@ -46,12 +46,15 @@ export class Dino extends Phaser.Physics.Arcade.Sprite {
 
     // 물리 설정
     this.body.setGravityY(GAME.GRAVITY);
-    this.body.setCollideWorldBounds(true);
+    // setCollideWorldBounds 제거: ground collider가 있으므로 월드 경계 충돌 불필요
+    // (월드 하단 경계와 ground가 동시에 blocked.down을 true로 만들어 간섭 발생)
     this.body.setBounce(0);
 
     // 충돌 박스를 몸체에 맞게 축소 (여유있는 히트박스 = 6살 배려)
+    // offsetY = DINO_SIZE - bodyHeight = 96 - 57.6 = 38.4 (= 0.4)
+    // origin(0.5, 1) 기준으로 바디 하단이 스프라이트 하단과 일치하도록 설정
     this.body.setSize(GAME.DINO_SIZE * 0.5, GAME.DINO_SIZE * 0.6);
-    this.body.setOffset(GAME.DINO_SIZE * 0.25, GAME.DINO_SIZE * 0.35);
+    this.body.setOffset(GAME.DINO_SIZE * 0.25, GAME.DINO_SIZE * 0.4);
 
     // 달리기 애니메이션 시작
     this.play(`${dinoKey}_run`);
@@ -281,8 +284,9 @@ export class Dino extends Phaser.Physics.Arcade.Sprite {
     this.isSliding = false;
 
     // 히트박스 원래대로 복원 (setScale 복원 불필요 - 스케일을 변경하지 않았으므로)
+    // offsetY = 0.4: origin(0.5,1) 기준 바디 하단 = 스프라이트 하단
     this.body.setSize(GAME.DINO_SIZE * 0.5, GAME.DINO_SIZE * 0.6);
-    this.body.setOffset(GAME.DINO_SIZE * 0.25, GAME.DINO_SIZE * 0.35);
+    this.body.setOffset(GAME.DINO_SIZE * 0.25, GAME.DINO_SIZE * 0.4);
 
     // 타이머 정리
     if (this.slideTimer) {
