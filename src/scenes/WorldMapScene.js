@@ -288,7 +288,7 @@ export class WorldMapScene extends Phaser.Scene {
 
     // === 스테이지 버튼 5개 (가로 배치) ===
     const stageIds = STAGES.filter(s => s.world === world.id).map(s => s.id);
-    const btnR = Math.min(cardW * 0.065, 24);
+    const btnR = Math.min(cardW * 0.09, 36); // 반지름 확대: 24->36px (터치 타겟 키움)
     const btnSpacing = cardW / 6;
     const btnY = cy + cardH * 0.15;
     const stageColor = WORLD_STAGE_COLORS[world.id] || 0x888888;

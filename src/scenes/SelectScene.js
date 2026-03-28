@@ -72,6 +72,9 @@ export class SelectScene extends Phaser.Scene {
 
     // 화면 크기 변경 대응
     this.scale.on('resize', this._onResize, this);
+
+    // 첫 번째 공룡(브라키오)을 기본 선택 - 6살이 버튼 회색 상태에서 혼란하지 않도록
+    this._selectDino(0);
   }
 
   /** 공룡 카드 4장 생성 - 상단에 배치, 좀 더 작게 */
